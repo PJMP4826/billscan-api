@@ -12,8 +12,8 @@ class BillingData:
     expiration_date: Optional[str] = None
 
     def __post_init__(self) -> None:
-        if self.has_qr_code and not self.billing_url:
-            raise ValueError("When has_qr_code=True, billing_url must be provided.")
+        # if self.has_qr_code and not self.billing_url:
+        #     raise ValueError("When has_qr_code=True, billing_url must be provided.")
         if self.is_billable:
             if not any([self.billing_url, self.billing_code, self.barcode]):
                 raise ValueError(

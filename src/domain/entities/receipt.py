@@ -27,8 +27,8 @@ class Receipt:
     context_notes: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.receipt_id or not self.receipt_id.strip():
-            raise ValueError("receipt_id must not be empty.")
+        # if not self.receipt_id or not self.receipt_id.strip():
+        #     raise ValueError("receipt_id must not be empty.")
         if not self.items:
             raise ValueError("A receipt must have at least one item.")
 
