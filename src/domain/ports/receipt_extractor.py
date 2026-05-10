@@ -4,5 +4,5 @@ from src.domain.entities.receipt import Receipt
 
 class ReceiptExtractorPort(ABC):
     @abstractmethod
-    async def extract_from_url(self, image_url: str, prompt_template_str: str) -> Receipt:
+    async def extract_from_url(self, images_url: list[str], prompt_template_str: str) -> list[Receipt]:
         raise NotImplementedError
