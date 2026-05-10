@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from decimal import Decimal
-from typing import List, Optional
+from typing import Any
 from src.domain.value_objects.merchant_data import MerchantData
 from src.domain.value_objects.transaction_metadata import TransactionMetadata
 from src.domain.value_objects.line_item import LineItem
@@ -16,14 +16,15 @@ class Receipt:
     A diferencia de los value objects (inmutables), Receipt tiene identidad
     propia (receipt_id) y puede mutar su estado a lo largo del ciclo de vida.
     """
+
     receipt_id: str
     merchant: MerchantData
     transaction: TransactionMetadata
-    items: List[LineItem]
+    items: list[LineItem]
     totals: TotalsAndTaxes
     payment: PaymentInfo
-    billing: Optional[BillingData] = None
-    context_notes: Optional[str] = None
+    billing: BillingData | None = None
+    context_notes: str | None = None
 
     def __post_init__(self) -> None:
         if not self.receipt_id or not self.receipt_id.strip():
@@ -41,3 +42,7 @@ class Receipt:
     def subtotal_from_items(self) -> Decimal:
         """Calcula el subtotal a partir del total_price de cada ítem."""
         return sum((i.total_price for i in self.items), Decimal("0.00"))
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convierte la entidad y sus value objects anidados a un dict plano."""
+        return asdict(self)
