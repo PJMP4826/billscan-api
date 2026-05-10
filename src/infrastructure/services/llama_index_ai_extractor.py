@@ -18,23 +18,29 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
         self._llm_provider = llm_provider
 
     async def extract_from_url(
-        self, image_url: str, prompt_template_str: str
-    ) -> Receipt:
-        image = await self._http_adapter.get_image(url=image_url)
+        self, images_url: list[str], prompt_template_str: str
+    ) -> list[Receipt]:
+        receipts: list[Receipt] = []
 
-        image_base64 = cast(bytes, base64.b64encode(image.image_bytes).decode("utf-8"))
+        for url in images_url:
+            image = await self._http_adapter.get_image(url=url)
 
-        image_documents: Sequence[ImageBlock] = [ImageBlock(image=image_base64)]
+            image_documents: Sequence[ImageBlock] = [
+                ImageBlock(image=base64.b64encode(image.image_bytes))
+            ]
 
-        program = MultiModalLLMCompletionProgram.from_defaults(  # type: ignore
-            output_cls=ReceiptData,
-            image_documents=image_documents,  # type: ignore
-            prompt_template_str=prompt_template_str,
-            multi_modal_llm=self._llm_provider,
-        )
+            program = MultiModalLLMCompletionProgram.from_defaults(  # type: ignore
+                output_cls=ReceiptData,
+                image_documents=image_documents,  # type: ignore
+                prompt_template_str=prompt_template_str,
+                multi_modal_llm=self._llm_provider,
+            )
 
-        result_pydantic = cast(ReceiptData, await program.acall())
-        return ReceiptMapper.schema_to_domain(
-            schema=result_pydantic,
-            receipt_id=result_pydantic.transaction.receipt_id or "",
-        )
+            result_pydantic = cast(ReceiptData, await program.acall())
+            receipt = ReceiptMapper.schema_to_domain(
+                schema=result_pydantic,
+                receipt_id=result_pydantic.transaction.receipt_id or "",
+            )
+            receipts.append(receipt)
+
+        return receipts
