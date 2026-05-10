@@ -25,7 +25,7 @@ class TotalsAndTaxes(BaseModel):
             "Si el ticket dice 'USTED AHORRÓ $X', ese es el total_discount."
         ),
     )
-    taxes: list[TaxDetail] = Field(
+    taxes: list[TaxDetail] = Field( # type: ignore
         default_factory=list,
         description=(
             "Desglose de los impuestos trasladados. "
