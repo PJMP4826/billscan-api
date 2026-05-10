@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 from src.domain.value_objects.tax_detail import TaxDetail
 
 
@@ -8,7 +8,7 @@ from src.domain.value_objects.tax_detail import TaxDetail
 class TotalsAndTaxes:
     subtotal: Optional[Decimal] = None
     total_discount: Optional[Decimal] = Decimal("0.00")
-    taxes: List[TaxDetail] = field(default_factory=list)
+    taxes: list[TaxDetail] = field(default_factory=list)
     total: Decimal = Decimal("0.00")
 
     def __post_init__(self) -> None:
