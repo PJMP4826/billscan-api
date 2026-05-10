@@ -15,4 +15,15 @@ class ReceiptData(BaseModel):
     totals: TotalsAndTaxes
     payment: PaymentInfo
     billing: Optional[BillingData] = None
-    context_notes: Optional[str] = Field(None, description="Otras notas como políticas de devolución.")
+    context_notes: Optional[str] = Field(
+        None,
+        description=(
+            "Notas adicionales visibles en el ticket. "
+            "En México es común ver: 'No se aceptan devoluciones', "
+            "'Gracias por su compra', 'Vuelva pronto', "
+            "'Horario de atención: L-V 9:00-18:00', "
+            "'Conserve su ticket para cualquier aclaración', "
+            "'Política de devolución: 7 días'. "
+            "Si el ticket tiene texto promocional o legal al pie, resúmelo aquí."
+        ),
+    )
