@@ -3,5 +3,6 @@
   "python.analysis.extraPaths": ["./"],
   "python.analysis.autoSearchPaths": true,
   "python.analysis.diagnosticMode": "workspace",
-  "git.enableSmartCommit": true
+  "git.enableSmartCommit": true,
+  "python.analysis.useLibraryCodeForTypes": true
 }
