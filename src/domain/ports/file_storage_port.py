@@ -8,7 +8,7 @@ class FileStoragePort(ABC):
     """
 
     @abstractmethod
-    def upload(
+    async def upload(
         self,
         key: str,
         data: bytes,
@@ -25,7 +25,7 @@ class FileStoragePort(ABC):
         ...
 
     @abstractmethod
-    def get_url(self, key: str, expires_in: int = 3600) -> str:
+    async def get_url(self, key: str, expires_in: int = 3600) -> str:
         """
         Generate a presigned URL for an existing object.
 
@@ -36,7 +36,7 @@ class FileStoragePort(ABC):
         ...
 
     @abstractmethod
-    def delete(self, key: str) -> None:
+    async def delete(self, key: str) -> None:
         """
         Delete an object from storage.
 
@@ -45,7 +45,7 @@ class FileStoragePort(ABC):
         ...
 
     @abstractmethod
-    def exists(self, key: str) -> bool:
+    async def exists(self, key: str) -> bool:
         """
         Check whether an object exists in storage.
 
