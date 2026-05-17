@@ -1,0 +1,26 @@
+{
+  "name": "Python en Docker Compose",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/code",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode",
+        "ms-python.black-formatter",
+        "ms-python.debugpy",
+        "DenizhanDaklr.copilot-vscode-deepseek",
+        "cweijan.vscode-database-client2"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "python.formatting.provider": "none"
+      }
+    }
+  },
+  "mounts": []
+}
