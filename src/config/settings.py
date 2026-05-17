@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     db_user: str = Field(..., description="Database username")
     db_password: str = Field(..., description="Database password")
     db_name: str = Field(..., description="Database name")
-    db_port: str = Field(default="1433", description="Database port")
+    db_port: str = Field(default="5432", description="Database port")
     db_host: str = Field(..., description="Database host")
 
     # Cloudflare R2 (S3-compatible) File Storage
