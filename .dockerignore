@@ -5,3 +5,4 @@ storage/
 *.pyc
 .git
 .pytest_cache
+.
