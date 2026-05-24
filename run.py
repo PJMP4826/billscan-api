@@ -1,10 +1,27 @@
-import time
+import uvicorn
+from main import app  # type: ignore
 
 
-print("Stub process running. Stop the container to exit.")
+def run_app():
+    host = "0.0.0.0"
+    port = 8000
 
-try:
-	while True:
-		time.sleep(60)
-except KeyboardInterrupt:
-	print("Shutting down.")
+    reload = True
+
+    try:
+        print("Server started successfully...")
+        uvicorn.run(
+            "main:app",
+            host=host,
+            port=port,
+            reload=reload,
+            workers=1,
+            use_colors=False,
+            log_config=None,
+        )
+    except Exception as e:
+        print(f"\nFATAL ERROR: {e}")
+
+
+if __name__ == "__main__":
+    run_app()
