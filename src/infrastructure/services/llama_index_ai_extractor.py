@@ -18,32 +18,31 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
         self._http_adapter = http_adapter
         self._llm_provider = llm_provider
 
-    async def extract_from_url(
-        self, images_url: list[str], prompt_template_str: str
+    async def extract(
+        self, images_bytes: list[bytes], prompt_template_str: str
     ) -> list[Receipt]:
         receipts: list[Receipt] = []
 
-        for url in images_url:
-            image = await self._http_adapter.get_image(url=url)
-
+        for image in images_bytes:
             image_documents: Sequence[ImageBlock] = [
-                ImageBlock(image=base64.b64encode(image.image_bytes))
+                ImageBlock(image=base64.b64encode(image))
             ]
 
+            logger.debug("Comenzando extraccion del ticket")
             receipt = await self._extract_with_retry(
-                image_documents=image_documents,
-                prompt_template_str=prompt_template_str,
-                image_url=url,
+                image_documents=image_documents, prompt_template_str=prompt_template_str
             )
+            logger.debug("Extraccion completada, siguiente...")
             receipts.append(receipt)
 
+        logger.debug(f"{len(receipts)} tickets procesados correctamente")
         return receipts
 
+    
     async def _extract_with_retry(
         self,
         image_documents: Sequence[ImageBlock],
         prompt_template_str: str,
-        image_url: str,
     ) -> Receipt:
         """Intenta la extracción hasta MAX_RETRIES veces, alimentando el error
         de validación de dominio al prompt para que el LLM se corrija solo."""
@@ -74,22 +73,17 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
                     logger.info(
                         "Extracción exitosa en intento %d para %s",
                         attempt,
-                        image_url,
                     )
                 return receipt
 
             except ValueError as exc:
                 last_error = str(exc)
                 logger.warning(
-                    "Intento %d/%d falló para %s: %s",
-                    attempt,
-                    MAX_RETRIES,
-                    image_url,
-                    last_error,
+                    "Intento %d/%d falló para %s: %s", attempt, MAX_RETRIES, last_error
                 )
 
         raise ValueError(
-            f"Extracción fallida tras {MAX_RETRIES} intentos para {image_url}. "
+            f"Extracción fallida tras {MAX_RETRIES} intentos"
             f"Último error: {last_error}"
         )
 
