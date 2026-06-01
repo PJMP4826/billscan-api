@@ -47,8 +47,27 @@ class TotalsAndTaxes(BaseModel):
             "No confundir con subtotal ni con 'Total Impuestos'."
         ),
     )
+    amount_paid: Decimal = Field(
+        ...,
+        description=(
+            "Monto pagado en pesos mexicanos con este método. "
+            "Si es pago en efectivo, el ticket puede mostrar: "
+            "'Efectivo: $500.00', 'Cambio: $12.50', donde amount_paid=500.00. "
+            "El cambio NO es amount_paid. "
+            "Si es pago mixto, amount_paid refleja este método, no el total."
+        ),
+    )
+    change: Optional[Decimal] = Field(
+        None,
+        description=(
+            "Cambio entregado al cliente en caso de pago en efectivo. "
+            "En tickets mexicanos aparece como: 'Cambio: $12.50', 'Vuelto: $12.50'. "
+            "Este valor representa únicamente el monto devuelto al cliente, "
+            "no debe sumarse a `amount_paid`."
+        ),
+    )
 
-    @field_validator('subtotal', 'total_discount', 'total', mode='before')
+    @field_validator('subtotal', 'total_discount', 'total', "amount_paid", "change", mode='before')
     @classmethod
     def parse_money_fields(cls, v: Any) -> Any:
         return clean_decimal(v)

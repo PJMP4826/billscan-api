@@ -10,6 +10,8 @@ class TotalsAndTaxes:
     total_discount: Optional[Decimal] = Decimal("0.00")
     taxes: list[TaxDetail] = field(default_factory=list) # type: ignore
     total: Decimal = Decimal("0.00")
+    amount_paid: Decimal = Decimal("0.00")
+    change: Decimal | None = None
 
     def __post_init__(self) -> None:
         if self.subtotal is not None and self.subtotal < Decimal("0.00"):
@@ -24,6 +26,10 @@ class TotalsAndTaxes:
             raise ValueError(
                 f"total must be >= 0, got {self.total}."
             )
+        if self.amount_paid < Decimal("0.00"):
+            raise ValueError(
+                f"amount_paid must be >= 0, got {self.amount_paid}."
+            )
         # Verify total is consistent: total >= sum(taxes) - discount
         taxes_sum = sum(t.amount for t in self.taxes)
         discount = self.total_discount or Decimal("0.00")
@@ -37,3 +43,21 @@ class TotalsAndTaxes:
                     f"subtotal ({subtotal}) - discount ({discount}) + taxes ({taxes_sum}) "
                     f"= {expected_total} (tolerance: ±0.01)."
                 )
+
+        if self.change is not None:
+            if self.change < Decimal("0.00"):
+                raise ValueError(f"change must be >= 0, got {self.change}.")
+        
+            expected_change = self.amount_paid - self.total
+            # si expected_change < 0 -> pago insuficiente
+            if expected_change < Decimal("0.00"):
+                raise ValueError(
+                    f"Insufficient payment: amount_paid ({self.amount_paid}) < total ({self.total})."
+                )
+        
+            if abs(self.change - expected_change) > Decimal("0.01"):
+                raise ValueError(
+                    f"Change ({self.change}) is inconsistent with "
+                    f"Amount paid ({self.amount_paid}) - total ({self.total}) = {expected_change}."
+                )
+
