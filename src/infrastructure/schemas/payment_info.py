@@ -1,23 +1,31 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
+from src.domain.enums.sat_payment_methods import (
+    SatPaymentMethodCode,
+    SatPaymentMethodDescription,
+)
+
 
 class PaymentInfo(BaseModel):
-    method: str = Field(
-        ...,
+    method_code: SatPaymentMethodCode = Field(
         description=(
-            "Método de pago. En México: 'Tarjeta de Débito', "
-            "'Tarjeta de Crédito', 'Efectivo', 'Transferencia', "
-            "'SPEI', 'Vales de Despensa', 'Tarjeta de Regalo', "
-            "'Pago Mixto' (cuando usan efectivo + tarjeta), "
-            "'Criptomonedas', 'Tarjeta', 'CASH', 'T.Débito'. "
-            "Normaliza a español. Si usaron múltiples métodos, "
-            "pon el principal (el de mayor importe). "
-            "PEMEX acepta 'Efectivo' y 'Tarjeta' (Visa/MC). "
-            "OXXO acepta 'Efectivo' y 'Tarjeta' (contactless)."
+            "Código del método de pago según catálogo del SAT (ej. '01', '04', '28'). "
+            "Usa los códigos oficiales del SAT cuando estén disponibles."
         ),
     )
-    
+    method_description: SatPaymentMethodDescription = Field(
+        description=(
+            "Descripción textual del método de pago en español. "
+            "Normaliza a español. Si usaron múltiples métodos, "
+            "pon el principal (el de mayor importe). "
+            "ej. PEMEX acepta 'Efectivo' y 'Tarjeta' (Visa/MC). "
+            "OXXO acepta 'Efectivo' y 'Tarjeta' (contactless)."
+            "Debe usar únicamente una de las descripciones definidas en `SatPaymentMethodDescription` "
+            "(ej. 'Efectivo', 'Tarjeta de crédito', 'Tarjeta de débito', 'Por definir')."
+        ),
+    )
+
     card_last_four: Optional[str] = Field(
         None,
         description=(
