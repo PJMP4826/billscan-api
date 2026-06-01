@@ -1,7 +1,5 @@
-from pydantic import BaseModel, Field, field_validator
-from decimal import Decimal
-from typing import Any, Optional
-from src.infrastructure.shared.clean_decimal import clean_decimal
+from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class PaymentInfo(BaseModel):
@@ -19,16 +17,7 @@ class PaymentInfo(BaseModel):
             "OXXO acepta 'Efectivo' y 'Tarjeta' (contactless)."
         ),
     )
-    amount_paid: Decimal = Field(
-        ...,
-        description=(
-            "Monto pagado en pesos mexicanos con este método. "
-            "Si es pago en efectivo, el ticket puede mostrar: "
-            "'Efectivo: $500.00', 'Cambio: $12.50', donde amount_paid=500.00. "
-            "El cambio NO es amount_paid. "
-            "Si es pago mixto, amount_paid refleja este método, no el total."
-        ),
-    )
+    
     card_last_four: Optional[str] = Field(
         None,
         description=(
@@ -49,8 +38,3 @@ class PaymentInfo(BaseModel):
             "Si no hay pago con tarjeta, déjalo vacío."
         ),
     )
-
-    @field_validator('amount_paid', mode='before')
-    @classmethod
-    def parse_money_fields(cls, v: Any) -> Any:
-        return clean_decimal(v)
