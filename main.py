@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 app = FastAPI(
     title="BillsScan API",
     docs_url="/docs",
-    description="ChatBot de servicio al cliente con base de conocimiento",
+    description="API de la app BillsScan para la facturacion de tickets de compra",
     version="1.0.0",
 )
 
