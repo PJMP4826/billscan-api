@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 warnings.filterwarnings("ignore", category=UserWarning)
 
 app = FastAPI(
-    title="AI Chat API",
+    title="BillsScan API",
     docs_url="/docs",
     description="ChatBot de servicio al cliente con base de conocimiento",
     version="1.0.0",
