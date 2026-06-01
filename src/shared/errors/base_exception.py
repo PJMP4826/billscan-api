@@ -41,7 +41,21 @@ class NotFoundError(BaseAppException):
         *,
         error_code: str = "NOT_FOUND_EXCEPTION",
         details: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            message, error_code=error_code, details=details or {}, **kwargs
+        )
+
+
+class BadRequestError(BaseAppException):
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_code: str = "BAD_REQUEST",
+        details: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             message, error_code=error_code, details=details or {}, **kwargs
