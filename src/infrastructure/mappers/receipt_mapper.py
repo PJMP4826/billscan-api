@@ -59,11 +59,12 @@ class ReceiptMapper:
             total_discount=schema.totals.total_discount,
             taxes=taxes,
             total=schema.totals.total,
+            amount_paid=schema.totals.amount_paid,
+            change=schema.totals.change
         )
 
         payment = PaymentInfo(
             method=schema.payment.method,
-            amount_paid=schema.payment.amount_paid,
             card_last_four=schema.payment.card_last_four,
             authorization_code=schema.payment.authorization_code,
         )
