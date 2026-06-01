@@ -64,7 +64,8 @@ class ReceiptMapper:
         )
 
         payment = PaymentInfo(
-            method=schema.payment.method,
+            method_code=schema.payment.method_code,
+            method_description=schema.payment.method_description,
             card_last_four=schema.payment.card_last_four,
             authorization_code=schema.payment.authorization_code,
         )
