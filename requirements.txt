@@ -56,6 +56,7 @@ packaging==26.2
 pillow==12.2.0
 platformdirs==4.9.6
 propcache==0.5.2
+puremagic==2.2.0
 pyasn1==0.6.3
 pyasn1_modules==0.4.2
 pycparser==3.0
@@ -64,6 +65,7 @@ pydantic-settings==2.14.1
 pydantic_core==2.46.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
+python-multipart==0.0.30
 PyYAML==6.0.3
 regex==2026.5.9
 requests==2.33.1
