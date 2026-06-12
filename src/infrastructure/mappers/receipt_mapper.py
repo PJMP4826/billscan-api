@@ -26,8 +26,8 @@ class ReceiptMapper:
         )
 
         transaction = TransactionMetadata(
-            date=schema.transaction.date,
-            time=schema.transaction.time,
+            transaction_date=schema.transaction.transaction_date,
+            transaction_time=schema.transaction.transaction_time,
             receipt_id=schema.transaction.receipt_id,
             pos_id=schema.transaction.pos_id,
             cashier=schema.transaction.cashier,
@@ -41,6 +41,7 @@ class ReceiptMapper:
                 unit_price=item.unit_price,
                 total_price=item.total_price,
                 discount=item.discount,
+                item_metadata=item.item_metadata
             )
             for item in schema.items
         ]
@@ -90,4 +91,5 @@ class ReceiptMapper:
             payment=payment,
             billing=billing,
             context_notes=schema.context_notes,
+            extra_metadata=schema.extra_metadata
         )
