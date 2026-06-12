@@ -14,7 +14,8 @@
         "ms-python.black-formatter",
         "ms-python.debugpy",
         "DenizhanDaklr.copilot-vscode-deepseek",
-        "cweijan.vscode-database-client2"
+        "cweijan.vscode-database-client2",
+        "shibiao.ai-commit-lite"
       ],
       "settings": {
         "editor.formatOnSave": true,
