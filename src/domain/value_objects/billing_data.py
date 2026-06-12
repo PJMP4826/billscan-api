@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-
+from datetime import date
 
 @dataclass(frozen=True)
 class BillingData:
@@ -9,7 +9,7 @@ class BillingData:
     billing_url: Optional[str] = None
     billing_code: Optional[str] = None
     barcode: Optional[str] = None
-    expiration_date: Optional[str] = None
+    expiration_date: Optional[date] = None
 
     def __post_init__(self) -> None:
         # if self.has_qr_code and not self.billing_url:
@@ -20,3 +20,9 @@ class BillingData:
                     "When is_billable=True, at least one of billing_url, "
                     "billing_code, or barcode must be provided."
                 )
+            
+    @property
+    def is_expired(self) -> bool:
+        if not self.expiration_date:
+            return False
+        return self.expiration_date < date.today()

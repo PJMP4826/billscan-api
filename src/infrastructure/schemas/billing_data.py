@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-
+from datetime import date
 
 class BillingData(BaseModel):
     is_billable: bool = Field(
@@ -53,15 +53,18 @@ class BillingData(BaseModel):
             "NO es el mismo código que el SKU o UPC del producto."
         ),
     )
-    expiration_date: Optional[str] = Field(
+    expiration_date: Optional[date] = Field(
         None,
         description=(
-            "Fecha o plazo límite para facturar. En México: "
-            "'Dispone de 30 días para solicitarla', "
-            "'Solo facturable en el mes de consumo', "
-            "'Vigencia para facturar: 31/12/2025', "
-            "'Facturar antes de 30 días naturales', "
-            "'Fecha límite: 15/04/2025'. "
-            "Captura la fecha exacta si aparece (YYYY-MM-DD) o el texto descriptivo."
+            "Fecha exacta límite para facturar. "
+            "Si el ticket indica una fecha explícita, devuélvela. "
+            "Si el ticket indica un plazo en lenguaje natural (ej. 'Dispone de 30 días', "
+            "'Solo facturable en el mes de consumo', 'Antes de fin de mes'), "
+            "debes INFERIR Y CALCULAR la fecha exacta de expiración sumando esos días "
+            "a la fecha de la transacción, o calculando el último día del mes corriente. "
+            "Por ejemplo, si la compra es del 2025-04-15 y dice 'facturar en el mes', "
+            "el resultado debe ser '2025-04-30'. "
+            "Devuelve ÚNICAMENTE la fecha en formato YYYY-MM-DD. "
+            "No incluyas el texto descriptivo original."
         ),
     )
