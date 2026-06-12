@@ -1,9 +1,9 @@
+from datetime import date, time
 from pydantic import BaseModel, Field
 from typing import Optional
 
-
 class TransactionMetadata(BaseModel):
-    date: Optional[str] = Field(
+    transaction_date: Optional[date] = Field(
         None,
         description=(
             "Fecha de la compra en formato YYYY-MM-DD. "
@@ -13,7 +13,7 @@ class TransactionMetadata(BaseModel):
             "Si solo ves '15 de marzo de 2025', conviértelo a 2025-03-15."
         ),
     )
-    time: Optional[str] = Field(
+    transaction_time: Optional[time] = Field(
         None,
         description=(
             "Hora de la compra en formato 24h HH:MM. "
