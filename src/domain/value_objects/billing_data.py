@@ -4,12 +4,13 @@ from datetime import date
 
 @dataclass(frozen=True)
 class BillingData:
-    is_billable: bool
+    is_billable: bool = False
     has_qr_code: bool = False
     billing_url: Optional[str] = None
     billing_code: Optional[str] = None
     barcode: Optional[str] = None
     expiration_date: Optional[date] = None
+    billing_metadata: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
         # if self.has_qr_code and not self.billing_url:

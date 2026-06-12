@@ -12,6 +12,7 @@ class BillingData(BaseModel):
             "'Para facturar ingrese a...', 'Esta es una representación impresa de un CFDI', "
             "'Comprobante Fiscal Digital', 'Factura sin costo en...'. "
             "Si no hay ninguna de estas frases, is_billable=false."
+            "Si se require descargar una app en PlayStore o AppStore (Android o IOS) entonces is_billable=false por cuestiones tecnicas"
         ),
     )
     has_qr_code: bool = Field(
@@ -66,5 +67,16 @@ class BillingData(BaseModel):
             "el resultado debe ser '2025-04-30'. "
             "Devuelve ÚNICAMENTE la fecha en formato YYYY-MM-DD. "
             "No incluyas el texto descriptivo original."
+        ),
+    )
+    billing_metadata: Optional[dict[str, str]] = Field(
+        default_factory=dict,
+        description=(
+            "Diccionario para métodos o instrucciones de facturación alternativas o adicionales. "
+            "Úsalo si el ticket pide enviar correo, usar WhatsApp, descargar una App, "
+            "o requiere datos extra (ej. número de sucursal, etc). "
+            "Ejemplos: {'whatsapp': '5512345678', 'email': 'facturas@taqueria.com', "
+            "'app_requerida': 'Wow+ Alsea', 'instrucciones': 'Enviar foto del ticket'}. "
+            "Usa siempre claves descriptivas en snake_case."
         ),
     )

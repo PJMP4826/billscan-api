@@ -80,6 +80,7 @@ class ReceiptMapper:
                 billing_code=schema.billing.billing_code,
                 barcode=schema.billing.barcode,
                 expiration_date=schema.billing.expiration_date,
+                billing_metadata=schema.billing.billing_metadata
             )
 
         return Receipt(
