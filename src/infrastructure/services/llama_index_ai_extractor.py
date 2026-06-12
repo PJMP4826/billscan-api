@@ -10,7 +10,7 @@ from src.infrastructure.adapters.http_adapter import HttpClientAdapter
 from src.infrastructure.mappers.receipt_mapper import ReceiptMapper
 from src.infrastructure.schemas.receipt_data import ReceiptData
 
-MAX_RETRIES: int = 3
+MAX_RETRIES: int = 5
 
 
 class LlamaIndexAiExtractor(ReceiptExtractorPort):
