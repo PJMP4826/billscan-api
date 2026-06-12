@@ -25,6 +25,7 @@ class Receipt:
     payment: PaymentInfo
     billing: BillingData | None = None
     context_notes: str | None = None
+    extra_metadata: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
         # if not self.receipt_id or not self.receipt_id.strip():
