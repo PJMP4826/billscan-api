@@ -11,6 +11,7 @@ class LineItem:
     unit_price: Optional[Decimal] = None
     total_price: Decimal = Decimal("0.00")
     discount: Optional[Decimal] = Decimal("0.00")
+    item_metadata: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
         if self.quantity <= 0:

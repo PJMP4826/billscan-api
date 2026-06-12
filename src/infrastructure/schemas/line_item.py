@@ -63,8 +63,18 @@ class LineItem(BaseModel):
             "Si el descuento aparece a nivel total (no por línea), ponlo en TotalsAndTaxes."
         ),
     )
+    item_metadata: Optional[dict[str, str]] = Field(
+        default_factory=dict,
+        description=(
+            "Diccionario para características únicas o metadatos específicos de este producto. "
+            "En México es útil para: {'IMEI': '358123456789012'} en celulares, "
+            "{'numero_recarga': '5512345678', 'compania': 'Telcel'} en recargas de saldo, "
+            "o {'talla': 'M', 'color': 'Azul'} en ropa. "
+            "Déjalo vacío si es un producto común de supermercado."
+        ),
+    )
 
-    @field_validator('unit_price', 'total_price', 'discount', mode='before')
+    @field_validator("unit_price", "total_price", "discount", mode="before")
     @classmethod
     def parse_money_fields(cls, v: Any) -> Any:
         return clean_decimal(v)
