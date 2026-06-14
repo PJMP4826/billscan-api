@@ -15,7 +15,7 @@ class ReceiptMapper:
     @staticmethod
     def schema_to_domain(
         schema: ReceiptDataSchema,
-        receipt_id: str,
+        receipt_uuid: str,
     ) -> Receipt:
         merchant = MerchantData(
             name=schema.merchant.name,
@@ -28,7 +28,7 @@ class ReceiptMapper:
         transaction = TransactionMetadata(
             transaction_date=schema.transaction.transaction_date,
             transaction_time=schema.transaction.transaction_time,
-            receipt_id=schema.transaction.receipt_id,
+            ticket_number=schema.transaction.ticket_number,
             pos_id=schema.transaction.pos_id,
             cashier=schema.transaction.cashier,
         )
@@ -84,7 +84,7 @@ class ReceiptMapper:
             )
 
         return Receipt(
-            receipt_id=receipt_id,
+            receipt_uuid=receipt_uuid,
             merchant=merchant,
             transaction=transaction,
             items=items,

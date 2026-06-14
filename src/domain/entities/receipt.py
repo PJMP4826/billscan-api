@@ -17,7 +17,7 @@ class Receipt:
     propia (receipt_id) y puede mutar su estado a lo largo del ciclo de vida.
     """
 
-    receipt_id: str
+    receipt_uuid: str # UUID generado por la app, identidad de dominio (NO es el BIGSERIAL id de la tabla)
     merchant: MerchantData
     transaction: TransactionMetadata
     items: list[LineItem]
@@ -28,8 +28,8 @@ class Receipt:
     extra_metadata: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
-        # if not self.receipt_id or not self.receipt_id.strip():
-        #     raise ValueError("receipt_id must not be empty.")
+        if not self.receipt_uuid or not self.receipt_uuid.strip():
+            raise ValueError("receipt_uuid must not be empty.")
         if not self.items:
             raise ValueError("A receipt must have at least one item.")
 
