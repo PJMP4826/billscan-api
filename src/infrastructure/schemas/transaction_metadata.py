@@ -22,7 +22,7 @@ class TransactionMetadata(BaseModel):
             "Algunos tickets agrupan fecha y hora en una línea: '15/03/2025 14:35'."
         ),
     )
-    receipt_id: Optional[str] = Field(
+    ticket_number: Optional[str] = Field(
         None,
         description=(
             "Identificador único de la venta. En México aparece como: "
