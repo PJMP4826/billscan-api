@@ -20,14 +20,8 @@ class InfrastructureException(BaseAppException):
             final_details["response_body"] = response_body
 
         super().__init__(
-            message,
-            error_code=error_code,
-            details=final_details,
-            **kwargs
+            message, error_code=error_code, details=final_details, **kwargs
         )
-
-
-
 
 
 class HttpException(InfrastructureException):
@@ -55,13 +49,8 @@ class HttpException(InfrastructureException):
             final_details["response_headers"] = response_headers
 
         super().__init__(
-            message,
-            error_code=error_code,
-            details=final_details,
-            **kwargs
+            message, error_code=error_code, details=final_details, **kwargs
         )
-
-
 
 
 class LLMException(InfrastructureException):
@@ -79,8 +68,21 @@ class LLMException(InfrastructureException):
             final_details["model"] = model
 
         super().__init__(
-            message,
-            error_code=error_code,
-            details=final_details,
-            **kwargs
+            message, error_code=error_code, details=final_details, **kwargs
+        )
+
+
+class PostgresDBException(InfrastructureException):
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_code: str = "POSTGRES_DB_ERROR",
+        details: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
+    ) -> None:
+        final_details = {**(details or {})}
+
+        super().__init__(
+            message, error_code=error_code, details=final_details, **kwargs
         )
