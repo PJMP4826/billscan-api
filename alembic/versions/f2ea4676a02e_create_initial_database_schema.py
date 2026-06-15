@@ -23,7 +23,7 @@ def upgrade() -> None:
         CREATE TABLE users (
             id VARCHAR(255) PRIMARY KEY,
             email VARCHAR(255) UNIQUE NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -59,7 +59,7 @@ def upgrade() -> None:
             address TEXT,
             branch_id VARCHAR(50),
             phone VARCHAR(50),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
             CONSTRAINT unq_merchant_branch UNIQUE (tax_id, branch_id)
         );
     """)
@@ -75,7 +75,7 @@ def upgrade() -> None:
         CREATE TABLE receipts (
             id BIGSERIAL PRIMARY KEY,
             user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE, -- podra ser null por ahora (MVP)
-            merchant_id BIGINT REFERENCES merchants(id) ON DELETE SET NULL,
+            merchant_id BIGINT REFERENCES merchants(id) NOT NULL ON DELETE SET NULL,
             payment_method_code VARCHAR(10) REFERENCES payment_methods(code) ON DELETE SET NULL,
             transaction_date DATE,
             transaction_time TIME,
@@ -90,8 +90,9 @@ def upgrade() -> None:
             card_last_four VARCHAR(10),
             authorization_code VARCHAR(100),
             context_notes TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            extra_metadata JSONB,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -103,7 +104,7 @@ def upgrade() -> None:
             amount NUMERIC(15, 2) NOT NULL,
             card_last_four VARCHAR(10),
             authorization_code VARCHAR(100),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -116,13 +117,12 @@ def upgrade() -> None:
             barcode TEXT,
             billing_code TEXT,
             expiration_date DATE,
-            billing_data JSONB,
-            extra_metadata JSONB,
+            billing_metadata JSONB,
             facturagpt_session_id VARCHAR(100),
             billing_status VARCHAR(50) DEFAULT 'NOT_REQUESTED',
             billing_error_code VARCHAR(100),
             billing_error_message TEXT,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -134,7 +134,7 @@ def upgrade() -> None:
             file_key VARCHAR(255) NOT NULL,
             file_url TEXT NOT NULL,
             mime_type VARCHAR(50),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -170,7 +170,7 @@ def upgrade() -> None:
             file_url TEXT NOT NULL,
             mime_type VARCHAR(50) DEFAULT 'image/jpeg',
             page_number INT DEFAULT 1,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -180,7 +180,7 @@ def upgrade() -> None:
             event_type VARCHAR(50) NOT NULL,
             session_id VARCHAR(100) NOT NULL,
             payload JSONB NOT NULL,
-            processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
     """)
 
@@ -190,7 +190,7 @@ def upgrade() -> None:
             receipt_id BIGINT NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,
             session_id VARCHAR(100),
             status VARCHAR(50) NOT NULL,
-            attempted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            attempted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
             error_code VARCHAR(100),
             error_message TEXT,
             response_payload JSONB
