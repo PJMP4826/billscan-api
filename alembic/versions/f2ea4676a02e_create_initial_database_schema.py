@@ -75,7 +75,7 @@ def upgrade() -> None:
         CREATE TABLE receipts (
             id BIGSERIAL PRIMARY KEY,
             user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE, -- podra ser null por ahora (MVP)
-            merchant_id BIGINT REFERENCES merchants(id) NOT NULL ON DELETE SET NULL,
+            merchant_id BIGINT NOT NULL REFERENCES merchants(id) ON DELETE RESTRICT,
             payment_method_code VARCHAR(10) REFERENCES payment_methods(code) ON DELETE SET NULL,
             transaction_date DATE,
             transaction_time TIME,
