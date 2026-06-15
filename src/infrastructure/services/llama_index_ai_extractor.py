@@ -1,4 +1,6 @@
 import base64
+import uuid
+
 from typing import Sequence, cast
 from src.config.logger import logger
 from llama_index.core.base.llms.types import ImageBlock
@@ -67,7 +69,7 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
             try:
                 receipt = ReceiptMapper.schema_to_domain(
                     schema=result_pydantic,
-                    receipt_id=result_pydantic.transaction.receipt_id or "",
+                    receipt_uuid=uuid.uuid4().hex
                 )
                 if attempt > 1:
                     logger.info(
