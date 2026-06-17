@@ -3,6 +3,7 @@ from src.api.routes import webhooks_api_routes
 from src.api.routes import http_api_routes
 from src.api.middlewares.cors import add_cors_middleware
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -13,6 +14,9 @@ app = FastAPI(
     description="API de la app BillsScan para la facturacion de tickets de compra",
     version="1.0.0",
 )
+
+# Nota: agregar Depends de JWT despues
+app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 
 add_cors_middleware(app)
@@ -35,4 +39,3 @@ app.include_router(
 app.include_router(
     http_api_routes.router,
 )
-
