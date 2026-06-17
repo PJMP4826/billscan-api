@@ -22,6 +22,7 @@ def upgrade() -> None:
         CREATE TABLE receipt_jobs_details (
             id BIGSERIAL PRIMARY KEY,
             user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            job_name VARCHAR(255) NOT NULL,
             status TEXT NOT NULL
                 CONSTRAINT chk_receipt_jobs_status
                 CHECK (status IN ('RECEIVED', 'EXTRACTING', 'COMPLETED', 'FAILED'))
