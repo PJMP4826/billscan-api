@@ -4,9 +4,9 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_job_details_repository_port import ReceiptJobDetailsRepositoryPort
 
-
-class ReceiptJobDetailsRepository:
+class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
     """Repositorio para `receipt_jobs_details`.
 
     Esta tabla rastrea el ciclo de vida de extracción de un ticket
@@ -18,19 +18,19 @@ class ReceiptJobDetailsRepository:
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
         self._db_manager = manager
 
-    async def create(self, user_id: str) -> int:
+    async def create(self, user_id: str, job_name: str) -> int:
         """Crea el job en estado RECEIVED. Devuelve el `id` (BIGSERIAL).
 
         Se llama al recibir la imagen, antes de encolar el worker en
         background.
         """
         sql = """
-            INSERT INTO receipt_jobs_details (user_id, status)
-            VALUES (:user_id, 'RECEIVED')
+            INSERT INTO receipt_jobs_details (user_id, status, job_name)
+            VALUES (:user_id, 'RECEIVED', :job_name)
             RETURNING id;
         """
         job_id = await self._db_manager.execute_sql_query_fetch_one(
-            sql, {"user_id": user_id}
+            sql, {"user_id": user_id, "job_name": job_name}
         )
 
         if not job_id:
