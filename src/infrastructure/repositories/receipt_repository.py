@@ -6,9 +6,10 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
 
 
-class ReceiptRepository:
+class ReceiptRepository(ReceiptRepositoryPort):
     """Repositorio para la tabla `receipts` (cabecera del agregado).
 
 
@@ -29,7 +30,6 @@ class ReceiptRepository:
         receipt: Receipt,
         merchant_id: int | None,
         user_id: str | None,
-        payment_method_code: str,
     ) -> int:
         """Inserta la cabecera del recibo y devuelve el `id` (BIGSERIAL).
 
@@ -93,7 +93,7 @@ class ReceiptRepository:
         params: dict[str, Any] = {
             "user_id": user_id,
             "merchant_id": merchant_id,
-            "payment_method_code": payment_method_code,
+            "payment_method_code": receipt.payment.method_code.value,  # type: ignore
             "transaction_date": transaction.transaction_date,
             "transaction_time": transaction.transaction_time,
             "ticket_number": transaction.ticket_number,
@@ -108,15 +108,13 @@ class ReceiptRepository:
             "authorization_code": payment.authorization_code,
             "context_notes": receipt.context_notes,
             "receipt_uuid": receipt.receipt_uuid,
-            "extra_metadata": extra_metadata
+            "extra_metadata": extra_metadata,
         }
 
         receipt_id = await self._db_manager.execute_sql_query_fetch_one(sql, params)
 
         if not receipt_id:
-            raise PostgresDBException(
-                "Error al guardar Ticket en BD"
-            )
+            raise PostgresDBException("Error al guardar Ticket en BD")
         return int(receipt_id)
 
     async def find_by_id(self, receipt_id: int) -> dict[str, Any] | None:
