@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 from src.config.logger import logger
-from src.config.settings import Settings
+from src.config.settings import settings
 from src.shared.errors.infrastructure_exceptions import (
     InfrastructureException,
     PostgresDBException,
@@ -11,7 +11,7 @@ from src.shared.errors.infrastructure_exceptions import (
 
 
 class SQLDatabaseConnectionManager:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self) -> None:
         self.settings = settings
         self._engine: AsyncEngine | None = None
 
@@ -139,3 +139,5 @@ class SQLDatabaseConnectionManager:
             await self._engine.dispose()
             self._engine = None
             logger.info("Pool de conexiones asíncronas de PostgreSQL liberado")
+
+database_connection_manager = SQLDatabaseConnectionManager()
