@@ -4,9 +4,9 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_image_repository_port import ReceiptImageRepositoryPort
 
-
-class ReceiptImageRepository:
+class ReceiptImageRepository(ReceiptImageRepositoryPort):
     """Repositorio para `receipt_images` (imágenes originales del ticket,
     1:M, soporta múltiples páginas vía `page_number`).
 
