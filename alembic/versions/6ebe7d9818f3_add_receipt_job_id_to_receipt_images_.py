@@ -42,7 +42,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS idx_receipt_images_receipt_job_id;")
     op.execute("ALTER TABLE receipt_images DROP COLUMN IF EXISTS receipt_job_id;")
-    op.execute("""
-        ALTER TABLE receipt_images
-        ALTER COLUMN receipt_id SET NOT NULL;
-    """)
+    # op.execute("""
+    #     ALTER TABLE receipt_images
+    #     ALTER COLUMN receipt_id SET NULL;
+    # """)
