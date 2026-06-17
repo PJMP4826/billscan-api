@@ -4,5 +4,7 @@ from src.domain.entities.receipt import Receipt
 
 class ReceiptExtractorPort(ABC):
     @abstractmethod
-    async def extract(self, images_by_group: dict[str, list[bytes]], prompt_template_str: str) -> list[Receipt]:
+    async def extract(
+        self, grouped_images_bytes: list[list[bytes]], prompt_template_str: str
+    ) -> list[Receipt]:
         raise NotImplementedError

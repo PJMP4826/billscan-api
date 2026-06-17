@@ -21,19 +21,20 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
         self._llm_provider = llm_provider
 
     async def extract(
-        self, images_by_group: dict[str, list[bytes]], prompt_template_str: str
+        self, grouped_images_bytes: list[list[bytes]], prompt_template_str: str
     ) -> list[Receipt]:
         receipts: list[Receipt] = []
 
-        image_documents: Sequence[ImageBlock] = []
-        
-        for i, images in images_by_group.items():
-            for image in images:
-                image_documents: Sequence[ImageBlock] = [
-                    ImageBlock(image=base64.b64encode(image))
-                ]
+        for pages in grouped_images_bytes:
+            # Un grupo = un ticket. Si el ticket tiene 2+ fotos (páginas),
+            # las mandamos TODAS juntas en el mismo image_documents para que
+            # el LLM las vea como un solo documento, no como tickets distintos.
+            image_documents: Sequence[ImageBlock] = [
+                ImageBlock(image=base64.b64encode(page)) for page in pages
+            ]
 
-            logger.debug(f"Comenzando extraccion del ticket No.{i}")
+            logger.debug(f"Comenzando extraccion del ticket ({len(pages)} imagen(es))")
+
             try:
                 receipt = await self._extract_with_retry(
                     image_documents=image_documents,
@@ -41,8 +42,10 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
                 )
                 logger.debug("Extraccion completada, siguiente...")
                 receipts.append(receipt)
-            except Exception as e:
-                logger.error(f"Error extrayendo datos del ticket no.{i}: {e}")
+            except Exception as exc:
+                logger.error(
+                    f"Error al extraer el ticket: {exc}. Continuando con el siguiente."
+                )
                 continue
 
         logger.debug(f"{len(receipts)} tickets procesados correctamente")
