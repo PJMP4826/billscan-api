@@ -12,7 +12,7 @@ from src.infrastructure.adapters.http_adapter import HttpClientAdapter
 from src.infrastructure.mappers.receipt_mapper import ReceiptMapper
 from src.infrastructure.schemas.receipt_data import ReceiptData
 
-MAX_RETRIES: int = 5
+MAX_RETRIES: int = 3
 
 
 class LlamaIndexAiExtractor(ReceiptExtractorPort):
@@ -21,26 +21,33 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
         self._llm_provider = llm_provider
 
     async def extract(
-        self, images_bytes: list[bytes], prompt_template_str: str
+        self, images_by_group: dict[str, list[bytes]], prompt_template_str: str
     ) -> list[Receipt]:
         receipts: list[Receipt] = []
 
-        for image in images_bytes:
-            image_documents: Sequence[ImageBlock] = [
-                ImageBlock(image=base64.b64encode(image))
-            ]
+        image_documents: Sequence[ImageBlock] = []
+        
+        for i, images in images_by_group.items():
+            for image in images:
+                image_documents: Sequence[ImageBlock] = [
+                    ImageBlock(image=base64.b64encode(image))
+                ]
 
-            logger.debug("Comenzando extraccion del ticket")
-            receipt = await self._extract_with_retry(
-                image_documents=image_documents, prompt_template_str=prompt_template_str
-            )
-            logger.debug("Extraccion completada, siguiente...")
-            receipts.append(receipt)
+            logger.debug(f"Comenzando extraccion del ticket No.{i}")
+            try:
+                receipt = await self._extract_with_retry(
+                    image_documents=image_documents,
+                    prompt_template_str=prompt_template_str,
+                )
+                logger.debug("Extraccion completada, siguiente...")
+                receipts.append(receipt)
+            except Exception as e:
+                logger.error(f"Error extrayendo datos del ticket no.{i}: {e}")
+                continue
 
         logger.debug(f"{len(receipts)} tickets procesados correctamente")
         return receipts
 
-    
     async def _extract_with_retry(
         self,
         image_documents: Sequence[ImageBlock],
@@ -68,8 +75,7 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
 
             try:
                 receipt = ReceiptMapper.schema_to_domain(
-                    schema=result_pydantic,
-                    receipt_uuid=uuid.uuid4().hex
+                    schema=result_pydantic, receipt_uuid=uuid.uuid4().hex
                 )
                 if attempt > 1:
                     logger.info(
