@@ -8,11 +8,16 @@ from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCa
 from src.application.use_cases.process_receipt_extraction_use_case import (
     ProcessReceiptExtractionUseCase,
 )
+
 from .repositories.repositories_bootstrap import (
     get_receipt_image_repository,
     get_receipt_job_details_repository,
     get_receipt_repository,
     get_merchant_repository,
+    get_receipt_item_repository,
+    get_receipt_tax_repository,
+    get_receipt_payment_repository,
+    get_receipt_billing_detail_repository,
 )
 from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter import (
     BackgroundTaskQueueAdapter,
@@ -54,6 +59,10 @@ def get_process_receipt_extraction_use_case(
         receipt_job_details_repository=get_receipt_job_details_repository(),
         receipt_image_repository=get_receipt_image_repository(),
         merchant_repository=get_merchant_repository(),
+        item_repository=get_receipt_item_repository(),
+        tax_repository=get_receipt_tax_repository(),
+        payment_repository=get_receipt_payment_repository(),
+        billing_detail_repository=get_receipt_billing_detail_repository(),
         extractor=get_llama_index_ai_extractor_service(),
         queue_publisher=queue_publisher,
     )
