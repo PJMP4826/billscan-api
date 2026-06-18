@@ -64,5 +64,5 @@ class SubmitReceiptUseCase:
 
             self._queue_publisher.enqueue_job(
                 job_name=job_name,
-                payload={"job_id": job_id},
+                payload={"job_id": job_id, "user_id": user_id},
             )
