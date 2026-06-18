@@ -4,9 +4,6 @@ from src.bootstraps.services.infrastructure_bootstrap_services import (
     get_background_task_queue_adapter,
     get_disk_file_storage_adapter,
 )
-from src.application.use_cases.extract_receipt_info_use_case import (
-    ExtractReceiptInfoUseCase,
-)
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.application.use_cases.process_receipt_extraction_use_case import (
     ProcessReceiptExtractionUseCase,
@@ -25,11 +22,6 @@ from src.infrastructure.adapters.queue_adapters.null_queue_publisher import (
 )
 
 from fastapi import BackgroundTasks
-
-
-def get_extract_receipt_info_use_case() -> ExtractReceiptInfoUseCase:
-    extractor = get_llama_index_ai_extractor_service()
-    return ExtractReceiptInfoUseCase(extractor=extractor)
 
 
 def get_submit_receipt_use_case(
