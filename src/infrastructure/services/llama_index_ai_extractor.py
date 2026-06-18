@@ -21,35 +21,26 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
         self._llm_provider = llm_provider
 
     async def extract(
-        self, grouped_images_bytes: list[list[bytes]], prompt_template_str: str
-    ) -> list[Receipt]:
-        receipts: list[Receipt] = []
+        self, image_pages: list[bytes], prompt_template_str: str
+    ) -> Receipt:
 
-        for pages in grouped_images_bytes:
-            # Un grupo = un ticket. Si el ticket tiene 2+ fotos (páginas),
-            # las mandamos TODAS juntas en el mismo image_documents para que
-            # el LLM las vea como un solo documento, no como tickets distintos.
-            image_documents: Sequence[ImageBlock] = [
-                ImageBlock(image=base64.b64encode(page)) for page in pages
-            ]
+        # Un grupo = un ticket. Si el ticket tiene 2+ fotos (páginas),
+        # las mandamos TODAS juntas en el mismo image_documents para que
+        # el LLM las vea como un solo documento, no como tickets distintos.
+        image_documents: Sequence[ImageBlock] = [
+            ImageBlock(image=base64.b64encode(page)) for page in image_pages
+        ]
 
-            logger.debug(f"Comenzando extraccion del ticket ({len(pages)} imagen(es))")
+        logger.debug(
+            f"Comenzando extraccion del ticket ({len(image_documents)} imagen(es))"
+        )
+        receipt = await self._extract_with_retry(
+            image_documents=image_documents,
+            prompt_template_str=prompt_template_str,
+        )
 
-            try:
-                receipt = await self._extract_with_retry(
-                    image_documents=image_documents,
-                    prompt_template_str=prompt_template_str,
-                )
-                logger.debug("Extraccion completada, siguiente...")
-                receipts.append(receipt)
-            except Exception as exc:
-                logger.error(
-                    f"Error al extraer el ticket: {exc}. Continuando con el siguiente."
-                )
-                continue
-
-        logger.debug(f"{len(receipts)} tickets procesados correctamente")
-        return receipts
+        logger.debug("Extraccion completada, siguiente...")
+        return receipt
 
     async def _extract_with_retry(
         self,
