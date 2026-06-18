@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
+import src.infrastructure.handlers.queue.receipt_job_handlers # type: ignore
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
 app = FastAPI(
