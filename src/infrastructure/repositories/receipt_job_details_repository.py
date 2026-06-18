@@ -4,7 +4,11 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
-from src.domain.ports.repositories.receipt_job_details_repository_port import ReceiptJobDetailsRepositoryPort
+from src.domain.ports.repositories.receipt_job_details_repository_port import (
+    ReceiptJobDetailsRepositoryPort,
+)
+from src.domain.enums.receipt_status import ReceiptStatus
+
 
 class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
     """Repositorio para `receipt_jobs_details`.
@@ -26,11 +30,16 @@ class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
         """
         sql = """
             INSERT INTO receipt_jobs_details (user_id, status, job_name)
-            VALUES (:user_id, 'RECEIVED', :job_name)
+            VALUES (:user_id, :status, :job_name)
             RETURNING id;
         """
         job_id = await self._db_manager.execute_sql_query_fetch_one(
-            sql, {"user_id": user_id, "job_name": job_name}
+            sql,
+            {
+                "user_id": user_id,
+                "status": ReceiptStatus.RECEIVED,
+                "job_name": job_name,
+            },
         )
 
         if not job_id:
@@ -44,25 +53,28 @@ class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
         worker, justo antes de invocar al LLM/OCR."""
         sql = """
             UPDATE receipt_jobs_details
-            SET status = 'EXTRACTING',
+            SET status = :status,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id;
         """
-        await self._db_manager.execute_statement(sql, {"id": job_id})
+        await self._db_manager.execute_statement(
+            sql, {"id": job_id, "status": ReceiptStatus.EXTRACTING}
+        )
 
     async def mark_completed(self, job_id: int, receipt_id: int) -> None:
         """Transición EXTRACTING -> COMPLETED. Backfill de receipt_id una
         vez que el agregado Receipt fue persistido con éxito."""
         sql = """
             UPDATE receipt_jobs_details
-            SET status = 'COMPLETED',
+            SET status = :status,
                 receipt_id = :receipt_id,
                 error_message = NULL,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id;
         """
         await self._db_manager.execute_statement(
-            sql, {"id": job_id, "receipt_id": receipt_id}
+            sql,
+            {"id": job_id, "status": ReceiptStatus.COMPLETED, "receipt_id": receipt_id},
         )
 
     async def mark_failed(self, job_id: int, error_message: str) -> None:
@@ -70,13 +82,18 @@ class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
         (permanece NULL, nunca se creó un Receipt)."""
         sql = """
             UPDATE receipt_jobs_details
-            SET status = 'FAILED',
+            SET status = :status,
                 error_message = :error_message,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id;
         """
         await self._db_manager.execute_statement(
-            sql, {"id": job_id, "error_message": error_message}
+            sql,
+            {
+                "id": job_id,
+                "status": ReceiptStatus.FAILED,
+                "error_message": error_message,
+            },
         )
 
     async def find_by_id(self, job_id: int) -> dict[str, Any] | None:
