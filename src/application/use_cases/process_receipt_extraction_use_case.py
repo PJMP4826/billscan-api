@@ -2,21 +2,37 @@ from src.config.logger import logger
 
 import httpx
 
+from src.domain.entities.receipt import Receipt
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
 from src.domain.ports.receipt_extractor import ReceiptExtractorPort
+
+# repos
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
 from src.domain.ports.repositories.receipt_job_details_repository_port import (
     ReceiptJobDetailsRepositoryPort,
 )
-from src.infrastructure.agents.ticket_extractor_agent.prompts.ticket_extractor_prompts import (
-    TICKET_EXTRACTOR_AGENT,
+from src.domain.ports.repositories.receipt_item_repository_port import (
+    ReceiptItemRepositoryPort,
+)
+from src.domain.ports.repositories.receipt_tax_repository_port import (
+    ReceiptTaxRepositoryPort,
+)
+from src.domain.ports.repositories.receipt_payment_repository_port import (
+    ReceiptPaymentRepositoryPort,
+)
+from src.domain.ports.repositories.receipt_billing_detail_repository_port import (
+    ReceiptBillingDetailRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
 from src.domain.ports.repositories.merchant_repository_port import (
     MerchantRepositoryPort,
+)
+
+from src.infrastructure.agents.ticket_extractor_agent.prompts.ticket_extractor_prompts import (
+    TICKET_EXTRACTOR_AGENT,
 )
 
 
@@ -28,16 +44,25 @@ class ProcessReceiptExtractionUseCase:
         receipt_job_details_repository: ReceiptJobDetailsRepositoryPort,
         receipt_image_repository: ReceiptImageRepositoryPort,
         merchant_repository: MerchantRepositoryPort,
+        item_repository: ReceiptItemRepositoryPort,
+        tax_repository: ReceiptTaxRepositoryPort,
+        payment_repository: ReceiptPaymentRepositoryPort,
+        billing_detail_repository: ReceiptBillingDetailRepositoryPort,
         extractor: ReceiptExtractorPort,
         queue_publisher: QueuePublisherPort,
     ) -> None:
         self._file_storage = file_storage
-        self._receipt_repository = receipt_repository
-        self._extractor = extractor
 
+        self._receipt_repository = receipt_repository
         self._receipt_job_details_repository = receipt_job_details_repository
         self._receipt_image_repository = receipt_image_repository
         self._merchant_repository = merchant_repository
+        self._item_repository = item_repository
+        self._tax_repository = tax_repository
+        self._payment_repository = payment_repository
+        self._billing_detail_repository = billing_detail_repository
+
+        self._extractor = extractor
         self._queue_publisher = queue_publisher
 
     async def execute(self, job_id: int, user_id: str) -> None:
@@ -78,6 +103,11 @@ class ProcessReceiptExtractionUseCase:
             receipt_id = await self._receipt_repository.insert(
                 receipt=receipt, merchant_id=merchant_id, user_id=user_id
             )
+
+            await self._persist_receipt_relations(
+                receipt_id=receipt_id, receipt=receipt
+            )
+
             await self._receipt_job_details_repository.mark_completed(
                 job_id=int(job_id), receipt_id=receipt_id
             )
@@ -103,6 +133,35 @@ class ProcessReceiptExtractionUseCase:
                 job_id=int(job_id),
                 error_message="La extracción no devolvió resultado",
             )
+
+    async def _persist_receipt_relations(
+        self, receipt_id: int, receipt: Receipt
+    ) -> None:
+        """
+        logica de insercion de todas las entidades relacionadas a un Receipt
+        """
+        # Items
+        if receipt.items:
+            await self._item_repository.insert_many(receipt_id, receipt.items)
+
+        # Taxes
+        if receipt.totals and receipt.totals.taxes:
+            await self._tax_repository.insert_many(receipt_id, receipt.totals.taxes)
+
+        # Payments
+        if receipt.payment:
+            await self._payment_repository.insert(
+                receipt_id=receipt_id,
+                payment_method_code=receipt.payment.method_code.value,  # type: ignore
+                amount=receipt.totals.amount_paid,
+                card_last_four=receipt.payment.card_last_four,
+                authorization_code=receipt.payment.authorization_code,
+            )
+
+        # Billing Details (1:1)
+        await self._billing_detail_repository.insert(
+            receipt_id=receipt_id, billing=receipt.billing
+        )
 
     async def _get_file_as_bytes_async(self, url: str) -> bytes:
         async with httpx.AsyncClient() as client:
