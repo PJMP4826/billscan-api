@@ -5,8 +5,12 @@ from src.domain.value_objects.billing_data import BillingData
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
+from src.domain.ports.repositories.receipt_billing_detail_repository_port import (
+    ReceiptBillingDetailRepositoryPort,
+)
 
-class ReceiptBillingDetailRepository:
+
+class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
     """Repositorio para `receipt_billing_details` (relación 1:1 con
     `receipts`, vía PK = receipt_id).
 
