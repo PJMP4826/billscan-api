@@ -119,7 +119,7 @@ class ProcessReceiptExtractionUseCase:
             if receipt.billing and receipt.billing.is_billable:
                 self._queue_publisher.enqueue_job(
                     job_name="INITIATE_BILLING",
-                    payload={"receipt_id": receipt_id},
+                    payload={"receipt_id": receipt_id, "user_id": user_id},
                 )
                 logger.info(
                     "Flujo de facturación pendiente de implementar (fuera de alcance)."
