@@ -5,9 +5,12 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.merchant_repository_port import (
+    MerchantRepositoryPort,
+)
 
 
-class MerchantRepository:
+class MerchantRepository(MerchantRepositoryPort):
     """Repositorio para la tabla `merchants`.
 
     Mapea hacia/desde el value object `MerchantData`. La tabla tiene una
@@ -48,9 +51,7 @@ class MerchantRepository:
         )
 
         if merchant_id is None:
-            raise PostgresDBException(
-                "No se pudo insertar el comercio, el ID es nulo."
-            )
+            raise PostgresDBException("No se pudo insertar el comercio, el ID es nulo.")
         return int(merchant_id)
 
     async def find_by_id(self, merchant_id: int) -> MerchantData | None:
