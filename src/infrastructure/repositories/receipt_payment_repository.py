@@ -5,9 +5,12 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_payment_repository_port import (
+    ReceiptPaymentRepositoryPort,
+)
 
 
-class ReceiptPaymentRepository:
+class ReceiptPaymentRepository(ReceiptPaymentRepositoryPort):
     """Repositorio para la tabla `receipt_payments` (pagos múltiples / split
     payments, 1:M).
 
@@ -62,9 +65,7 @@ class ReceiptPaymentRepository:
         payment_id = await self._db_manager.execute_sql_query_fetch_one(sql, params)
 
         if not payment_id:
-            raise PostgresDBException(
-                "Error al guardar los pagos"
-            )
+            raise PostgresDBException("Error al guardar los pagos")
         return int(payment_id)
 
     async def find_by_receipt_id(self, receipt_id: int) -> list[dict[str, Any]]:
