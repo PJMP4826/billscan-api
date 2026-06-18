@@ -6,9 +6,9 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_item_repository_port import ReceiptItemRepositoryPort
 
-
-class ReceiptItemRepository:
+class ReceiptItemRepository(ReceiptItemRepositoryPort):
     """Repositorio para la tabla `receipt_items` (detalle 1:M de un recibo).
 
     NOTA - serialización JSONB:
