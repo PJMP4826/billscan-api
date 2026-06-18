@@ -5,9 +5,12 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.receipt_tax_repository_port import (
+    ReceiptTaxRepositoryPort,
+)
 
 
-class ReceiptTaxRepository:
+class ReceiptTaxRepository(ReceiptTaxRepositoryPort):
     """Repositorio para la tabla `receipt_taxes` (desglose de impuestos 1:M)."""
 
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
