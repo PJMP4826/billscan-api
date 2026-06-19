@@ -12,9 +12,9 @@ class InvoiceResult:
     Read model returned by the port after submission or a status check
     """
 
-    session_id: str
-    external_id: str
-    status: BillingStatus
+    session_id: str | None = None
+    external_id: str | None = None
+    status: BillingStatus | None = None
 
     ocr_result: OcrResult | None = None
     cfdi_summary: CfdiSummary | None = None
