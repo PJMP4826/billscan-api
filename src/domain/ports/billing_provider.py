@@ -45,7 +45,7 @@ class BillingProviderPort(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_invoice_files(self, session_id: str) -> InvoiceFiles:
+    async def get_invoice_files(self, session_id: str) -> InvoiceResult | InvoiceFiles:
         """
         Retrieve the generated invoice files (XML + PDF download URLs).
 
