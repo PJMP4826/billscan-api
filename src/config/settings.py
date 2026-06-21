@@ -32,6 +32,12 @@ class Settings(BaseSettings):
         description="Optional public base URL for the R2 bucket",
     )
 
+    # Billing Providers
+
+    # FacturaGPT Provider Credentials
+    facturagpt_base_url: str = Field(..., description="Base FacturaGPT API EndPoint")
+    facturagpt_api_key: str = Field(..., description="FacturaGPT API KEY")
+
     @property
     def database_url(self) -> str:
         user = urllib.parse.quote_plus(self.db_user)
