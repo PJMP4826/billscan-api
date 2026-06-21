@@ -211,7 +211,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             "external_id": request.external_id,
             "ticket_image": request.ticket_image_b64,
             "uso_cfdi": request.invoice_use.value,
-            "payment_method": request.payment_method.value,
+            "payment_method": request.payment_method.value, # type: ignore
             "save_customer": request.save_customer,
             "test_mode": request.test_mode,
         }
