@@ -46,4 +46,4 @@ class Receipt:
 
     def to_dict(self) -> dict[str, Any]:
         """Convierte la entidad y sus value objects anidados a un dict plano."""
-        return asdict(self)
+        return asdict(self) # type: ignore
