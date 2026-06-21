@@ -2,6 +2,7 @@ from src.config.logger import logger
 
 import httpx
 
+from src.domain.enums.job_names import JobName
 from src.domain.entities.receipt import Receipt
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
@@ -118,7 +119,7 @@ class ProcessReceiptExtractionUseCase:
 
             if receipt.billing and receipt.billing.is_billable:
                 self._queue_publisher.enqueue_job(
-                    job_name="INITIATE_BILLING",
+                    job_name=JobName.INITIATE_BILLING,
                     payload={"receipt_id": receipt_id, "user_id": user_id},
                 )
                 logger.info(
