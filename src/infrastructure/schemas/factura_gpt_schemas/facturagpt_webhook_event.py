@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Optional
 from pydantic import BaseModel
 
-from facturagpt_webhook_files import FacturaGPTWebhookFiles
-from facturagpt_cfdi_summary import FacturaGPTCfdiSummary
+from .facturagpt_webhook_files import FacturaGPTWebhookFiles
+from .facturagpt_cfdi_summary import FacturaGPTCfdiSummary
 
 
 class FacturaGPTWebhookEvent(BaseModel):
