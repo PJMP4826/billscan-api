@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from domain.enums.tax_regime import TaxRegime
+from src.domain.enums.tax_regime import TaxRegime
 
 
 @dataclass
