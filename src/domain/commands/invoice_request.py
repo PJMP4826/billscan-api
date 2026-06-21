@@ -12,14 +12,16 @@ class InvoiceRequest:
     This is the domain's language — no provider field names here.
     """
 
-    external_id: str
+    external_id: str # sera el receipt_uuid guardado en BD
     ticket_image_b64: str
 
     customer_id: str | None = None
     customer_info: BillingCustomerInfo | None = None
 
     save_customer: bool = False
-    payment_method: SatPaymentMethodCode = SatPaymentMethodCode.POR_DEFINIR
+
+    # se podria obtener desde BD y mapearlo al Enum o dejar que el adpater de FacturaGPT lo detecte
+    payment_method: SatPaymentMethodCode | None = SatPaymentMethodCode.POR_DEFINIR
     invoice_use: InvoiceUse = InvoiceUse.G03
     webhook_url: str | None = None
     test_mode: bool = False
