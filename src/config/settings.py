@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # FacturaGPT Provider Credentials
     facturagpt_base_url: str = Field(..., description="Base FacturaGPT API EndPoint")
     facturagpt_api_key: str = Field(..., description="FacturaGPT API KEY")
+    facturagpt_test_mode: bool = Field(default=False, description="FacturaGPT Test Mode")
 
     @property
     def database_url(self) -> str:
