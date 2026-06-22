@@ -63,7 +63,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         )
 
         if not row:
-            raise PostgresDBException("Error al registrar usuario en BD")
+            raise PostgresDBException("Error al registrar la informacion fiscal en BD")
         return int(row)
 
     async def add_regimen(
