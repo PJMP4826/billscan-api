@@ -1,10 +1,17 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form
 
 from src.api.http.controllers.upload_receipt_controller import UploadReceiptController
+from src.api.http.controllers.create_fiscal_info_controller import (
+    CreateFiscalInfoController,
+)
+from src.api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 
 router = APIRouter(prefix="/api")
 
 file_controller = UploadReceiptController()
+fiscal_info_controller = (
+    CreateFiscalInfoController()
+)
 
 
 @router.post("/uploads/files")
@@ -27,3 +34,9 @@ async def upload_files(
         raise HTTPException(status_code=400, detail="Debes enviar al menos un archivo")
 
     return await file_controller.handle(all_files, groups, background_tasks)
+
+
+@router.post("/fiscal-info")
+async def create_fiscal_info(payload: CreateFiscalInfoRequest):
+    """Registra la información fiscal y el régimen fiscal del usuario."""
+    return await fiscal_info_controller.handle(request_data=payload)
