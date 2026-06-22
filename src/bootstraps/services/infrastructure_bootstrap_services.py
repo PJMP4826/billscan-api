@@ -57,5 +57,5 @@ def get_background_task_queue_adapter(
 
 def get_fernet_encryptor() -> FernetEncryptor:
     return FernetEncryptor(
-        encryption_key=settings.ecryption_key
+        encryption_key=settings.encryption_key
     )
