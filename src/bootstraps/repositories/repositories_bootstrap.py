@@ -20,6 +20,9 @@ from src.infrastructure.repositories.receipt_payment_repository import (
 from src.infrastructure.repositories.receipt_billing_detail_repository import (
     ReceiptBillingDetailRepository,
 )
+from src.infrastructure.repositories.fiscal_info_repository import (
+    FiscalInfoRepository,
+)
 
 
 def get_receipt_job_details_repository() -> ReceiptJobDetailsRepository:
@@ -52,3 +55,6 @@ def get_receipt_payment_repository() -> ReceiptPaymentRepository:
 
 def get_receipt_billing_detail_repository() -> ReceiptBillingDetailRepository:
     return ReceiptBillingDetailRepository(manager=database_connection_manager)
+
+def get_fiscal_info_repository() -> FiscalInfoRepository:
+    return FiscalInfoRepository(manager=database_connection_manager)
