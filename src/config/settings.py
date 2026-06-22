@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # Security Configuration
     # Data Encryptors
 
-    ecryption_key: str = Field(..., description="Data Ecryption Key")
+    encryption_key: str = Field(..., description="Data Encryption Key")
 
     @property
     def database_url(self) -> str:
