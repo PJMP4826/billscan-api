@@ -13,6 +13,7 @@ from src.infrastructure.adapters.files_storage.disk_file_storage_adapter import 
 from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter import (
     BackgroundTaskQueueAdapter,
 )
+from src.infrastructure.adapters.security.fernet_encryptor import FernetEncryptor
 
 
 from fastapi import BackgroundTasks
@@ -53,3 +54,8 @@ def get_background_task_queue_adapter(
     background_tasks: BackgroundTasks,
 ) -> BackgroundTaskQueueAdapter:
     return BackgroundTaskQueueAdapter(background_tasks=background_tasks)
+
+def get_fernet_encryptor() -> FernetEncryptor:
+    return FernetEncryptor(
+        encryption_key=settings.ecryption_key
+    )

@@ -3,6 +3,7 @@ from src.bootstraps.services.infrastructure_bootstrap_services import (
     # get_cloudflare_r2_file_storage_adapter,
     get_background_task_queue_adapter,
     get_disk_file_storage_adapter,
+    get_fernet_encryptor,
 )
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.application.use_cases.process_receipt_extraction_use_case import (
@@ -18,12 +19,16 @@ from .repositories.repositories_bootstrap import (
     get_receipt_tax_repository,
     get_receipt_payment_repository,
     get_receipt_billing_detail_repository,
+    get_fiscal_info_repository,
 )
 from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter import (
     BackgroundTaskQueueAdapter,
 )
 from src.infrastructure.adapters.queue_adapters.null_queue_publisher import (
     NullQueuePublisher,
+)
+from src.application.use_cases.create_fiscal_info_use_case import (
+    CreateFiscalInfoUseCase,
 )
 
 from fastapi import BackgroundTasks
@@ -65,4 +70,11 @@ def get_process_receipt_extraction_use_case(
         billing_detail_repository=get_receipt_billing_detail_repository(),
         extractor=get_llama_index_ai_extractor_service(),
         queue_publisher=queue_publisher,
+    )
+
+
+def get_create_fiscal_info_use_case() -> CreateFiscalInfoUseCase:
+    return CreateFiscalInfoUseCase(
+        fiscal_info_repository=get_fiscal_info_repository(),
+        encryptor=get_fernet_encryptor(),
     )
