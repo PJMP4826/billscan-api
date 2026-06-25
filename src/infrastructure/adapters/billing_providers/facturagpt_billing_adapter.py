@@ -12,13 +12,14 @@ Nothing above this file knows about FacturaGPT. Nothing below knows about
 domain models. This file is the only translation boundary.
 """
 
-
 import httpx
+from src.config.logger import logger
 
 from src.domain.commands.invoice_request import InvoiceRequest
 from src.domain.records.invoice_result import InvoiceResult
 from src.domain.records.invoice_files import InvoiceFiles
 from src.domain.records.ocr_result import OcrResult
+
 # from src.domain.records.cfdi_summary import CfdiSummary
 from src.domain.enums.billing_status import BillingStatus
 
@@ -75,9 +76,9 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
 
     BASE_URL = "https://api.facturagpt.com.mx"
 
-    def __init__(self, base_url: str, api_key: str, client: httpx.AsyncClient) -> None:
+    def __init__(self, base_url: str, api_key: str) -> None:
         self._api_key = api_key
-        self._client = client
+        self._client: httpx.AsyncClient | None = None
         self._base_url = base_url if base_url else self.BASE_URL
 
     # ------------------------------------------------------------------
@@ -159,6 +160,35 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             )
         return result
 
+    async def startup(self) -> None:
+        """
+        Initializes the httpx.AsyncClient.
+        This method should be called once during application startup.
+        """
+        if self._client is None:
+            self._client = httpx.AsyncClient()
+            logger.info("FacturaGPTBillingAdapter: httpx.AsyncClient initialized.")
+        else:
+            logger.warning(
+                "FacturaGPTBillingAdapter: httpx.AsyncClient already initialized."
+            )
+            return
+
+    async def shutdown(self) -> None:
+        """
+        Closes the httpx.AsyncClient.
+        This method should be called once during application shutdown.
+        """
+        if self._client:
+            await self._client.aclose()
+            self._client = None  # Clear the client after closing
+            logger.info("FacturaGPTBillingAdapter: httpx.AsyncClient closed.")
+        else:
+            logger.warning(
+                "FacturaGPTBillingAdapter: httpx.AsyncClient not initialized or already closed."
+            )  # Si tienes un logger
+            return
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -173,6 +203,10 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
     async def _post(
         self, path: str, body: dict[str, str | bool | dict[str, str]]
     ) -> dict[str, str | bool | dict[str, str] | None]:
+        if self._client is None:
+            raise RuntimeError(
+                "HTTPX client not initialized. Call .startup() on FacturaGPTBillingAdapter first."
+            )
         response = await self._client.post(
             f"{self._base_url}{path}",
             json=body,
@@ -181,6 +215,10 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
         return response.json()
 
     async def _get(self, path: str) -> dict[str, str | bool | dict[str, str] | None]:
+        if self._client is None:
+            raise RuntimeError(
+                "HTTPX client not initialized. Call .startup() on FacturaGPTBillingAdapter first."
+            )
         response = await self._client.get(
             f"{self._base_url}{path}",
             headers=self._auth_headers,
@@ -211,7 +249,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             "external_id": request.external_id,
             "ticket_image": request.ticket_image_b64,
             "uso_cfdi": request.invoice_use.value,
-            "payment_method": request.payment_method.value, # type: ignore
+            "payment_method": request.payment_method.value,  # type: ignore
             "save_customer": request.save_customer,
             "test_mode": request.test_mode,
         }
