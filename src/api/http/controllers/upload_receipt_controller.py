@@ -1,3 +1,4 @@
+import json
 import puremagic
 from fastapi import UploadFile, status, BackgroundTasks
 from fastapi.responses import JSONResponse
@@ -13,18 +14,24 @@ class UploadReceiptController:
     async def handle(
         self,
         files: list[UploadFile],
-        groups: list[str] | None,
+        groups_raw: str | None,
         background_tasks: BackgroundTasks,
+        auto_billing: bool | None = False,
     ) -> JSONResponse:
         try:
 
+            groups = self._deserialize_group(groups_raw=groups_raw)
             grouped_images = await self._group_and_validate(files, groups)
 
             use_case = get_submit_receipt_use_case(background_tasks=background_tasks)
 
             temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
 
-            await use_case.execute(user_id=temp_user_id, grouped_images=grouped_images)
+            await use_case.execute(
+                user_id=temp_user_id,
+                grouped_images=grouped_images,
+                auto_billing=auto_billing,
+            )
 
             return JSONResponse(
                 status_code=status.HTTP_202_ACCEPTED,
@@ -51,6 +58,25 @@ class UploadReceiptController:
                     "message": str(e),
                 },
             )
+
+    def _deserialize_group(self, groups_raw: str | None) -> list[str] | None:
+        groups: list[str] | None = None
+        if groups_raw:
+            try:
+                raw_list: list[str] = json.loads(
+                    groups_raw
+                )  # Convierte '["1", "2"]' -> ["1", "2"]
+
+                if not isinstance(raw_list, list):  # type: ignore
+                    raise ValueError("groups no es un array serializable")
+
+                groups = [str(item) for item in raw_list]
+            except (json.JSONDecodeError, ValueError):
+                # Si el frontend envió un texto plano sin formato JSON (ej. "grupo1,grupo2")
+                groups = [
+                    item.strip() for item in groups_raw.split(",") if item.strip()
+                ]
+        return groups
 
     async def _group_and_validate(
         self, files: list[UploadFile], groups: list[str] | None
