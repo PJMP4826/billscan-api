@@ -23,6 +23,7 @@ class CreateFiscalInfoController:
                 cp=request_data.cp,
                 address=request_data.address,
                 regimen_code=request_data.regimen_code,
+                use_cfdi_code_default=request_data.use_cfdi_code_default
             )
 
             return JSONResponse(
