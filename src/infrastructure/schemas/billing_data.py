@@ -1,18 +1,20 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional
 from datetime import date
+
 
 class BillingData(BaseModel):
     is_billable: bool = Field(
         ...,
         description=(
-            "True si el ticket contiene instrucciones para solicitar factura fiscal. "
-            "En México las frases clave son: 'Solicite su factura en...', "
-            "'Factura fácil en...', '¿Necesitas factura?', 'Facturación electrónica:', "
-            "'Para facturar ingrese a...', 'Esta es una representación impresa de un CFDI', "
-            "'Comprobante Fiscal Digital', 'Factura sin costo en...'. "
-            "Si no hay ninguna de estas frases, is_billable=false."
-            "Si se require descargar una app en PlayStore o AppStore (Android o IOS) entonces is_billable=false por cuestiones tecnicas"
+            "True si el ticket es un recibo de compra válido que permite solicitar una factura fiscal (CFDI) posteriormente. "
+            "Busca indicios como: 'Solicite su factura en...', 'Factura fácil en...', "
+            "'¿Necesitas factura?', 'Facturación electrónica:', 'Para facturar ingrese a...'. o sinonimos similares "
+            "REGLAS DE EXCLUSIÓN IMPORTANTES: "
+            "1. Si el documento dice algo como 'Esta es una representación impresa de un CFDI' (o un sinonimo similar) o contiene un 'Folio Fiscal (UUID)' de 36 caracteres, is_billable=False porque YA ES una factura. "
+            "2. Si se requiere descargar una app en PlayStore o AppStore (Android o iOS), is_billable=False por cuestiones técnicas. "
+            "3. Si no hay indicios de facturación ni enlaces, is_billable=False. "
+            "REGLA SUPREMA: A pesar de las reglas anteriores, si logras extraer un valor válido para 'billing_url', 'billing_code' o 'barcode' (y no es un CFDI ya emitido), entonces is_billable DEBE SER OBLIGATORIAMENTE True."
         ),
     )
     has_qr_code: bool = Field(
@@ -80,3 +82,14 @@ class BillingData(BaseModel):
             "Usa siempre claves descriptivas en snake_case."
         ),
     )
+
+    @model_validator(mode="after")
+    def ensure_billing_consistency(self) -> "BillingData":
+        # Si el LLM extrajo una URL o un código, es lógicamente facturable
+        # Corregimos el booleano en caso de que el LLM haya alucinado un False.
+        if (
+            self.billing_url or self.billing_code or self.barcode
+        ) and not self.is_billable:
+            self.is_billable = True
+
+        return self
