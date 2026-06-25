@@ -27,7 +27,7 @@ class SubmitReceiptUseCase:
         self._queue_publisher = queue_publisher
 
     async def execute(
-        self, user_id: str, grouped_images: dict[str, list[dict[str, bytes | str]]]
+        self, user_id: str, grouped_images: dict[str, list[dict[str, bytes | str]]], auto_billing: bool | None = False
     ) -> None:
 
         # Iteramos sobre cada ticket (grupo)
