@@ -97,6 +97,8 @@ class InitiateBillingUseCase:
                 receipt_id=receipt_id,
                 billing_status=BillingStatus.PROCESSING,
                 facturagpt_session_id=response.session_id,
+                billing_error_code=response.error_code,
+                billing_error_message=response.error_message
             )
 
             logger.info(f"Receipt {receipt_id} enviado a servicio de facturacion")
