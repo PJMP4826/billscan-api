@@ -17,7 +17,7 @@ async def upload_files(
     background_tasks: BackgroundTasks,
     files: list[UploadFile] | None = File(default=None, alias="files[]"),
     groups: str | None = Form(default=None, alias="groups[]"),
-    auto_billing: bool | None = Form(default=False),
+    auto_billing: bool = Form(default=False),
 ):
 
     if not files:

@@ -16,7 +16,7 @@ class UploadReceiptController:
         files: list[UploadFile],
         groups_raw: str | None,
         background_tasks: BackgroundTasks,
-        auto_billing: bool | None = False,
+        auto_billing: bool = False,
     ) -> JSONResponse:
         try:
 
