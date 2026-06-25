@@ -28,6 +28,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         email: str,
         cp: str,
         address: str | None,
+        use_cfdi_code_default: str
     ) -> int:
         """Inserta la información fiscal base del usuario y devuelve su `id` (BIGSERIAL)."""
         sql = """
@@ -37,7 +38,8 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 razon_social, 
                 email, 
                 cp, 
-                address
+                address,
+                use_cfdi_default
             )
             VALUES (
                 :user_id, 
@@ -45,7 +47,8 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 :razon_social, 
                 :email, 
                 :cp, 
-                :address
+                :address,
+                :use_cfdi_default
             )
             RETURNING id;
         """
@@ -59,6 +62,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 "email": email,
                 "cp": cp,
                 "address": address,
+                "use_cfdi_default": use_cfdi_code_default
             },
         )
 

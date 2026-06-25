@@ -25,6 +25,7 @@ class CreateFiscalInfoUseCase:
         cp: str,
         address: str | None,
         regimen_code: str,
+        use_cfdi_code_default: str
     ) -> None:
         """Crea la información fiscal de un usuario y agrega un régimen."""
         try:
@@ -41,6 +42,7 @@ class CreateFiscalInfoUseCase:
                 email=encrypted_email,
                 cp=encrypted_cp,
                 address=encrypted_address,
+                use_cfdi_code_default=use_cfdi_code_default
             )
 
             valid_regimen = TaxRegime(regimen_code)

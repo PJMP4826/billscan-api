@@ -19,6 +19,7 @@ class FiscalInfoRepositoryPort(ABC):
         email: str,
         cp: str,
         address: str | None,
+        use_cfdi_code_default: str
     ) -> int:
         """Inserta la información fiscal base del usuario y devuelve su ID."""
         pass
