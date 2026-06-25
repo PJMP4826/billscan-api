@@ -20,6 +20,7 @@ from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
+from src.domain.ports.data_encryptor import DataEncryptor
 
 
 class InitiateBillingUseCase:
@@ -30,12 +31,15 @@ class InitiateBillingUseCase:
         fiscal_info_repository_port: FiscalInfoRepositoryPort,
         receipt_image_repository_port: ReceiptImageRepositoryPort,
         receipt_repository: ReceiptRepositoryPort,
+        encryptor: DataEncryptor
     ) -> None:
         self._billing_provider = billing_provider
         self._billing_detail_repository = billing_detail_repository
         self._fiscal_info_repository = fiscal_info_repository_port
         self._receipt_image_repository = receipt_image_repository_port
         self._receipt_repository = receipt_repository
+        self._encryptor = encryptor
+
 
     async def execute(self, payload: dict[str, str | int]) -> None:
         receipt_id = int(payload["receipt_id"])
@@ -65,11 +69,12 @@ class InitiateBillingUseCase:
             )
 
             user_info = BillingCustomerInfo(
-                razon_social=fiscal_user_info["razon_social"],
-                rfc=fiscal_user_info["rfc"],
-                email=fiscal_user_info["fiscal_email"],
+                razon_social=self._encryptor.decrypt(fiscal_user_info["razon_social"]),
+                rfc=self._encryptor.decrypt(fiscal_user_info["rfc"]),
+                email=self._encryptor.decrypt(fiscal_user_info["fiscal_email"]),
                 regimen=TaxRegime(fiscal_user_info["regimen_code"]),
-                cp=fiscal_user_info["cp"],
+                cp=self._encryptor.decrypt(fiscal_user_info["cp"]),
+                address=self._encryptor.decrypt(fiscal_user_info["address"])
             )
 
             receipt = await self._receipt_repository.find_by_id(receipt_id=receipt_id)
