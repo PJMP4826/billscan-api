@@ -127,6 +127,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 fi.email AS fiscal_email,
                 fi.cp,
                 fi.address,
+                fi.use_cfdi_default,
                 r.id AS regimen_id,
                 r.regimen_code,
                 r.regimen_description,
@@ -162,6 +163,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         email: str,
         cp: str,
         address: str | None,
+        use_cfdi_code_default: str
     ) -> None:
         """(Opcional) Método para actualizar los datos estáticos de la información fiscal."""
         sql = """
@@ -171,6 +173,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 email = :email,
                 cp = :cp,
                 address = :address
+                use_cfdi_default = :use_cfdi_default
             WHERE id = :id;
         """
         await self._db_manager.execute_statement(
@@ -182,5 +185,6 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 "email": email,
                 "cp": cp,
                 "address": address,
+                "use_cfdi_default": use_cfdi_code_default
             },
         )

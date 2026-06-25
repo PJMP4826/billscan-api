@@ -54,6 +54,7 @@ class FiscalInfoRepositoryPort(ABC):
         email: str,
         cp: str,
         address: str | None,
+        use_cfdi_code_default: str
     ) -> None:
         """Actualiza los datos estáticos de la información fiscal."""
         pass
