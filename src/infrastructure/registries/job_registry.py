@@ -1,6 +1,6 @@
-from typing import Any, Awaitable, Callable
+from typing import Any, Coroutine, Callable
 
-JobHandler = Callable[[dict[str, Any]], Awaitable[None]]
+JobHandler = Callable[[dict[str, Any]], Coroutine[Any, Any, None]]
 
 
 class JobRegistry:
