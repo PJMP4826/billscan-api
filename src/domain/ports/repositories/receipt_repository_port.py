@@ -27,7 +27,7 @@ class ReceiptRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, receipt_id: int) -> dict[str, Any] | None:
+    async def find_by_id(self, receipt_id: int) -> dict[str, Any]:
         """Busca la cabecera de un recibo por su ID interno."""
         pass
 

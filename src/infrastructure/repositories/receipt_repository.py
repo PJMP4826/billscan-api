@@ -117,7 +117,7 @@ class ReceiptRepository(ReceiptRepositoryPort):
             raise PostgresDBException("Error al guardar Ticket en BD")
         return int(receipt_id)
 
-    async def find_by_id(self, receipt_id: int) -> dict[str, Any] | None:
+    async def find_by_id(self, receipt_id: int) -> dict[str, Any]:
         sql = """
             SELECT
                 id,
@@ -143,9 +143,14 @@ class ReceiptRepository(ReceiptRepositoryPort):
             FROM receipts
             WHERE id = :id;
         """
-        return await self._db_manager.execute_sql_query_fetch_first(
+        result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"id": receipt_id}
         )
+
+        if not result:
+            raise ValueError("Ticket no encontrado")
+
+        return result
 
     async def find_by_uuid(self, receipt_uuid: str) -> dict[str, Any] | None:
         sql = """
