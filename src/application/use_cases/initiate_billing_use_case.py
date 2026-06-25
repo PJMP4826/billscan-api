@@ -94,18 +94,21 @@ class InitiateBillingUseCase:
                 facturagpt_session_id=response.session_id,
             )
 
+            logger.info(f"Receipt {receipt_id} enviado a servicio de facturacion")
         except Exception as exc:
             logger.error(
                 f"Error al iniciar facturación para el receipt {receipt_id}: {exc}"
             )
-            # Marcar como fallido en la base de datos para no dejar el flujo colgado
-            if response:
-                await self._billing_detail_repository.update_billing_status(
-                    receipt_id=receipt_id,
-                    billing_status=BillingStatus.FAILED,
-                    billing_error_code=response.error_code,
-                    billing_error_message=str(response.error_message),
-                )
+
+            error_code = response.error_code if response else "INTERNAL_ERROR"
+            error_message = str(response.error_message) if response else str(exc)
+
+            await self._billing_detail_repository.update_billing_status(
+                receipt_id=receipt_id,
+                billing_status=BillingStatus.FAILED,
+                billing_error_code=error_code,
+                billing_error_message=error_message,
+            )
 
     async def _imagen_url_a_base64(self, url: str):
         async with httpx.AsyncClient() as cliente:
