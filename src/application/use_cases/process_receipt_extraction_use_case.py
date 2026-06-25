@@ -66,7 +66,7 @@ class ProcessReceiptExtractionUseCase:
         self._extractor = extractor
         self._queue_publisher = queue_publisher
 
-    async def execute(self, job_id: int, user_id: str) -> None:
+    async def execute(self, job_id: int, user_id: str, auto_billing: bool) -> None:
         try:
             await self._receipt_job_details_repository.mark_extracting(
                 job_id=int(job_id)
@@ -117,7 +117,7 @@ class ProcessReceiptExtractionUseCase:
                 receipt_id=receipt_id, receipt_job_id=job_id
             )
 
-            if receipt.billing and receipt.billing.is_billable:
+            if receipt.billing and receipt.billing.is_billable and auto_billing is True:
                 self._queue_publisher.enqueue_job(
                     job_name=JobName.INITIATE_BILLING,
                     payload={"receipt_id": receipt_id, "user_id": user_id},

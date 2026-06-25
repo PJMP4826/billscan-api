@@ -12,5 +12,6 @@ async def handle_process_receipt_extraction(payload: dict[str, Any]) -> None:
     # Ejecutamos el caso de uso pasando los datos del payload serializado
     await use_case.execute(
         job_id=int(payload["job_id"]),
-        user_id=str(payload["user_id"])
+        user_id=str(payload["user_id"]),
+        auto_billing=payload.get("auto_billing", False)
     )

@@ -27,7 +27,7 @@ class SubmitReceiptUseCase:
         self._queue_publisher = queue_publisher
 
     async def execute(
-        self, user_id: str, grouped_images: dict[str, list[dict[str, bytes | str]]], auto_billing: bool | None = False
+        self, user_id: str, grouped_images: dict[str, list[dict[str, bytes | str]]], auto_billing: bool
     ) -> None:
 
         # Iteramos sobre cada ticket (grupo)
@@ -64,5 +64,5 @@ class SubmitReceiptUseCase:
 
             self._queue_publisher.enqueue_job(
                 job_name=job_name,
-                payload={"job_id": job_id, "user_id": user_id},
+                payload={"job_id": job_id, "user_id": user_id, "auto_billing": auto_billing},
             )
