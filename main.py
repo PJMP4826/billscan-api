@@ -6,7 +6,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
-import src.infrastructure.handlers.queue.receipt_job_handlers # type: ignore
+import src.infrastructure.handlers.queue.receipt_job_handlers  # type: ignore
+import src.infrastructure.handlers.queue.billing_job_handlers  # type: ignore
+from src.bootstraps.app_lifecycle import lifespan
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -15,6 +17,7 @@ app = FastAPI(
     docs_url="/docs",
     description="API de la app BillsScan para la facturacion de tickets de compra",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Nota: agregar Depends de JWT despues
