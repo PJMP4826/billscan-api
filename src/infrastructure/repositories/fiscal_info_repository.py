@@ -112,7 +112,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
             raise PostgresDBException("Error al guardar regimen fiscal")
         return int(row)
 
-    async def get_latest_by_user_id(self, user_id: str) -> dict[str, Any] | None:
+    async def get_latest_by_user_id(self, user_id: str) -> dict[str, Any]:
         """Obtiene la información fiscal del usuario junto con su ÚLTIMO régimen.
 
         Utiliza LEFT JOIN por si la info fiscal aún no tiene un régimen asociado,
@@ -138,9 +138,14 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
             ORDER BY r.fecha_alta DESC NULLS LAST
             LIMIT 1;
         """
-        return await self._db_manager.execute_sql_query_fetch_first(
+        result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"user_id": user_id}
         )
+
+        if not result:
+            raise ValueError("No hay informacion fiscal asociada a tu usuario")
+        
+        return result
 
     async def has_fiscal_info(self, user_id: str) -> bool:
         """Verifica de forma optimizada si un usuario ya tiene información fiscal."""

@@ -36,7 +36,7 @@ class FiscalInfoRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def get_latest_by_user_id(self, user_id: str) -> dict[str, Any] | None:
+    async def get_latest_by_user_id(self, user_id: str) -> dict[str, Any]:
         """Obtiene la información fiscal del usuario junto con su último régimen vigente."""
         pass
 
