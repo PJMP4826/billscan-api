@@ -122,9 +122,6 @@ class ProcessReceiptExtractionUseCase:
                     job_name=JobName.INITIATE_BILLING,
                     payload={"receipt_id": receipt_id, "user_id": user_id},
                 )
-                logger.info(
-                    "Flujo de facturación pendiente de implementar (fuera de alcance)."
-                )
 
             logger.info(f"Receipt {receipt_id} extraído correctamente. ")
 
