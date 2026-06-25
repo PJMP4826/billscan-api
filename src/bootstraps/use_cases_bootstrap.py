@@ -91,4 +91,5 @@ def get_initiate_billing_use_case() -> InitiateBillingUseCase:
         receipt_image_repository_port=get_receipt_image_repository(),
         fiscal_info_repository_port=get_fiscal_info_repository(),
         receipt_repository=get_receipt_repository(),
+        encryptor=get_fernet_encryptor(),
     )
