@@ -14,9 +14,14 @@ from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter im
     BackgroundTaskQueueAdapter,
 )
 from src.infrastructure.adapters.security.fernet_encryptor import FernetEncryptor
+from src.infrastructure.adapters.billing_providers.facturagpt_billing_adapter import (
+    FacturaGPTBillingAdapter,
+)
 
 
 from fastapi import BackgroundTasks
+
+_facturagpt_billing_adapter_instance: FacturaGPTBillingAdapter | None = None
 
 
 def get_http_client_adapter() -> HttpClientAdapter:
@@ -55,7 +60,16 @@ def get_background_task_queue_adapter(
 ) -> BackgroundTaskQueueAdapter:
     return BackgroundTaskQueueAdapter(background_tasks=background_tasks)
 
+
 def get_fernet_encryptor() -> FernetEncryptor:
-    return FernetEncryptor(
-        encryption_key=settings.encryption_key
-    )
+    return FernetEncryptor(encryption_key=settings.encryption_key)
+
+
+def get_facturagpt_billing_adapter() -> FacturaGPTBillingAdapter:
+    global _facturagpt_billing_adapter_instance
+    if _facturagpt_billing_adapter_instance is None:
+        _facturagpt_billing_adapter_instance = FacturaGPTBillingAdapter(
+            api_key=settings.facturagpt_api_key,
+            base_url=settings.facturagpt_base_url,
+        )
+    return _facturagpt_billing_adapter_instance
