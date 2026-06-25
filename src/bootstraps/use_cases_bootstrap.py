@@ -4,6 +4,7 @@ from src.bootstraps.services.infrastructure_bootstrap_services import (
     get_background_task_queue_adapter,
     get_disk_file_storage_adapter,
     get_fernet_encryptor,
+    get_facturagpt_billing_adapter,
 )
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.application.use_cases.process_receipt_extraction_use_case import (
@@ -24,11 +25,14 @@ from .repositories.repositories_bootstrap import (
 from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter import (
     BackgroundTaskQueueAdapter,
 )
-from src.infrastructure.adapters.queue_adapters.null_queue_publisher import (
-    NullQueuePublisher,
+from src.infrastructure.adapters.queue_adapters.asyncio_queue_publisher import (
+    AsyncioQueuePublisher,
 )
 from src.application.use_cases.create_fiscal_info_use_case import (
     CreateFiscalInfoUseCase,
+)
+from src.application.use_cases.initiate_billing_use_case import (
+    InitiateBillingUseCase,
 )
 
 from fastapi import BackgroundTasks
@@ -56,7 +60,7 @@ def get_process_receipt_extraction_use_case(
         queue_publisher = BackgroundTaskQueueAdapter(background_tasks=background_tasks)
     else:
         # Si viene desde el Handler/Worker de fondo, usamos el Null adapter
-        queue_publisher = NullQueuePublisher()
+        queue_publisher = AsyncioQueuePublisher()
 
     return ProcessReceiptExtractionUseCase(
         file_storage=get_disk_file_storage_adapter(),
@@ -77,4 +81,14 @@ def get_create_fiscal_info_use_case() -> CreateFiscalInfoUseCase:
     return CreateFiscalInfoUseCase(
         fiscal_info_repository=get_fiscal_info_repository(),
         encryptor=get_fernet_encryptor(),
+    )
+
+
+def get_initiate_billing_use_case() -> InitiateBillingUseCase:
+    return InitiateBillingUseCase(
+        billing_provider=get_facturagpt_billing_adapter(),
+        billing_detail_repository=get_receipt_billing_detail_repository(),
+        receipt_image_repository_port=get_receipt_image_repository(),
+        fiscal_info_repository_port=get_fiscal_info_repository(),
+        receipt_repository=get_receipt_repository(),
     )
