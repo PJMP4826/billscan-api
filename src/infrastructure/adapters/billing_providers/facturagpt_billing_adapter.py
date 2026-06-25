@@ -99,6 +99,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             result = InvoiceResult(
                 session_id=parsed.meta.session_id,
                 error_code=parsed.error.code,
+                error_message=parsed.error.message,
                 status=BillingStatus(status.upper()),
             )
 
@@ -265,7 +266,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
                 "razon_social": info.razon_social,
                 "rfc": info.rfc,
                 "email": info.email,
-                "regimen": info.regimen,
+                "regimen": info.regimen.value,
                 "cp": info.cp,
                 **({"address": info.address} if info.address else {}),
             }
