@@ -31,7 +31,7 @@ class InitiateBillingUseCase:
         fiscal_info_repository_port: FiscalInfoRepositoryPort,
         receipt_image_repository_port: ReceiptImageRepositoryPort,
         receipt_repository: ReceiptRepositoryPort,
-        encryptor: DataEncryptor
+        encryptor: DataEncryptor,
     ) -> None:
         self._billing_provider = billing_provider
         self._billing_detail_repository = billing_detail_repository
@@ -40,19 +40,13 @@ class InitiateBillingUseCase:
         self._receipt_repository = receipt_repository
         self._encryptor = encryptor
 
-
     async def execute(self, payload: dict[str, str | int]) -> None:
         receipt_id = int(payload["receipt_id"])
         user_id = str(payload["user_id"])
 
         response = None
         try:
-            # 1. Cambiar estado a PENDING para que el usuario vea que se está timbrando...
-            await self._billing_detail_repository.update_billing_status(
-                receipt_id=receipt_id, billing_status=BillingStatus.PENDING
-            )
-
-            # 2. Obtener las imagenes del ticket necesarias para la factura
+            # Obtener las imagenes del ticket necesarias para la factura
 
             # Esta es una list de images, por ahora no se uniran las imagenes (un ticket puede tener varias fotos)
             # solo se contemplara una unica imagen por ticket (image[0])
@@ -74,7 +68,7 @@ class InitiateBillingUseCase:
                 email=self._encryptor.decrypt(fiscal_user_info["fiscal_email"]),
                 regimen=TaxRegime(fiscal_user_info["regimen_code"]),
                 cp=self._encryptor.decrypt(fiscal_user_info["cp"]),
-                address=self._encryptor.decrypt(fiscal_user_info["address"])
+                address=self._encryptor.decrypt(fiscal_user_info["address"]),
             )
 
             receipt = await self._receipt_repository.find_by_id(receipt_id=receipt_id)
@@ -98,7 +92,7 @@ class InitiateBillingUseCase:
                 billing_status=BillingStatus.PROCESSING,
                 facturagpt_session_id=response.session_id,
                 billing_error_code=response.error_code,
-                billing_error_message=response.error_message
+                billing_error_message=response.error_message,
             )
 
             logger.info(f"Receipt {receipt_id} enviado a servicio de facturacion")
