@@ -4,6 +4,7 @@ import httpx
 
 from src.domain.enums.job_names import JobName
 from src.domain.entities.receipt import Receipt
+from src.domain.enums.billing_status import BillingStatus
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
 from src.domain.ports.receipt_extractor import ReceiptExtractorPort
@@ -117,11 +118,15 @@ class ProcessReceiptExtractionUseCase:
                 receipt_id=receipt_id, receipt_job_id=job_id
             )
 
-            if receipt.billing and receipt.billing.is_billable and auto_billing is True:
-                self._queue_publisher.enqueue_job(
-                    job_name=JobName.INITIATE_BILLING,
-                    payload={"receipt_id": receipt_id, "user_id": user_id},
+            if receipt.billing and receipt.billing.is_billable:
+                await self._billing_detail_repository.update_billing_status(
+                    receipt_id=receipt_id, billing_status=BillingStatus.PENDING
                 )
+                if auto_billing is True:
+                    self._queue_publisher.enqueue_job(
+                        job_name=JobName.INITIATE_BILLING,
+                        payload={"receipt_id": receipt_id, "user_id": user_id},
+                    )
 
             logger.info(f"Receipt {receipt_id} extraído correctamente. ")
 
