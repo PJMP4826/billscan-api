@@ -118,15 +118,21 @@ class ProcessReceiptExtractionUseCase:
                 receipt_id=receipt_id, receipt_job_id=job_id
             )
 
-            if receipt.billing and receipt.billing.is_billable:
-                await self._billing_detail_repository.update_billing_status(
-                    receipt_id=receipt_id, billing_status=BillingStatus.PENDING
-                )
-                if auto_billing is True:
-                    self._queue_publisher.enqueue_job(
-                        job_name=JobName.INITIATE_BILLING,
-                        payload={"receipt_id": receipt_id, "user_id": user_id},
+            if receipt.billing:
+                if not receipt.billing.is_billable:
+                    await self._billing_detail_repository.update_billing_status(
+                        receipt_id=receipt_id, billing_status=BillingStatus.NOT_ELIGIBLE
                     )
+
+                if receipt.billing.is_billable:
+                    await self._billing_detail_repository.update_billing_status(
+                        receipt_id=receipt_id, billing_status=BillingStatus.PENDING
+                    )
+                    if auto_billing is True:
+                        self._queue_publisher.enqueue_job(
+                            job_name=JobName.INITIATE_BILLING,
+                            payload={"receipt_id": receipt_id, "user_id": user_id},
+                        )
 
             logger.info(f"Receipt {receipt_id} extraído correctamente. ")
 
