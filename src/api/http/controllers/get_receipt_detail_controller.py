@@ -19,7 +19,7 @@ class GetReceiptDetailController:
                 status_code=status.HTTP_200_OK,
                 content={
                     "status": 200,
-                    "data": result,
+                    "data": {"detail_level": request.detail_level, "result": result},
                 },
             )
 
