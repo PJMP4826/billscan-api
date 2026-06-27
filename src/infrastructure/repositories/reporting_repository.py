@@ -21,6 +21,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
     These are cross-domain projections — they do not belong to any
     single aggregate. Raw SQL is intentional here.
     """
+    _FULL_DETAIL_JSON_FIELDS = {"items", "taxes", "payments", "extra_metadata"}
 
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
         self._db_manager = manager
@@ -211,7 +212,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
 
         return parse_row_to_str(row=result)
 
-    async def get_receipt_full_detail(self, receipt_uuid: str) -> dict[str, str | None]:
+    async def get_receipt_full_detail(self, receipt_uuid: str) -> dict[str, Any | None]:
         sql = """
             SELECT
                 r.*,
@@ -255,4 +256,4 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         if not result:
             raise ValueError("Ticket no encontrado")
 
-        return parse_row_to_str(row=result)
+        return parse_row_to_str(row=result, json_fields=self._FULL_DETAIL_JSON_FIELDS)
