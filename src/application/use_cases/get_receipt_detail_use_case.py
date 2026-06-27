@@ -4,7 +4,7 @@ from src.domain.ports.repositories.reporting_repository_port import (
 )
 
 
-class GetReceiptBaseDetailUseCase:
+class GetReceiptDetailUseCase:
     def __init__(self, reporting_repository: ReportingRepositoryPort) -> None:
         self._reporting_repository = reporting_repository
 
