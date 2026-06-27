@@ -1,4 +1,5 @@
 from typing import Literal
+from typing import Any
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
@@ -10,7 +11,7 @@ class GetReceiptDetailUseCase:
 
     async def execute(
         self, receipt_uuid: str, detail_level: Literal["base", "full"] = "base"
-    ) -> dict[str, str | None]:
+    ) -> dict[str, Any | None]:
         if detail_level == "full":
             return await self._reporting_repository.get_receipt_full_detail(
                 receipt_uuid=receipt_uuid,
