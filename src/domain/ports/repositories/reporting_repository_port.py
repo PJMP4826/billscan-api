@@ -39,7 +39,7 @@ class ReportingRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def get_receipt_base_detail(self, receipt_uuid: str) -> dict[str, str | None] | None:
+    async def get_receipt_base_detail(self, receipt_uuid: str) -> dict[str, str | None]:
         """
         Returns the base fiscal detail of a single receipt,
         including merchant info, fiscal info, and payment method.
@@ -47,7 +47,7 @@ class ReportingRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def get_receipt_full_detail(self, receipt_uuid: str) -> dict[str, str | None] | None:
+    async def get_receipt_full_detail(self, receipt_uuid: str) -> dict[str, str | None]:
         """
         Returns the full detail of a receipt including aggregated
         items, taxes, and payments as JSON arrays.
