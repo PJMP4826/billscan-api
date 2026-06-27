@@ -1,14 +1,19 @@
 from decimal import Decimal
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class RecentActivityItem:
-    comercio: str | None
-    file_url: str | None
+    comercio: str
+    file_url: str
     fecha_alta: str
     total: Decimal
-    status: str | None
+    status: str
 
     def to_dict(self) -> dict[str, str]:
-        return asdict(self)
+        return {
+            "comercio": self.comercio,
+            "file_url": self.file_url,
+            "fecha_alta": self.fecha_alta,
+            "total": str(self.total),
+        }
