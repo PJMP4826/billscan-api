@@ -21,6 +21,7 @@ from .repositories.repositories_bootstrap import (
     get_receipt_payment_repository,
     get_receipt_billing_detail_repository,
     get_fiscal_info_repository,
+    get_reporting_repository,
 )
 from src.infrastructure.adapters.queue_adapters.background_task_queue_adapter import (
     BackgroundTaskQueueAdapter,
@@ -33,6 +34,18 @@ from src.application.use_cases.create_fiscal_info_use_case import (
 )
 from src.application.use_cases.initiate_billing_use_case import (
     InitiateBillingUseCase,
+)
+from src.application.use_cases.get_deductible_expenses_summary_use_case import (
+    GetDeductibleExpensesSummaryUseCase,
+)
+from src.application.use_cases.get_issued_cfdi_summary_use_case import (
+    GetIssuedCFDISummaryUseCase,
+)
+from src.application.use_cases.get_recent_activity_use_case import (
+    GetRecentActivityUseCase,
+)
+from src.application.use_cases.get_receipt_detail_use_case import (
+    GetReceiptDetailUseCase,
 )
 
 from fastapi import BackgroundTasks
@@ -93,3 +106,21 @@ def get_initiate_billing_use_case() -> InitiateBillingUseCase:
         receipt_repository=get_receipt_repository(),
         encryptor=get_fernet_encryptor(),
     )
+
+
+def get_deductible_expenses_summary_use_case() -> GetDeductibleExpensesSummaryUseCase:
+    return GetDeductibleExpensesSummaryUseCase(
+        reporting_repository=get_reporting_repository()
+    )
+
+
+def get_issued_cfdi_summary_use_case() -> GetIssuedCFDISummaryUseCase:
+    return GetIssuedCFDISummaryUseCase(reporting_repository=get_reporting_repository())
+
+
+def get_recent_activity_use_case() -> GetRecentActivityUseCase:
+    return GetRecentActivityUseCase(reporting_repository=get_reporting_repository())
+
+
+def get_receipt_detail_use_case() -> GetReceiptDetailUseCase:
+    return GetReceiptDetailUseCase(reporting_repository=get_reporting_repository())
