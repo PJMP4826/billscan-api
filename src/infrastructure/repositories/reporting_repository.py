@@ -48,7 +48,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                         AND re_job_d.status = 'COMPLETED'
                 );
         """
-        row = await self._db_manager.execute_sql_query_fetch_one(sql, {})
+        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
 
         if not row:
             raise ValueError("Error obteniendo reporte tickets deducibles")
@@ -87,7 +87,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                         AND re_bi_d.billing_status = 'COMPLETED'
                 );
         """
-        row = await self._db_manager.execute_sql_query_fetch_one(sql, {})
+        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
 
         if not row:
             raise ValueError("Error obteniendo reporte de facturas")
@@ -202,9 +202,11 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             WHERE r.receipt_uuid = :receipt_uuid;
         """
 
-        result = await self._db_manager.execute_sql_query_fetch_one(
+        result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"receipt_uuid": receipt_uuid}
         )
+
+        print(result)
 
         if not result:
             raise ValueError("Ticket no encontrado")
@@ -248,7 +250,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                    ON rbd.receipt_id = r.id
             WHERE r.receipt_uuid = :receipt_uuid;
         """
-        result = await self._db_manager.execute_sql_query_fetch_one(
+        result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"receipt_uuid": receipt_uuid}
         )
 
