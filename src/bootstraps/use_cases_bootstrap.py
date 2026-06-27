@@ -47,6 +47,9 @@ from src.application.use_cases.get_recent_activity_use_case import (
 from src.application.use_cases.get_receipt_detail_use_case import (
     GetReceiptDetailUseCase,
 )
+from src.application.use_cases.get_user_fiscal_info_use_case import (
+    GetUserFiscalInfoUseCase,
+)
 
 from fastapi import BackgroundTasks
 
@@ -92,6 +95,12 @@ def get_process_receipt_extraction_use_case(
 
 def get_create_fiscal_info_use_case() -> CreateFiscalInfoUseCase:
     return CreateFiscalInfoUseCase(
+        fiscal_info_repository=get_fiscal_info_repository(),
+        encryptor=get_fernet_encryptor(),
+    )
+
+def get_user_fiscal_info_use_case() -> GetUserFiscalInfoUseCase:
+    return GetUserFiscalInfoUseCase(
         fiscal_info_repository=get_fiscal_info_repository(),
         encryptor=get_fernet_encryptor(),
     )
