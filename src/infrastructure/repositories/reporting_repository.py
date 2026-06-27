@@ -206,8 +206,6 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             sql, {"receipt_uuid": receipt_uuid}
         )
 
-        print(result)
-
         if not result:
             raise ValueError("Ticket no encontrado")
 
