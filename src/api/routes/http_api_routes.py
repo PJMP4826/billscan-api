@@ -26,6 +26,9 @@ from src.api.http.controllers.get_recent_activity_controller import (
 from src.api.http.controllers.get_receipt_detail_controller import (
     GetReceiptDetailController,
 )
+from src.api.http.controllers.get_fiscal_info_controller import (
+    GetUserFiscalInfoController,
+)
 from src.api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 from src.api.http.requests.get_recent_activity_request import GetRecentActivityRequest
 from src.api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
@@ -38,6 +41,7 @@ deductible_expenses_controller = GetDeductibleExpensesSummaryController()
 issued_cfdi_controller = GetIssuedCFDISummaryController()
 recent_activity_controller = GetRecentActivityController()
 receipt_detail_controller = GetReceiptDetailController()
+get_fiscal_info_controller = GetUserFiscalInfoController()
 
 
 @router.post("/receipts")
@@ -72,6 +76,10 @@ async def get_receipt_detail(
 async def create_fiscal_info(payload: CreateFiscalInfoRequest):
     """Registers the fiscal info and tax regime of the user."""
     return await fiscal_info_controller.handle(request_data=payload)
+
+@router.get("/fiscal-info")
+async def get_fiscal_info():
+    return await get_fiscal_info_controller.handle()
 
 
 @router.get("/reporting/deductible-expenses")
