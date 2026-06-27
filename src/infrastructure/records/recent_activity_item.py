@@ -1,5 +1,5 @@
 from decimal import Decimal
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass(frozen=True)
@@ -9,3 +9,6 @@ class RecentActivityItem:
     fecha_alta: str
     total: Decimal
     status: str | None
+
+    def to_dict(self) -> dict[str, str]:
+        return asdict(self)
