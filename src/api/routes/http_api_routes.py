@@ -57,7 +57,7 @@ async def upload_files(
 
 @router.get("/receipts/{receipt_uuid}")
 async def get_receipt_detail(
-    receipt_uuid: str = Query(),
+    receipt_uuid: str,
     detail_level: Literal["base", "full"] = Query(default="base"),
 ):
     """Returns the detail (base or full) of a receipt including items, taxes and payments."""
