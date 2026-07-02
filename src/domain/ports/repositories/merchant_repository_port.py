@@ -25,7 +25,7 @@ class MerchantRepositoryPort(ABC):
 
     @abstractmethod
     async def find_by_tax_id_and_branch(
-        self, tax_id: str | None, branch_id: str | None
+        self, tax_id: str, branch_id: str
     ) -> dict[str, Any] | None:
         """Busca por la llave única compuesta (tax_id, branch_id).
 

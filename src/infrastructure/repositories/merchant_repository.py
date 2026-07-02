@@ -42,10 +42,10 @@ class MerchantRepository(MerchantRepositoryPort):
         merchant_id = await self._db_manager.execute_sql_query_fetch_one(
             sql,
             {
-                "name": merchant.name,
-                "tax_id": merchant.tax_id,
+                "name": merchant.name.strip() if merchant.name else merchant.name,
+                "tax_id": merchant.tax_id.strip() if merchant.tax_id else None,
                 "address": merchant.address,
-                "branch_id": merchant.branch_id,
+                "branch_id": merchant.branch_id.strip() if merchant.branch_id else None,
                 "phone": merchant.phone,
             },
         )
@@ -66,7 +66,7 @@ class MerchantRepository(MerchantRepositoryPort):
         return self._row_to_vo(row) if row else None
 
     async def find_by_tax_id_and_branch(
-        self, tax_id: str | None, branch_id: str | None
+        self, tax_id: str, branch_id: str
     ) -> dict[str, Any] | None:
         """Busca por la llave única compuesta (tax_id, branch_id).
 
@@ -79,7 +79,7 @@ class MerchantRepository(MerchantRepositoryPort):
             WHERE tax_id = :tax_id AND branch_id = :branch_id;
         """
         return await self._db_manager.execute_sql_query_fetch_first(
-            sql, {"tax_id": tax_id, "branch_id": branch_id}
+            sql, {"tax_id": tax_id.strip(), "branch_id": branch_id.strip()}
         )
 
     async def find_or_create(self, merchant: MerchantData) -> int:
@@ -89,7 +89,7 @@ class MerchantRepository(MerchantRepositoryPort):
         branch_id son ambos None, siempre inserta (no hay llave única que
         verificar de forma significativa).
         """
-        if merchant.tax_id is not None or merchant.branch_id is not None:
+        if merchant.tax_id is not None and merchant.branch_id is not None:
             existing = await self.find_by_tax_id_and_branch(
                 merchant.tax_id, merchant.branch_id
             )
