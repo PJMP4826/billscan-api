@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from .facturagpt_webhook_files import FacturaGPTWebhookFiles
 from .facturagpt_cfdi_summary import FacturaGPTCfdiSummary
+from src.domain.enums.billing_webhook_event_type import BillingWebHookEventType
 
 
 class FacturaGPTWebhookEvent(BaseModel):
@@ -11,7 +12,7 @@ class FacturaGPTWebhookEvent(BaseModel):
     Covers both factura.completed and factura.failed payloads.
     Fields absent in factura.failed (files, cfdi_summary) are Optional.
     """
-    event: str
+    event: BillingWebHookEventType
     version: str
     idempotency_key: str
     session_id: str
