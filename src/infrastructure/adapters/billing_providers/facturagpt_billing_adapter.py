@@ -20,7 +20,6 @@ from src.domain.records.invoice_result import InvoiceResult
 from src.domain.records.invoice_files import InvoiceFiles
 from src.domain.records.ocr_result import OcrResult
 
-# from src.domain.records.cfdi_summary import CfdiSummary
 from src.domain.enums.billing_status import BillingStatus
 
 from src.domain.ports.billing_provider import BillingProviderPort
