@@ -4,6 +4,7 @@ from src.domain.enums.billing_status import BillingStatus
 from src.domain.enums.billing_webhook_event_type import BillingWebHookEventType
 from src.domain.records.ocr_result import OcrResult
 from src.domain.records.cfdi_summary import CfdiSummary
+from src.domain.records.delivery_method import DeliveryMethod
 from src.domain.records.invoice_files import InvoiceFiles
 
 
@@ -22,7 +23,7 @@ class InvoiceResult:
     idempotency_key: str | None = None
     completed_at: str | None = None
     processing_time_seconds: int | None = None
-
+    delivery_method: DeliveryMethod | None = None
     ocr_result: OcrResult | None = None
     cfdi_summary: CfdiSummary | None = None
     files: InvoiceFiles | None = None
