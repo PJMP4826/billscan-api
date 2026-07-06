@@ -9,6 +9,7 @@ from src.domain.records.invoice_result import InvoiceResult
 from src.domain.records.invoice_files import InvoiceFiles
 from src.domain.records.invoice_result import InvoiceResult
 from src.domain.records.cfdi_summary import CfdiSummary
+from src.domain.records.delivery_method import DeliveryMethod
 from src.domain.enums.billing_status import BillingStatus
 
 from src.domain.ports.billing_webhook_handler_port import BillingWebhookHandlerPort
@@ -75,6 +76,7 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
 
         files = None
         cfdi = None
+        delivery_method = None
         error_code = None
         error_msg = None
 
@@ -99,6 +101,14 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
                         currency=s.currency,
                         fecha_timbrado=s.fecha_timbrado,
                     )
+                if event.delivery:
+                    dm = event.delivery
+                    delivery_method = DeliveryMethod(
+                        method=dm.method,
+                        files_available=dm.files_available,
+                        email_recipient=dm.email_recipient,
+                        message=dm.message,
+                    )
             case BillingWebHookEventType.FAILED:
                 error_code = event.reason_code
                 error_msg = event.reason_message
@@ -122,6 +132,7 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
             idempotency_key=event.idempotency_key,
             completed_at=event.completed_at,
             processing_time_seconds=event.processing_time_seconds,
+            delivery_method=delivery_method,
             files=files,
             cfdi_summary=cfdi,
             error_code=error_code,
