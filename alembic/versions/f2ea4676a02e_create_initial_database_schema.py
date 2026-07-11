@@ -174,6 +174,7 @@ def upgrade() -> None:
         );
     """)
 
+    # solo se usara para indentificar a la peticion del WebHook, los jobs van en otra tabla
     op.execute("""
         CREATE TABLE facturagpt_webhooks (
             idempotency_key VARCHAR(255) PRIMARY KEY,
