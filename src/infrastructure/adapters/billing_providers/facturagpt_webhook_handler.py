@@ -72,7 +72,7 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
         return self._map_event_to_result(event)
 
     def _map_event_to_result(self, event: FacturaGPTWebhookEvent) -> InvoiceResult:
-        status = BillingStatus.map_webhook_status_event(status=event.status)
+        status = BillingStatus(event.status.upper())
 
         files = None
         cfdi = None
