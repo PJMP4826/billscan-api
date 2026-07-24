@@ -88,6 +88,9 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
         body = self._build_submit_body(request)
         raw = await self._post("/api/v1/get_factura", body)
 
+        if "detail" in raw:
+            raise BillingProviderError(f"API Error: {raw['detail']}")
+
         parsed = FacturaGPTSubmitResponse.model_validate(raw)
         # self._raise_if_error(parsed.ok, parsed.error)
 
@@ -132,7 +135,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
         if data:
             result = InvoiceResult(
                 session_id=data.session_id,
-                status=BillingStatus(data.status.upper()),
+                status=BillingStatus(data.status.upper())
             )
 
         return result
