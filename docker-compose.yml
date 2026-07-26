@@ -15,8 +15,6 @@ services:
       - DB_HOST=postgres
       - DB_PORT=5432
     restart: unless-stopped
-    # Sobrescribe el arranque normal para que el contenedor NO se cierre al fallar el código
-    command: tail -f /dev/null
 
   postgres:
     image: postgres:16-alpine
