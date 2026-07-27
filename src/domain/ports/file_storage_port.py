@@ -8,19 +8,14 @@ class FileStoragePort(ABC):
     """
 
     @abstractmethod
-    async def upload(
-        self,
-        key: str,
-        data: bytes,
-        mime_type: str,
-    ) -> str:
+    async def upload(self, key: str, data: bytes, mime_type: str) -> str:
         """
-        Upload a file and return its public URL or storage key.
+        Upload a file and return its storage key.
 
-        :param key:       Storage key / path (e.g. "avatars/fausto.jpg")
+        :param key:       Storage key / path (e.g. "users/fausto/ticket-123.jpg")
         :param data:      Raw file bytes
-        :param mime_type: MIME type (e.g. "image/jpeg", "image/png", "image/webp")
-        :return:          Accessible URL string
+        :param mime_type: MIME type (e.g. "image/jpeg", "image/png")
+        :return:          Storage key string (NOT a URL)
         """
         ...
 
@@ -32,6 +27,16 @@ class FileStoragePort(ABC):
         :param key:        Storage key of the object
         :param expires_in: Seconds until the URL expires (default: 1 hour)
         :return:           Presigned URL string
+        """
+        ...
+
+    @abstractmethod
+    async def download(self, key: str) -> tuple[bytes, str]:
+        """
+        Download object content and its content-type from storage.
+
+        :param key: Storage key of the object
+        :return:    Tuple of (raw bytes, content_type)
         """
         ...
 
