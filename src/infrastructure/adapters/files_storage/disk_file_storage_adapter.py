@@ -33,21 +33,16 @@ class DiskFileStorageAdapter(FileStoragePort):
             async with aiofiles.open(file_path, "wb") as f:
                 await f.write(data)
 
-            public_url = f"{self._base_url}/{key}"
-
-            logger.info(
-                "Uploaded object '%s' to disk. Public URL: '%s'", key, public_url
-            )
-
-            return public_url
+            logger.info("Uploaded object '%s' to disk at '%s'", key, file_path)
+            return key
 
         except IOError as e:
             logger.error("Disk upload failed for key '%s': %s", key, e)
             raise InfrastructureException(
-                f"File not found for key '{key}'",
-                error_code="DISK_FILE_NOT_FOUND",
+                f"Disk upload failed for key '{key}'",
+                error_code="DISK_UPLOAD_ERROR",
                 details={"key": key, "path": str(file_path)},
-            )
+            ) from e
 
     async def get_url(self, key: str, expires_in: int = 3600) -> str:
         if await self.exists(key):
@@ -59,6 +54,36 @@ class DiskFileStorageAdapter(FileStoragePort):
                 error_code="DISK_FILE_NOT_FOUND",
                 details={"key": key},
             )
+
+    async def download(self, key: str) -> tuple[bytes, str]:
+        file_path = self._base_directory / key
+        try:
+            async with aiofiles.open(file_path, "rb") as f:
+                data = await f.read()
+
+            # Inferir content-type desde la extensión
+            import mimetypes
+
+            content_type, _ = mimetypes.guess_type(str(file_path))
+            content_type = content_type or "application/octet-stream"
+
+            logger.info("Downloaded object '%s' from disk (%s bytes)", key, len(data))
+            return data, content_type
+
+        except FileNotFoundError as e:
+            logger.error("File not found for key '%s': %s", key, e)
+            raise InfrastructureException(
+                f"File not found for key '{key}'",
+                error_code="DISK_FILE_NOT_FOUND",
+                details={"key": key, "path": str(file_path)},
+            ) from e
+        except IOError as e:
+            logger.error("Disk download failed for key '%s': %s", key, e)
+            raise InfrastructureException(
+                f"Disk download failed for key '{key}'",
+                error_code="DISK_DOWNLOAD_ERROR",
+                details={"key": key, "path": str(file_path)},
+            ) from e
 
     async def delete(self, key: str) -> None:
         file_path = self._base_directory / key
