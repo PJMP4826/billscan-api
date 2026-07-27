@@ -50,9 +50,7 @@ class CloudFlareR2FileStorageAdapter(FileStoragePort):
 
     async def upload(self, key: str, data: bytes, mime_type: str) -> str:
         """
-        Upload raw bytes to R2.
-        Returns a permanent public URL if public_base_url was configured,
-        otherwise returns a 1-hour presigned GET URL.
+        Upload raw bytes to R2 and return the storage key.
         """
         try:
             await asyncio.to_thread(
@@ -65,6 +63,7 @@ class CloudFlareR2FileStorageAdapter(FileStoragePort):
             logger.info(
                 "Uploaded object '%s' (%s) to bucket '%s'", key, mime_type, self._bucket
             )
+            return key
         except ClientError as e:
             logger.error("R2 upload failed for key '%s': %s", key, e)
             raise InfrastructureException(
@@ -72,11 +71,6 @@ class CloudFlareR2FileStorageAdapter(FileStoragePort):
                 error_code="R2_UPLOAD_ERROR",
                 details={"key": key, "bucket": self._bucket},
             ) from e
-
-        if self._public_base_url:
-            return f"{self._public_base_url}/{key}"
-
-        return await self.get_url(key)
 
     async def get_url(self, key: str, expires_in: int = 3600) -> str:
         """
@@ -96,6 +90,30 @@ class CloudFlareR2FileStorageAdapter(FileStoragePort):
                 f"Failed to generate presigned URL for key '{key}'",
                 error_code="R2_PRESIGNED_URL_ERROR",
                 details={"key": key, "bucket": self._bucket, "expires_in": expires_in},
+            ) from e
+
+    async def download(self, key: str) -> tuple[bytes, str]:
+        """
+        Download object content and its content-type from R2.
+        Returns (data, content_type).
+        The backend streams this to the client — no URL is exposed.
+        """
+        try:
+            response = await asyncio.to_thread(
+                self._client.get_object,
+                Bucket=self._bucket,
+                Key=key,
+            )
+            content_type = response.get("ContentType", "application/octet-stream")
+            data = await asyncio.to_thread(response["Body"].read)
+            logger.info("Downloaded object '%s' from bucket '%s'", key, self._bucket)
+            return data, content_type
+        except ClientError as e:
+            logger.error("R2 download failed for key '%s': %s", key, e)
+            raise InfrastructureException(
+                f"R2 download failed for key '{key}'",
+                error_code="R2_DOWNLOAD_ERROR",
+                details={"key": key, "bucket": self._bucket},
             ) from e
 
     async def delete(self, key: str) -> None:
