@@ -1,6 +1,7 @@
-from typing import Any
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 from src.config.logger import logger
 from src.config.settings import settings
@@ -43,6 +44,16 @@ class SQLDatabaseConnectionManager:
                 "Error en la configuración del motor de base de datos asíncrono",
                 details={"error": str(e)},
             )
+
+    @asynccontextmanager
+    async def transaction(self) -> AsyncGenerator[AsyncConnection, None]:
+        """Provides an atomic transaction scope across multiple SQL operations."""
+        async with self.engine.begin() as conn:
+            try:
+                yield conn
+            except Exception as e:
+                logger.error(f"Transaction rolled back due to error: {e}")
+                raise PostgresDBException(f"Database transaction failed: {e}") from e
 
     async def execute_sql_query_fetch_all(
         self, sql: str, params: dict[str, Any] = {}
@@ -139,5 +150,6 @@ class SQLDatabaseConnectionManager:
             await self._engine.dispose()
             self._engine = None
             logger.info("Pool de conexiones asíncronas de PostgreSQL liberado")
+
 
 database_connection_manager = SQLDatabaseConnectionManager()
