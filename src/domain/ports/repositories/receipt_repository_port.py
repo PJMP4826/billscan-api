@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any
-
 from src.domain.entities.receipt import Receipt
 
 
@@ -17,40 +15,23 @@ class ReceiptRepositoryPort(ABC):
     """
 
     @abstractmethod
-    async def insert(
+    async def save(
         self,
         receipt: Receipt,
-        merchant_id: int | None,
         user_id: str | None,
+        merchant_id: int | None,
     ) -> int:
         """Inserta la cabecera del recibo y devuelve el `id` creado."""
         pass
 
     @abstractmethod
-    async def find_by_id(self, receipt_id: int) -> dict[str, Any]:
+    async def find_by_id(self, receipt_id: int) -> Receipt:
         """Busca la cabecera de un recibo por su ID interno."""
         pass
 
     @abstractmethod
-    async def find_by_uuid(self, receipt_uuid: str) -> dict[str, Any] | None:
+    async def find_by_uuid(self, receipt_uuid: str) -> Receipt:
         """Busca la cabecera de un recibo por su UUID público."""
-        pass
-
-    @abstractmethod
-    async def find_by_user_id(
-        self, user_id: str, limit: int = 50, offset: int = 0
-    ) -> list[dict[str, Any]]:
-        """Lista las cabeceras de los recibos de un usuario, más recientes primero."""
-        pass
-
-    @abstractmethod
-    async def update_merchant_and_payment(
-        self,
-        receipt_id: int,
-        merchant_id: int | None,
-        payment_method_code: str,
-    ) -> None:
-        """Actualiza las relaciones de comercio y método de pago de un recibo."""
         pass
 
     @abstractmethod
