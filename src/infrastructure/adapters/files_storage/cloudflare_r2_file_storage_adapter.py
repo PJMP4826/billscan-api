@@ -119,7 +119,7 @@ class CloudFlareR2FileStorageAdapter(FileStoragePort):
     async def delete(self, key: str) -> None:
         try:
             await asyncio.to_thread(
-                self._client.delete_object,
+                self._client.delete_object, # type: ignore
                 Bucket=self._bucket,
                 Key=key,
             )
