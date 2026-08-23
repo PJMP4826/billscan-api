@@ -75,8 +75,14 @@ class InitiateBillingUseCase:
 
             request = InvoiceRequest(
                 ticket_image_b64=image_base64,
-                external_id=receipt["receipt_uuid"],
-                payment_method=SatPaymentMethodCode(receipt["payment_method_code"]),
+                external_id=receipt.receipt_uuid,
+                payment_method=SatPaymentMethodCode(
+                    (
+                        receipt.payment.method_code.value
+                        if receipt.payment.method_code
+                        else None
+                    )
+                ),
                 invoice_use=InvoiceUse(fiscal_user_info["use_cfdi_default"]),
                 customer_info=user_info,
                 test_mode=settings.facturagpt_test_mode,
