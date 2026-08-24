@@ -9,14 +9,6 @@ from src.infrastructure.repositories.receipt_image_repository import (
 )
 from src.infrastructure.repositories.merchant_repository import MerchantRepository
 from src.infrastructure.repositories.receipt_repository import ReceiptRepository
-
-from src.infrastructure.repositories.receipt_item_repository import (
-    ReceiptItemRepository,
-)
-from src.infrastructure.repositories.receipt_tax_repository import ReceiptTaxRepository
-from src.infrastructure.repositories.receipt_payment_repository import (
-    ReceiptPaymentRepository,
-)
 from src.infrastructure.repositories.receipt_billing_detail_repository import (
     ReceiptBillingDetailRepository,
 )
@@ -42,18 +34,6 @@ def get_merchant_repository() -> MerchantRepository:
 
 def get_receipt_repository() -> ReceiptRepository:
     return ReceiptRepository(manager=database_connection_manager)
-
-
-def get_receipt_item_repository() -> ReceiptItemRepository:
-    return ReceiptItemRepository(manager=database_connection_manager)
-
-
-def get_receipt_tax_repository() -> ReceiptTaxRepository:
-    return ReceiptTaxRepository(manager=database_connection_manager)
-
-
-def get_receipt_payment_repository() -> ReceiptPaymentRepository:
-    return ReceiptPaymentRepository(manager=database_connection_manager)
 
 
 def get_receipt_billing_detail_repository() -> ReceiptBillingDetailRepository:
