@@ -157,7 +157,6 @@ class ReceiptJobDetailsRepository(ReceiptJobDetailsRepositoryPort):
                 receipt_id,
                 receipt_job_id,
                 file_key,
-                file_url,
                 mime_type,
                 page_number
             FROM receipt_images
