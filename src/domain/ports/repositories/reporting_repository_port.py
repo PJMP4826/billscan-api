@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from src.application.dtos.deductible_expense_summary_dto import (
     DeductibleExpenseSummary,
 )
 from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
-from src.application.dtos.recent_activity_item_dto import RecentActivityItem
-
 
 class ReportingRepositoryPort(ABC):
 
@@ -31,7 +30,7 @@ class ReportingRepositoryPort(ABC):
         receipt_uuid: str | None = None,
         status_filter: str | None = None,
         limit: int = 10,
-    ) -> list[RecentActivityItem]:
+    ) -> list[dict[str, Any]]:
         """
         Returns recent activity items ordered by creation date DESC.
         Optionally filtered by receipt_uuid or status.
