@@ -18,7 +18,7 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
 
     Sin VO de dominio: `ImageRecord` (image_bytes + mime_type) representa
     los bytes crudos durante el procesamiento OCR, no la referencia
-    persistida (file_key/file_url en storage externo). Este repositorio
+    persistida (file_key en storage externo). Este repositorio
     trabaja con la referencia ya subida, no con los bytes.
     """
 
@@ -29,7 +29,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
         self,
         receipt_job_id: int,
         file_key: str,
-        file_url: str,
         mime_type: str = "image/jpeg",
         page_number: int = 1,
         receipt_id: int | None = None,
@@ -42,7 +41,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
                 receipt_job_id,
                 receipt_id,
                 file_key,
-                file_url,
                 mime_type,
                 page_number
             )
@@ -50,7 +48,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
                 :receipt_job_id,
                 :receipt_id,
                 :file_key,
-                :file_url,
                 :mime_type,
                 :page_number
             )
@@ -60,7 +57,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
             "receipt_job_id": receipt_job_id,
             "receipt_id": receipt_id,
             "file_key": file_key,
-            "file_url": file_url,
             "mime_type": mime_type,
             "page_number": page_number,
         }
@@ -75,15 +71,14 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
     ) -> list[int]:
         """Inserta varias imágenes (multi-página) ligadas a un job.
 
-        Cada elemento de `images` debe tener las claves: file_key,
-        file_url, y opcionalmente mime_type, page_number.
+        Cada elemento de `images` debe tener las claves: file_key 
+        y opcionalmente mime_type, page_number.
         """
         ids: list[int] = []
         for img in images:
             image_id = await self.insert(
                 receipt_job_id=receipt_job_id,
                 file_key=img["file_key"],
-                file_url=img["file_url"],
                 mime_type=img.get("mime_type", "image/jpeg"),
                 page_number=img.get("page_number", 1),
             )
@@ -110,7 +105,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
                 receipt_id,
                 receipt_job_id,
                 file_key,
-                file_url,
                 mime_type,
                 page_number,
                 created_at
@@ -131,7 +125,6 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
                 receipt_id,
                 receipt_job_id,
                 file_key,
-                file_url,
                 mime_type,
                 page_number,
                 created_at
