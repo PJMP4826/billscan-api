@@ -28,7 +28,7 @@ class GetReceiptDetailUseCase:
         )
 
         if file_key := rows.pop("file_key", None):
-            _, file_url = await self._file_storage.get_url(str(file_key))
+            file_url = await self._file_storage.get_url(str(file_key))
             rows["file_url"] = file_url
 
         return rows

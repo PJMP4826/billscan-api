@@ -31,7 +31,7 @@ class GetRecentActivityUseCase:
 
         recent_activity_item: list[RecentActivityItem] = []
         for row in rows:
-            _, file_url = await self._file_storage.get_url(row["file_key"])
+            file_url = await self._file_storage.get_url(row["file_key"])
             recent_activity_item.append(
                 RecentActivityItem(
                     comercio=row["comercio"],
