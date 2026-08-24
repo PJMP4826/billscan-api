@@ -1,7 +1,7 @@
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
-from src.infrastructure.records.issued_cfdi_summary import IssuedCFDISummary
+from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
 
 
 class GetIssuedCFDISummaryUseCase:

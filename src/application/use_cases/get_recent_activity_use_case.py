@@ -1,7 +1,7 @@
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
-from src.infrastructure.records.recent_activity_item import RecentActivityItem
+from src.application.dtos.recent_activity_item_dto import RecentActivityItem
 
 
 class GetRecentActivityUseCase:

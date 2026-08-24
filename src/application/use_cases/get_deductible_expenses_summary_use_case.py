@@ -1,7 +1,7 @@
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
-from src.infrastructure.records.deductible_expense_summary import (
+from src.application.dtos.deductible_expense_summary_dto import (
     DeductibleExpenseSummary,
 )
 

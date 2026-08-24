@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 
-from src.infrastructure.records.deductible_expense_summary import (
+from src.application.dtos.deductible_expense_summary_dto import (
     DeductibleExpenseSummary,
 )
-from src.infrastructure.records.issued_cfdi_summary import IssuedCFDISummary
-from src.infrastructure.records.recent_activity_item import RecentActivityItem
+from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
+from src.application.dtos.recent_activity_item_dto import RecentActivityItem
 
 
 class ReportingRepositoryPort(ABC):
