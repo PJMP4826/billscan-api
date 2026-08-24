@@ -2,7 +2,7 @@
 FacturaGPT concrete implementation of BillingProviderPort.
 
 Responsibilities:
-- Translate InvoiceRequest (domain) → FacturaGPT request body (dict)
+- Translate InvoiceRequestCommand (domain) → FacturaGPT request body (dict)
 - Call FacturaGPT API via httpx with proper auth headers
 - Deserialize response using Pydantic schemas (type-safe, not raw dicts)
 - Translate FacturaGPT response schemas → InvoiceResult (domain)
@@ -15,7 +15,7 @@ domain models. This file is the only translation boundary.
 import httpx
 from src.config.logger import logger
 
-from src.domain.commands.invoice_request import InvoiceRequest
+from src.application.commands.invoice_request_command import InvoiceRequestCommand
 from src.application.dtos.invoice_result_dto import InvoiceResult
 from src.application.dtos.invoice_files_dto import InvoiceFiles
 from src.application.dtos.ocr_result_dto import OcrResult
@@ -84,7 +84,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
     # BillingProviderPort implementation
     # ------------------------------------------------------------------
 
-    async def submit_invoice(self, request: InvoiceRequest) -> InvoiceResult:
+    async def submit_invoice(self, request: InvoiceRequestCommand) -> InvoiceResult:
         body = self._build_submit_body(request)
         raw = await self._post("/api/v1/get_factura", body)
 
@@ -242,10 +242,10 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
         raise exc_class(error.message, error_code=error.code)
 
     def _build_submit_body(
-        self, request: InvoiceRequest
+        self, request: InvoiceRequestCommand
     ) -> dict[str, str | bool | dict[str, str]]:
         """
-        Translate domain InvoiceRequest → FacturaGPT-specific request dict.
+        Translate domain InvoiceRequestCommand → FacturaGPT-specific request dict.
         This is the only place FacturaGPT field names appear on the input side.
         """
         body: dict[str, str | bool | dict[str, str]] = {

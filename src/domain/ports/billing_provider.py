@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.domain.commands.invoice_request import InvoiceRequest
+from src.application.commands.invoice_request_command import InvoiceRequestCommand
 from src.application.dtos.invoice_result_dto import InvoiceResult
 from src.application.dtos.invoice_files_dto import InvoiceFiles
 
@@ -18,7 +18,7 @@ class BillingProviderPort(ABC):
     """
 
     @abstractmethod
-    async def submit_invoice(self, request: InvoiceRequest) -> InvoiceResult:
+    async def submit_invoice(self, request: InvoiceRequestCommand) -> InvoiceResult:
         """
         Submit a receipt image and customer info to start invoice generation.
 

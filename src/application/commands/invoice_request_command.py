@@ -6,7 +6,7 @@ from src.domain.enums.invoice_use import InvoiceUse
 
 
 @dataclass
-class InvoiceRequest:
+class InvoiceRequestCommand:
     """
     Everything needed to submit an invoice request through the port.
     This is the domain's language — no provider field names here.

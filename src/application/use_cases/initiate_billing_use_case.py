@@ -8,7 +8,7 @@ from src.domain.ports.billing_provider import BillingProviderPort
 from src.domain.enums.tax_regime import TaxRegime
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.sat_payment_methods import SatPaymentMethodCode
-from src.domain.commands.invoice_request import InvoiceRequest
+from src.application.commands.invoice_request_command import InvoiceRequestCommand
 from src.domain.value_objects.billing_customer import BillingCustomerInfo
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
@@ -73,7 +73,7 @@ class InitiateBillingUseCase:
 
             receipt = await self._receipt_repository.find_by_id(receipt_id=receipt_id)
 
-            request = InvoiceRequest(
+            request = InvoiceRequestCommand(
                 ticket_image_b64=image_base64,
                 external_id=receipt.receipt_uuid,
                 payment_method=SatPaymentMethodCode(
