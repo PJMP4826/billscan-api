@@ -22,7 +22,6 @@ class BillingFileRepository:
         receipt_id: int,
         file_type: str | None,
         file_key: str,
-        file_url: str,
         mime_type: str | None = None,
     ) -> int:
         sql = """
@@ -30,14 +29,12 @@ class BillingFileRepository:
                 receipt_id,
                 file_type,
                 file_key,
-                file_url,
                 mime_type
             )
             VALUES (
                 :receipt_id,
                 :file_type,
                 :file_key,
-                :file_url,
                 :mime_type
             )
             RETURNING id;
@@ -46,7 +43,6 @@ class BillingFileRepository:
             "receipt_id": receipt_id,
             "file_type": file_type,
             "file_key": file_key,
-            "file_url": file_url,
             "mime_type": mime_type,
         }
         file_id = await self._db_manager.execute_sql_query_fetch_one(sql, params)
@@ -64,7 +60,6 @@ class BillingFileRepository:
                 receipt_id,
                 file_type,
                 file_key,
-                file_url,
                 mime_type,
                 created_at
             FROM billing_files
