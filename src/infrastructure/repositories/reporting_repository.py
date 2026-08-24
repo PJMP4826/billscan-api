@@ -8,7 +8,6 @@ from src.application.dtos.deductible_expense_summary_dto import (
     DeductibleExpenseSummary,
 )
 from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
-from src.application.dtos.recent_activity_item_dto import RecentActivityItem
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
@@ -103,7 +102,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         receipt_uuid: str | None = None,
         status_filter: str | None = None,
         limit: int = 10,
-    ) -> list[RecentActivityItem]:
+    ) -> list[dict[str, Any]]:
         conditions = ["1 = 1"]
         params: dict[str, Any] = {"limit": limit}
 
@@ -119,11 +118,11 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                     r.receipt_uuid,
                     m.name AS comercio,
                     (
-                        SELECT file_url
+                        SELECT file_key
                         FROM receipt_images
                         WHERE receipt_id = r.id
                         LIMIT 1
-                    ) AS file_url,
+                    ) AS file_key,
                     r.created_at  AS fecha_alta,
                     r.total,
                     CASE
@@ -147,7 +146,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             )
             SELECT
                 comercio,
-                file_url,
+                file_key,
                 fecha_alta,
                 total,
                 status
@@ -160,17 +159,8 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         if status_filter is not None:
             params["status_filter"] = status_filter
 
-        rows = await self._db_manager.execute_sql_query_fetch_all(sql, params)
-        return [
-            RecentActivityItem(
-                comercio=row["comercio"],
-                file_url=row["file_url"],
-                fecha_alta=str(row["fecha_alta"]),
-                total=Decimal(str(row["total"])),
-                status=row["status"],
-            )
-            for row in rows
-        ]
+        return await self._db_manager.execute_sql_query_fetch_all(sql, params)
+        
 
     async def get_receipt_base_detail(self, receipt_uuid: str) -> dict[str, str | None]:
         sql = """
@@ -184,7 +174,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 COALESCE(r.amount_paid,    0)   AS monto_pagado,
                 COALESCE(r.change,         0)   AS cambio,
                 r.total                         AS total_ticket,
-                ri.file_url,
+                ri.file_key,
                 f_info.use_cfdi_default         AS uso_cfdi,
                 r.payment_method_code           AS metodo_pago_codigo,
                 pm.description                  AS metodo_pago_descripcion
