@@ -211,6 +211,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 rbd.billing_status,
                 rbd.billing_url,
                 rbd.billing_code,
+                ri.file_key,
                 (
                     SELECT JSON_AGG(items)
                     FROM (
@@ -237,6 +238,9 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                    ON r.merchant_id  = m.id
             LEFT JOIN receipt_billing_details rbd
                    ON rbd.receipt_id = r.id
+            LEFT JOIN receipt_images ri
+                ON ri.receipt_id = r.id
+                AND ri.page_number = 1
             WHERE r.receipt_uuid = :receipt_uuid;
         """
         result = await self._db_manager.execute_sql_query_fetch_first(
