@@ -92,6 +92,7 @@ def get_create_fiscal_info_use_case() -> CreateFiscalInfoUseCase:
         encryptor=get_fernet_encryptor(),
     )
 
+
 def get_user_fiscal_info_use_case() -> GetUserFiscalInfoUseCase:
     return GetUserFiscalInfoUseCase(
         fiscal_info_repository=get_fiscal_info_repository(),
@@ -121,8 +122,14 @@ def get_issued_cfdi_summary_use_case() -> GetIssuedCFDISummaryUseCase:
 
 
 def get_recent_activity_use_case() -> GetRecentActivityUseCase:
-    return GetRecentActivityUseCase(reporting_repository=get_reporting_repository())
+    return GetRecentActivityUseCase(
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
+        reporting_repository=get_reporting_repository(),
+    )
 
 
 def get_receipt_detail_use_case() -> GetReceiptDetailUseCase:
-    return GetReceiptDetailUseCase(reporting_repository=get_reporting_repository())
+    return GetReceiptDetailUseCase(
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
+        reporting_repository=get_reporting_repository(),
+    )
