@@ -1,7 +1,5 @@
 from src.config.logger import logger
 
-import httpx
-
 from src.domain.enums.job_names import JobName
 from src.domain.enums.billing_status import BillingStatus
 from src.domain.ports.file_storage_port import FileStoragePort
@@ -68,7 +66,7 @@ class ProcessReceiptExtractionUseCase:
 
             image_pages_bytes: list[bytes] = []
             for record in images_records:
-                img_bytes = await self._get_file_as_bytes_async(await self._file_storage.get_url(record["file_key"]))
+                img_bytes, _ = await self._file_storage.download(record["file_key"])
                 image_pages_bytes.append(img_bytes)
 
             receipt = await self._extractor.extract(
@@ -122,9 +120,3 @@ class ProcessReceiptExtractionUseCase:
                 job_id=int(job_id),
                 error_message="La extracción no devolvió resultado",
             )
-
-    async def _get_file_as_bytes_async(self, url: str) -> bytes:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, timeout=10.0)
-            response.raise_for_status()
-            return response.content

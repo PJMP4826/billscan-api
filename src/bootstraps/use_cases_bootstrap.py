@@ -1,8 +1,7 @@
 from src.bootstraps.services.infrastructure_bootstrap_services import (
     get_llama_index_ai_extractor_service,
-    # get_cloudflare_r2_file_storage_adapter,
+    get_cloudflare_r2_file_storage_adapter,
     get_background_task_queue_adapter,
-    get_disk_file_storage_adapter,
     get_fernet_encryptor,
     get_facturagpt_billing_adapter,
 )
@@ -55,7 +54,7 @@ def get_submit_receipt_use_case(
     background_tasks: BackgroundTasks,
 ) -> SubmitReceiptUseCase:
     return SubmitReceiptUseCase(
-        file_storage=get_disk_file_storage_adapter(),
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
         queue_publisher=get_background_task_queue_adapter(
             background_tasks=background_tasks
         ),
@@ -76,7 +75,7 @@ def get_process_receipt_extraction_use_case(
         queue_publisher = AsyncioQueuePublisher()
 
     return ProcessReceiptExtractionUseCase(
-        file_storage=get_disk_file_storage_adapter(),
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
         receipt_repository=get_receipt_repository(),
         receipt_job_details_repository=get_receipt_job_details_repository(),
         receipt_image_repository=get_receipt_image_repository(),
