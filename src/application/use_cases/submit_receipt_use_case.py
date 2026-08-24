@@ -48,7 +48,7 @@ class SubmitReceiptUseCase:
 
                 file_key = uuid.uuid4().hex
                 mime_file_type = str(item["mime"])
-                image_url = await self._file_storage.upload(
+                image_key = await self._file_storage.upload(
                     key=file_key,
                     data=file_data,
                     mime_type=mime_file_type,
@@ -56,8 +56,7 @@ class SubmitReceiptUseCase:
 
                 await self._receipt_image_repository.insert(
                     receipt_job_id=job_id,
-                    file_key=file_key,
-                    file_url=image_url,
+                    file_key=image_key,
                     mime_type=mime_file_type,
                     page_number=page_idx,
                 )
