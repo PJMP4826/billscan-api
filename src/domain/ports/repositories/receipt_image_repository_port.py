@@ -8,7 +8,6 @@ class ReceiptImageRepositoryPort(ABC):
         self,
         receipt_job_id: int,
         file_key: str,
-        file_url: str,
         mime_type: str = "image/jpeg",
         page_number: int = 1,
         receipt_id: int | None = None,
@@ -26,7 +25,7 @@ class ReceiptImageRepositoryPort(ABC):
         """Inserta varias imágenes (multi-página) ligadas a un job.
 
         Cada elemento de `images` debe tener las claves: file_key,
-        file_url, y opcionalmente mime_type, page_number.
+        y opcionalmente mime_type, page_number.
         """
         pass
 
