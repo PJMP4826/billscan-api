@@ -5,11 +5,11 @@ import hmac
 
 from src.config.logger import logger
 
-from src.domain.records.invoice_result import InvoiceResult
-from src.domain.records.invoice_files import InvoiceFiles
-from src.domain.records.invoice_result import InvoiceResult
-from src.domain.records.cfdi_summary import CfdiSummary
-from src.domain.records.delivery_method import DeliveryMethod
+from src.application.dtos.invoice_result_dto import InvoiceResult
+from src.application.dtos.invoice_files_dto import InvoiceFiles
+from src.application.dtos.invoice_result_dto import InvoiceResult
+from src.application.dtos.cfdi_summary_dto import CfdiSummary
+from src.application.dtos.delivery_method_dto import DeliveryMethod
 from src.domain.enums.billing_status import BillingStatus
 
 from src.domain.ports.billing_webhook_handler_port import BillingWebhookHandlerPort

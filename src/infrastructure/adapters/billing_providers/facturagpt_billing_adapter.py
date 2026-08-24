@@ -16,9 +16,9 @@ import httpx
 from src.config.logger import logger
 
 from src.domain.commands.invoice_request import InvoiceRequest
-from src.domain.records.invoice_result import InvoiceResult
-from src.domain.records.invoice_files import InvoiceFiles
-from src.domain.records.ocr_result import OcrResult
+from src.application.dtos.invoice_result_dto import InvoiceResult
+from src.application.dtos.invoice_files_dto import InvoiceFiles
+from src.application.dtos.ocr_result_dto import OcrResult
 
 from src.domain.enums.billing_status import BillingStatus
 

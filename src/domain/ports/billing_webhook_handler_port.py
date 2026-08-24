@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.domain.records.invoice_result import InvoiceResult
+from src.application.dtos.invoice_result_dto import InvoiceResult
 
 
 class BillingWebhookHandlerPort(ABC):
