@@ -108,6 +108,7 @@ def get_initiate_billing_use_case() -> InitiateBillingUseCase:
         fiscal_info_repository_port=get_fiscal_info_repository(),
         receipt_repository=get_receipt_repository(),
         encryptor=get_fernet_encryptor(),
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
     )
 
 

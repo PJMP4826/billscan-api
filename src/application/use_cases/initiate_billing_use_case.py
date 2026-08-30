@@ -1,4 +1,3 @@
-import httpx
 import base64
 
 from src.config.logger import logger
@@ -9,6 +8,7 @@ from src.domain.enums.tax_regime import TaxRegime
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.sat_payment_methods import SatPaymentMethodCode
 from src.application.commands.invoice_request_command import InvoiceRequestCommand
+from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.value_objects.billing_customer import BillingCustomerInfo
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
@@ -32,6 +32,7 @@ class InitiateBillingUseCase:
         receipt_image_repository_port: ReceiptImageRepositoryPort,
         receipt_repository: ReceiptRepositoryPort,
         encryptor: DataEncryptor,
+        file_storage: FileStoragePort,
     ) -> None:
         self._billing_provider = billing_provider
         self._billing_detail_repository = billing_detail_repository
@@ -39,6 +40,7 @@ class InitiateBillingUseCase:
         self._receipt_image_repository = receipt_image_repository_port
         self._receipt_repository = receipt_repository
         self._encryptor = encryptor
+        self._file_storage = file_storage
 
     async def execute(self, payload: dict[str, str | int]) -> None:
         receipt_id = int(payload["receipt_id"])
@@ -54,9 +56,11 @@ class InitiateBillingUseCase:
                 receipt_id=receipt_id
             )
 
-            image_url = image[0]
+            image = image[0]
 
-            image_base64 = await self._imagen_url_a_base64(url=image_url["file_url"])
+            img_bytes, _ = await self._file_storage.download(image["file_key"])
+
+            image_base64 = base64.b64encode(img_bytes).decode("utf-8")
 
             fiscal_user_info = await self._fiscal_info_repository.get_latest_by_user_id(
                 user_id=user_id
@@ -116,14 +120,3 @@ class InitiateBillingUseCase:
                 billing_error_code=error_code,
                 billing_error_message=error_message,
             )
-
-    async def _imagen_url_a_base64(self, url: str):
-        async with httpx.AsyncClient() as cliente:
-            respuesta = await cliente.get(url)
-
-            if not respuesta.status_code == 200:
-                raise ValueError(f"Error: Código de estado {respuesta.status_code}")
-
-            bytes_imagen = respuesta.content
-            base64_bytes = base64.b64encode(bytes_imagen)
-            return base64_bytes.decode("utf-8")
