@@ -176,22 +176,26 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             raise RuntimeError(
                 "HTTPX client not initialized. Call .startup() on FacturaGPTBillingAdapter first."
             )
-        response = await self._client.get(
-            url,
-            headers=self._auth_headers,
-            follow_redirects=True,
-        )
-        if response.status_code >= 400:
-            logger.error(
-                "FacturaGPT download failed url=%s status=%s body=%s",
+
+        try:
+            response = await self._client.get(
                 url,
-                response.status_code,
-                response.text[:500],
+                headers=self._auth_headers,
+                follow_redirects=True,
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(
+                "No se pudo descargar el archivo de factura desde %s: %s",
+                url,
+                e,
+                exc_info=True,
             )
             raise BillingProviderError(
-                f"No se pudo descargar el archivo de factura (HTTP {response.status_code}): {url}",
+                f"No se pudo descargar el archivo de factura: {url}",
                 error_code="INVOICE_FILE_DOWNLOAD_ERROR",
-            )
+            ) from e
+
         content_type = response.headers.get("Content-Type", "application/octet-stream")
         return response.content, content_type
 
