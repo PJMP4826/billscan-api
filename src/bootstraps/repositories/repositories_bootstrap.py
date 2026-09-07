@@ -18,6 +18,12 @@ from src.infrastructure.repositories.fiscal_info_repository import (
 from src.infrastructure.repositories.reporting_repository import (
     PostgresReportingRepository,
 )
+from src.infrastructure.repositories.facturagpt_webhook_repository import (
+    FacturaGPTWebhookRepository,
+)
+from src.infrastructure.repositories.billing_file_repository import (
+    BillingFileRepository,
+)
 
 
 def get_receipt_job_details_repository() -> ReceiptJobDetailsRepository:
@@ -46,3 +52,11 @@ def get_fiscal_info_repository() -> FiscalInfoRepository:
 
 def get_reporting_repository() -> PostgresReportingRepository:
     return PostgresReportingRepository(manager=database_connection_manager)
+
+
+def get_facturagpt_webhook_repository() -> FacturaGPTWebhookRepository:
+    return FacturaGPTWebhookRepository(manager=database_connection_manager)
+
+
+def get_billing_file_repository() -> BillingFileRepository:
+    return BillingFileRepository(manager=database_connection_manager)

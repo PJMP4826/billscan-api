@@ -17,11 +17,15 @@ from src.infrastructure.adapters.security.fernet_encryptor import FernetEncrypto
 from src.infrastructure.adapters.billing_providers.facturagpt_billing_adapter import (
     FacturaGPTBillingAdapter,
 )
+from src.infrastructure.adapters.billing_providers.facturagpt_webhook_handler import (
+    FacturaGPTWebhookHandler,
+)
 
 
 from fastapi import BackgroundTasks
 
 _facturagpt_billing_adapter_instance: FacturaGPTBillingAdapter | None = None
+_facturagpt_webhook_handler_instance: FacturaGPTWebhookHandler | None = None
 
 
 def get_http_client_adapter() -> HttpClientAdapter:
@@ -73,3 +77,23 @@ def get_facturagpt_billing_adapter() -> FacturaGPTBillingAdapter:
             base_url=settings.facturagpt_base_url,
         )
     return _facturagpt_billing_adapter_instance
+
+
+def get_facturagpt_webhook_handler() -> FacturaGPTWebhookHandler:
+    """Handler singleton de verificación/firma + parseo de webhooks.
+
+    Exige `settings.facturagpt_webhook_secret` (whsec_...): se valida en el
+    primer uso (cuando llega un webhook o al armar el worker), no al arrancar,
+    para no romper el boot si el entorno aún no lo define.
+    """
+    global _facturagpt_webhook_handler_instance
+    if _facturagpt_webhook_handler_instance is None:
+        if not settings.facturagpt_webhook_secret:
+            raise RuntimeError(
+                "Falta configurar facturagpt_webhook_secret (whsec_...) "
+                "en el entorno para procesar webhooks de FacturaGPT."
+            )
+        _facturagpt_webhook_handler_instance = FacturaGPTWebhookHandler(
+            webhook_secret=settings.facturagpt_webhook_secret
+        )
+    return _facturagpt_webhook_handler_instance
