@@ -28,6 +28,7 @@ from typing import Any
 from src.config.logger import logger
 from src.application.dtos.invoice_result_dto import InvoiceResult
 
+from src.domain.enums.billing_file_type import BillingFileType
 from src.domain.enums.billing_status import BillingStatus
 from src.domain.enums.billing_webhook_event_type import BillingWebHookEventType
 from src.domain.ports.billing_provider import BillingProviderPort
@@ -43,10 +44,7 @@ from src.domain.ports.repositories.receipt_billing_detail_repository_port import
     ReceiptBillingDetailRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
-
-# tipos de archivo almacenados en billing_files.file_type
-FILE_TYPE_XML = "XML"
-FILE_TYPE_PDF = "PDF"
+from src.shared.errors.billing_exceptions import BillingProviderError
 
 _SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
 
@@ -187,10 +185,7 @@ class ProcessFacturaGPTWebhookUseCase:
                 idempotency_key,
             )
 
-    # ------------------------------------------------------------------
     # Evento factura.completed
-    # ------------------------------------------------------------------
-
     async def _apply_completed(
         self,
         receipt_id: int,
@@ -205,21 +200,19 @@ class ProcessFacturaGPTWebhookUseCase:
         xml_key = pdf_key = None
         if files and files.xml_url:
             xml_key = await self._store_invoice_file(
-                receipt_uuid=receipt_uuid,
                 url=files.xml_url,
-                file_type=FILE_TYPE_XML,
+                file_type=BillingFileType.XML,
                 folio=(
                     invoice_result.cfdi_summary.folio_fiscal
                     if invoice_result.cfdi_summary
                     else None
                 ),
             )
-        
+
         if files and files.pdf_url:
             pdf_key = await self._store_invoice_file(
-                receipt_uuid=receipt_uuid,
                 url=files.pdf_url,
-                file_type=FILE_TYPE_PDF,
+                file_type=BillingFileType.PDF,
                 folio=(
                     invoice_result.cfdi_summary.folio_fiscal
                     if invoice_result.cfdi_summary
@@ -253,9 +246,8 @@ class ProcessFacturaGPTWebhookUseCase:
 
     async def _store_invoice_file(
         self,
-        receipt_uuid: str,
         url: str,
-        file_type: str,
+        file_type: BillingFileType,
         folio: str | None,
     ) -> str:
         """Descarga (provider) → sube a storage con key determinística.
@@ -264,14 +256,22 @@ class ProcessFacturaGPTWebhookUseCase:
         (processed_at NULL) y el reintento vuelve a intentar aquí sin dejar
         estados a medias (el upload anterior con la misma key se sobrescribe).
         """
-        extension = "xml" if file_type == FILE_TYPE_XML else "pdf"
         base = _safe_filename(folio, "factura")
-        key = f"cfdi/{receipt_uuid}/{base}.{extension}"
+        key = f"{base}.{file_type.extension}"
 
         data, content_type = await self._billing_provider.download_invoice_file(url)
 
+        if content_type and "text/html" in content_type:
+            logger.error(
+                "FacturaGPT devolvió HTML en vez de archivo (url=%s, content_type=%s). ",
+                url, content_type,
+            )
+            raise BillingProviderError(
+                "El proxy de descarga devolvió HTML en vez del archivo de factura."
+            )
+
         await self._file_storage.upload(key=key, data=data, mime_type=content_type)
-        logger.info("Archivo %s del CFDI almacenado en key='%s'", file_type, key)
+        logger.info("Archivo %s del CFDI almacenado en key='%s'", file_type.value, key)
         return key
 
     async def _insert_missing_files(
@@ -286,25 +286,22 @@ class ProcessFacturaGPTWebhookUseCase:
         existing = await self._billing_file_repository.find_by_receipt_id(receipt_id)
         existing_types = {str(row.get("file_type")).upper() for row in existing}
 
-        if xml_key and FILE_TYPE_XML not in existing_types:
+        if xml_key and BillingFileType.XML.value not in existing_types:
             await self._billing_file_repository.insert(
                 receipt_id=receipt_id,
-                file_type=FILE_TYPE_XML,
+                file_type=BillingFileType.XML.value,
                 file_key=xml_key,
-                mime_type="application/xml",
+                mime_type=BillingFileType.XML.mime_type,
             )
-        if pdf_key and FILE_TYPE_PDF not in existing_types:
+        if pdf_key and BillingFileType.PDF.value not in existing_types:
             await self._billing_file_repository.insert(
                 receipt_id=receipt_id,
-                file_type=FILE_TYPE_PDF,
+                file_type=BillingFileType.PDF.value,
                 file_key=pdf_key,
-                mime_type="application/pdf",
+                mime_type=BillingFileType.PDF.mime_type,
             )
 
-    # ------------------------------------------------------------------
     # Evento factura.failed
-    # ------------------------------------------------------------------
-
     async def _apply_failed(
         self, receipt_id: int, invoice_result: InvoiceResult
     ) -> None:
