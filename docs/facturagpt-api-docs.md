@@ -390,6 +390,26 @@ Webhooks are the **recommended** (and required) way to receive invoice results.
 
 ---
 
+When a merchant generates the invoice but sends it directly by email, factura.completed is still terminal and chargeable, but the webhook has no files object:
+
+```json
+{
+  "event": "factura.completed",
+  "version": "2026-03",
+  "idempotency_key": "factura.completed:id_abc123:1741132800",
+  "session_id": "id_abc123",
+  "external_id": "expense_12345",
+  "status": "completed",
+  "completed_at": "2026-03-06T12:01:23Z",
+  "delivery": {
+    "method": "merchant_email",
+    "files_available": false,
+    "email_recipient": "customer@example.com",
+    "message": "La factura fue generada por el comercio y enviada directamente por email."
+  }
+}
+```
+
 ### factura.failed Payload
 
 ```json
