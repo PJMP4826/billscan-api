@@ -57,3 +57,21 @@ class BillingProviderPort(ABC):
             BillingProviderError: on any other provider-level error.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    async def download_invoice_file(self, url: str) -> tuple[bytes, str]:
+        """
+        Download the raw bytes of an invoice file (XML or PDF) using the
+        download URL included in a webhook delivery (e.g.
+        https://api.facturagpt.com.mx/api/v1/files/{session_id}/xml).
+
+        Providers that cannot download files should raise
+        NotImplementedError — callers decide whether the flow depends on it.
+
+        Returns:
+            tuple[bytes, str]: (raw file bytes, content-type header value).
+
+        Raises:
+            BillingProviderError: on any provider-level error.
+        """
+        raise NotImplementedError

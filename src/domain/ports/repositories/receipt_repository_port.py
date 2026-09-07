@@ -35,6 +35,18 @@ class ReceiptRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    async def find_id_by_uuid(self, receipt_uuid: str) -> int | None:
+        """
+        Resuelve el `id` (BIGSERIAL) de un recibo a partir de su UUID público.
+
+        Es el puente que usa el webhook de FacturaGPT: el `external_id` que
+        FacturaGPT devuelve ES el `receipt_uuid`, y las tablas relacionadas
+        (receipt_billing_details, billing_files) se referencian por el `id`
+        numérico. Devuelve None si el recibo aún no existe.
+        """
+        pass
+
+    @abstractmethod
     async def delete(self, receipt_id: int) -> None:
         """Elimina un recibo por su ID."""
         pass
