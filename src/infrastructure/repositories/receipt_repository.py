@@ -67,6 +67,17 @@ class ReceiptRepository(ReceiptRepositoryPort):
             where_clause="r.receipt_uuid = :uuid", params={"uuid": receipt_uuid}
         )
 
+    async def find_id_by_uuid(self, receipt_uuid: str) -> int | None:
+        """Resuelve el id (BIGSERIAL) a partir del UUID público (external_id
+        que FacturaGPT devuelve en los webhooks)."""
+        sql = """
+            SELECT id
+            FROM receipts
+            WHERE receipt_uuid = :uuid;
+        """
+        row = await self._db.execute_sql_query_fetch_first(sql, {"uuid": receipt_uuid})
+        return int(row["id"]) if row else None
+
     async def delete(self, receipt_id: int) -> None:
         """Deletes a receipt and relies on ON DELETE CASCADE for aggregate children."""
         async with self._db.transaction() as conn:
