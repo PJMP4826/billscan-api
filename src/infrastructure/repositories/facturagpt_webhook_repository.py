@@ -4,9 +4,12 @@ from typing import Any
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
+from src.domain.ports.repositories.facturagpt_webhook_repository_port import (
+    FacturaGPTWebhookRepositoryPort,
+)
 
 
-class FacturaGPTWebhookRepository:
+class FacturaGPTWebhookRepository(FacturaGPTWebhookRepositoryPort):
     """Repositorio para `facturagpt_webhooks` (idempotencia de webhooks,
     PK = idempotency_key).
 
@@ -18,6 +21,10 @@ class FacturaGPTWebhookRepository:
     Esto evita que el flujo normal (un webhook duplicado por reintento de
     red de FacturaGPT) dependa de capturar una excepción de violación de
     PK -- la duplicación es un caso esperado, no un error.
+
+    Semántica de `processed_at` (NULLABLE tras la migración ad576528aa27):
+    NULL = recibido pero no procesado correctamente (pendiente o falló);
+    el worker lo setea al terminar con éxito.
     """
 
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
@@ -62,7 +69,10 @@ class FacturaGPTWebhookRepository:
                 event_type,
                 session_id,
                 payload,
-                processed_at
+                received_at,
+                processed_at,
+                last_error,
+                receipt_id
             FROM facturagpt_webhooks
             WHERE idempotency_key = :idempotency_key;
         """
@@ -77,11 +87,48 @@ class FacturaGPTWebhookRepository:
                 event_type,
                 session_id,
                 payload,
-                processed_at
+                received_at,
+                processed_at,
+                last_error,
+                receipt_id
             FROM facturagpt_webhooks
             WHERE session_id = :session_id
             ORDER BY processed_at;
         """
         return await self._db_manager.execute_sql_query_fetch_all(
             sql, {"session_id": session_id}
+        )
+
+    async def mark_processed(self, idempotency_key: str) -> bool:
+        """Marca el evento como procesado SOLO si no lo estaba. Devuelve True
+        si esta llamada ganó el marcado (evita doble procesamiento)."""
+        sql = """
+            UPDATE facturagpt_webhooks
+            SET processed_at = CURRENT_TIMESTAMP,
+                last_error = NULL
+            WHERE idempotency_key = :idempotency_key
+              AND processed_at IS NULL
+            RETURNING idempotency_key;
+        """
+        result = await self._db_manager.execute_sql_query_fetch_one(
+            sql, {"idempotency_key": idempotency_key}
+        )
+        return result is not None
+
+    async def update_error(
+        self, idempotency_key: str, error_message: str | None
+    ) -> None:
+        """Registra el error del worker dejando `processed_at` en NULL para
+        permitir un reintento (duplicado de red o reconciliación)."""
+        sql = """
+            UPDATE facturagpt_webhooks
+            SET last_error = :error_message
+            WHERE idempotency_key = :idempotency_key;
+        """
+        await self._db_manager.execute_statement(
+            sql,
+            {
+                "idempotency_key": idempotency_key,
+                "error_message": error_message,
+            },
         )
