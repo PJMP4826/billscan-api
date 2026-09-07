@@ -134,8 +134,7 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
         data = parsed.data
         if data:
             result = InvoiceResult(
-                session_id=data.session_id,
-                status=BillingStatus(data.status.upper())
+                session_id=data.session_id, status=BillingStatus(data.status.upper())
             )
 
         return result
@@ -162,6 +161,39 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
                 pdf_url=data.pdf_url,
             )
         return result
+
+    async def download_invoice_file(self, url: str) -> tuple[bytes, str]:
+        """
+        Descarga los bytes crudos de un archivo de factura (XML/PDF) usando
+        la URL de descarga incluida en el webhook (download proxy de
+        FacturaGPT). Se autentica con la misma API key del partner y sigue
+        los redirects firmados del proxy.
+
+        Returns:
+            tuple[bytes, str]: (bytes del archivo, content-type).
+        """
+        if self._client is None:
+            raise RuntimeError(
+                "HTTPX client not initialized. Call .startup() on FacturaGPTBillingAdapter first."
+            )
+        response = await self._client.get(
+            url,
+            headers=self._auth_headers,
+            follow_redirects=True,
+        )
+        if response.status_code >= 400:
+            logger.error(
+                "FacturaGPT download failed url=%s status=%s body=%s",
+                url,
+                response.status_code,
+                response.text[:500],
+            )
+            raise BillingProviderError(
+                f"No se pudo descargar el archivo de factura (HTTP {response.status_code}): {url}",
+                error_code="INVOICE_FILE_DOWNLOAD_ERROR",
+            )
+        content_type = response.headers.get("Content-Type", "application/octet-stream")
+        return response.content, content_type
 
     async def startup(self) -> None:
         """
