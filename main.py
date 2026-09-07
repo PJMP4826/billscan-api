@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 import src.infrastructure.handlers.queue.receipt_job_handlers  # type: ignore
 import src.infrastructure.handlers.queue.billing_job_handlers  # type: ignore
+import src.infrastructure.handlers.queue.webhook_job_handlers  # type: ignore
 from src.bootstraps.app_lifecycle import lifespan
 
 warnings.filterwarnings("ignore", category=UserWarning)
