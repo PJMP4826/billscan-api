@@ -4,9 +4,12 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
+from src.domain.ports.repositories.billing_file_repository_port import (
+    BillingFileRepositoryPort,
+)
 
 
-class BillingFileRepository:
+class BillingFileRepository(BillingFileRepositoryPort):
     """Repositorio para `billing_files` (XML/PDF de factura, 1:M).
 
     Sin VO de dominio: estos registros son referencias a archivos
