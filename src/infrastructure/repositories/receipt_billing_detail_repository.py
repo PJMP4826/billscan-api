@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from typing import Any
 
@@ -119,19 +120,37 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         facturagpt_session_id: str | None = None,
         billing_error_code: str | None = None,
         billing_error_message: str | None = None,
+        cfdi_summary: dict[str, Any] | None = None,
+        completed_at: str | None = None,
     ) -> None:
         """Actualiza el estado de facturación, típicamente desde un
         webhook de FacturaGPT (PENDING, PROCESSING, COMPLETED, FAILED,
-        etc. según convención del proyecto)."""
+        etc. según convención del proyecto).
+
+        `cfdi_summary` (dict crudo del evento factura.completed) se persiste
+        en la columna JSONB `cfdi_summary`; `completed_at` en su columna
+        timestamptz. Ambos se ignoran si llegan como None (no pisan lo
+        existente) — esto hace al UPDATE idempotente ante reintentos.
+        """
+        cfdi_summary_json = (
+            json.dumps(cfdi_summary) if cfdi_summary is not None else None
+        )
+
         sql = """
             UPDATE receipt_billing_details
             SET billing_status = :billing_status,
                 facturagpt_session_id = COALESCE(:facturagpt_session_id, facturagpt_session_id),
                 billing_error_code = :billing_error_code,
                 billing_error_message = :billing_error_message,
+                cfdi_summary = COALESCE(CAST(:cfdi_summary AS JSONB), cfdi_summary),
+                completed_at = COALESCE(CAST(:completed_at AS timestamptz), completed_at),
                 updated_at = CURRENT_TIMESTAMP
             WHERE receipt_id = :receipt_id;
         """
+        completed_at_datetime = None
+        if completed_at:
+            completed_at_datetime = datetime.fromisoformat(completed_at)
+        
         await self._db_manager.execute_statement(
             sql,
             {
@@ -140,6 +159,8 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
                 "facturagpt_session_id": facturagpt_session_id,
                 "billing_error_code": billing_error_code,
                 "billing_error_message": billing_error_message,
+                "cfdi_summary": cfdi_summary_json,
+                "completed_at": completed_at_datetime,
             },
         )
 
