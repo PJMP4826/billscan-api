@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     facturagpt_test_mode: bool = Field(
         default=False, description="FacturaGPT Test Mode"
     )
+    # Webhook signing secret (whsec_...) del Partner Dashboard de FacturaGPT.
+    # Opcional en settings para no romper el arranque; se exige al construir
+    # el handler (cuando llega el primer webhook o se arma el worker).
+    facturagpt_webhook_secret: str = Field(
+        description="FacturaGPT Webhook signing secret (whsec_...)",
+    )
 
     # Security Configuration
     # Data Encryptors
