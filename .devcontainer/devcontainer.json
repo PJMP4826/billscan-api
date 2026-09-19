@@ -23,5 +23,5 @@
     }
   },
   "mounts": [],
-  "postCreateCommand": "sudo chown -R appuser:appuser /code/.git"
+  "postCreateCommand": "sudo chown -R appuser:appuser /code"
 }
