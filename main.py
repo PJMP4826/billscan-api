@@ -3,7 +3,6 @@ from src.api.routes import webhooks_api_routes
 from src.api.routes import http_api_routes
 from src.api.middlewares.cors import add_cors_middleware
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
 import src.infrastructure.handlers.queue.receipt_job_handlers  # type: ignore
