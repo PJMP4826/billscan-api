@@ -32,6 +32,24 @@ class Receipt:
             raise ValueError("receipt_uuid must not be empty.")
         if not self.items:
             raise ValueError("A receipt must have at least one item.")
+        if self.totals.total <= Decimal("0.00"):
+            raise ValueError(
+                f"Receipt total must be > 0, got {self.totals.total}. "
+                f"The AI likely failed to extract the total correctly. "
+                f"Even if some items are free (2x1, promociones, cupones), "
+                f"the receipt total should never be zero."
+            )
+        paid_items_sum = sum(
+            (i.total_price for i in self.items if i.total_price > Decimal("0.00")),
+            Decimal("0.00"),
+        )
+        if paid_items_sum <= Decimal("0.00"):
+            raise ValueError(
+                f"All items have total_price = 0 (sum={paid_items_sum}). "
+                f"At least one item must have a non-zero price. "
+                f"The AI likely failed to extract item prices correctly. "
+                f"Check unit_price and total_price for each item on the receipt."
+            )
 
     def add_item(self, item: LineItem) -> None:
         """Agrega un artículo al recibo."""

@@ -22,13 +22,13 @@ class TotalsAndTaxes:
             raise ValueError(
                 f"total_discount must be >= 0, got {self.total_discount}."
             )
-        if self.total < Decimal("0.00"):
+        if self.total <= Decimal("0.00"):
             raise ValueError(
-                f"total must be >= 0, got {self.total}."
+                f"total must be > 0 (a real receipt cannot have a zero total), got {self.total}."
             )
-        if self.amount_paid < Decimal("0.00"):
+        if self.amount_paid <= Decimal("0.00"):
             raise ValueError(
-                f"amount_paid must be >= 0, got {self.amount_paid}."
+                f"amount_paid must be > 0 (a real receipt cannot have zero amount paid), got {self.amount_paid}."
             )
         # Verify total is consistent: total >= sum(taxes) - discount
         taxes_sum = sum(t.amount for t in self.taxes)
