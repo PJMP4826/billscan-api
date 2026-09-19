@@ -1,7 +1,7 @@
 import warnings
-from src.api.routes import webhooks_api_routes
-from src.api.routes import http_api_routes
-from src.api.middlewares.cors import add_cors_middleware
+from api.routes import webhooks_api_routes
+from api.routes import http_api_routes
+from api.middlewares.cors import add_cors_middleware
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 

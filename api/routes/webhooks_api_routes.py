@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 
-from src.api.http.controllers.receive_facturagpt_webhook_controller import (
+from api.http.controllers.receive_facturagpt_webhook_controller import (
     ReceiveFacturaGPTWebhookController,
 )
 

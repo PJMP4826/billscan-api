@@ -1,7 +1,7 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from src.api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
+from api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
 from src.bootstraps.use_cases_bootstrap import get_receipt_detail_use_case
 
 

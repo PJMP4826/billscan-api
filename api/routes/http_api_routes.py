@@ -10,28 +10,28 @@ from fastapi import (
     Query,
 )
 
-from src.api.http.controllers.upload_receipt_controller import UploadReceiptController
-from src.api.http.controllers.create_fiscal_info_controller import (
+from api.http.controllers.upload_receipt_controller import UploadReceiptController
+from api.http.controllers.create_fiscal_info_controller import (
     CreateFiscalInfoController,
 )
-from src.api.http.controllers.get_deductible_expenses_summary_controller import (
+from api.http.controllers.get_deductible_expenses_summary_controller import (
     GetDeductibleExpensesSummaryController,
 )
-from src.api.http.controllers.get_issued_cfdi_summary_controller import (
+from api.http.controllers.get_issued_cfdi_summary_controller import (
     GetIssuedCFDISummaryController,
 )
-from src.api.http.controllers.get_recent_activity_controller import (
+from api.http.controllers.get_recent_activity_controller import (
     GetRecentActivityController,
 )
-from src.api.http.controllers.get_receipt_detail_controller import (
+from api.http.controllers.get_receipt_detail_controller import (
     GetReceiptDetailController,
 )
-from src.api.http.controllers.get_fiscal_info_controller import (
+from api.http.controllers.get_fiscal_info_controller import (
     GetUserFiscalInfoController,
 )
-from src.api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
-from src.api.http.requests.get_recent_activity_request import GetRecentActivityRequest
-from src.api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
+from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
+from api.http.requests.get_recent_activity_request import GetRecentActivityRequest
+from api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
 
 router = APIRouter(prefix="/api")
 

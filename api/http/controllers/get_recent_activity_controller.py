@@ -2,7 +2,7 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 
 from src.bootstraps.use_cases_bootstrap import get_recent_activity_use_case
-from src.api.http.requests.get_recent_activity_request import (
+from api.http.requests.get_recent_activity_request import (
     GetRecentActivityRequest,
 )
 

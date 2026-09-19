@@ -1,7 +1,7 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from src.api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
+from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 from src.bootstraps.use_cases_bootstrap import get_create_fiscal_info_use_case
 from src.shared.errors.base_exception import BadRequestError
 
