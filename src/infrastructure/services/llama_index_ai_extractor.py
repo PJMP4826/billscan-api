@@ -81,7 +81,7 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
             except ValueError as exc:
                 last_error = str(exc)
                 logger.warning(
-                    "Intento %d/%d falló para %s: %s", attempt, MAX_RETRIES, last_error
+                    "Intento %d/%d falló: %s", attempt, MAX_RETRIES, last_error
                 )
 
         raise ValueError(
