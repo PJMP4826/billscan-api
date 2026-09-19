@@ -73,8 +73,9 @@ class LlamaIndexAiExtractor(ReceiptExtractorPort):
                 )
                 if attempt > 1:
                     logger.info(
-                        "Extracción exitosa en intento %d para %s",
+                        "Extracción exitosa en intento %d para receipt %s",
                         attempt,
+                        receipt.receipt_uuid,
                     )
                 return receipt
 
