@@ -22,8 +22,6 @@ app = FastAPI(
 )
 
 # Nota: agregar Depends de JWT despues
-app.mount("/static", StaticFiles(directory="uploads"), name="static")
-
 
 add_cors_middleware(app)
 
