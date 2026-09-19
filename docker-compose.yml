@@ -7,13 +7,13 @@ services:
     env_file:
       - .env
     ports:
-      - 8000:8000
-      - 5678:5678
+      - "${PORT_SERVER:-8000}:${PORT_SERVER:-8000}"
+      - "5678:5678"
     volumes:
       - .:/code
     environment:
       - DB_HOST=postgres
-      - DB_PORT=5432
+      - DB_PORT=${DB_PORT:-5432}
     restart: unless-stopped
 
   postgres:
@@ -25,7 +25,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5435:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
