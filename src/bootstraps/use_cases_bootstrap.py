@@ -133,6 +133,17 @@ def get_completed_billing_summary_use_case():
     )
 
 
+def get_receipt_list_use_case():
+    from src.application.use_cases.get_receipt_list_use_case import (
+        GetReceiptListUseCase,
+    )
+    from .repositories.repositories_bootstrap import get_reporting_repository
+
+    return GetReceiptListUseCase(
+        reporting_repository=get_reporting_repository()
+    )
+
+
 def get_recent_activity_use_case():
     from src.application.use_cases.get_recent_activity_use_case import (
         GetRecentActivityUseCase,

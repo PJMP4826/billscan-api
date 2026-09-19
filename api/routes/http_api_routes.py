@@ -17,6 +17,9 @@ from api.http.controllers.create_fiscal_info_controller import (
 from api.http.controllers.get_completed_billing_summary_controller import (
     GetCompletedBillingSummaryController,
 )
+from api.http.controllers.get_receipt_list_controller import (
+    GetReceiptListController,
+)
 from api.http.controllers.get_recent_activity_controller import (
     GetRecentActivityController,
 )
@@ -33,6 +36,7 @@ from api.http.requests.get_receipt_detail_request import GetReceiptDetailRequest
 router = APIRouter(prefix="/api")
 
 receipt_controller = UploadReceiptController()
+receipt_list_controller = GetReceiptListController()
 fiscal_info_controller = CreateFiscalInfoController()
 completed_billing_controller = GetCompletedBillingSummaryController()
 recent_activity_controller = GetRecentActivityController()
@@ -53,6 +57,15 @@ async def upload_files(
     return await receipt_controller.handle(
         files, groups, background_tasks, auto_billing
     )
+
+
+@router.get("/receipts")
+async def get_receipt_list(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=50),
+):
+    """Returns a paginated list of receipts with merchant, total, and billing status."""
+    return await receipt_list_controller.handle(page, page_size)
 
 
 @router.get("/receipts/{receipt_uuid}")

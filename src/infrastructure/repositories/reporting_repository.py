@@ -1,12 +1,15 @@
 from decimal import Decimal
 from typing import Any
 
+from src.domain.enums.billing_status import BillingStatus
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
+from src.application.dtos.receipt_list_item_dto import ReceiptListItem
+from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
@@ -65,6 +68,65 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total_billed=Decimal(str(row["total_facturado"])),
             invoices_generated=int(row["facturas_generadas"]),
             period=period,
+        )
+
+    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
+        offset = (page - 1) * page_size
+
+        count_sql = """
+            SELECT COUNT(*) AS total
+            FROM receipts r;
+        """
+        count_row = await self._db_manager.execute_sql_query_fetch_first(count_sql, {})
+        total = int(count_row["total"]) if count_row else 0
+
+        sql = """
+            SELECT
+                r.receipt_uuid,
+                m.name AS merchant_name,
+                TO_CHAR(r.created_at, 'YYYY-MM-DD HH24:MI:SS') AS registered_at,
+                r.total,
+                CASE
+                    WHEN rbd.receipt_id IS NULL
+                      OR rbd.billing_status IS NULL
+                      OR rbd.billing_status = 'NOT_REQUESTED'
+                    THEN (
+                        SELECT rjd.status
+                        FROM receipt_jobs_details rjd
+                        WHERE rjd.receipt_id = r.id
+                        ORDER BY rjd.created_at DESC
+                        LIMIT 1
+                    )
+                    ELSE rbd.billing_status
+                END AS status
+            FROM receipts r
+            LEFT JOIN merchants m
+                   ON r.merchant_id = m.id
+            LEFT JOIN receipt_billing_details rbd
+                   ON rbd.receipt_id = r.id
+            ORDER BY r.created_at DESC
+            LIMIT :limit OFFSET :offset;
+        """
+        rows = await self._db_manager.execute_sql_query_fetch_all(
+            sql, {"limit": page_size, "offset": offset}
+        )
+
+        items = [
+            ReceiptListItem(
+                receipt_uuid=row["receipt_uuid"],
+                merchant_name=row["merchant_name"],
+                registered_at=row["registered_at"],
+                total=Decimal(str(row["total"])),
+                status=BillingStatus(row["status"] or "UNKNOWN"),
+            )
+            for row in rows
+        ]
+
+        return ReceiptListResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
         )
 
     async def get_recent_activity(

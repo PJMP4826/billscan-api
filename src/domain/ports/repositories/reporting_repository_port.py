@@ -4,6 +4,7 @@ from typing import Any
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
+from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
 
 class ReportingRepositoryPort(ABC):
 
@@ -36,6 +37,14 @@ class ReportingRepositoryPort(ABC):
         """
         Returns the base fiscal detail of a single receipt,
         including merchant info, fiscal info, and payment method.
+        """
+        pass
+
+    @abstractmethod
+    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
+        """
+        Returns a paginated list of receipts with merchant name,
+        registration date, total, and billing status.
         """
         pass
 
