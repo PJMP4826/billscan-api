@@ -4,8 +4,8 @@ from typing import Any
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
-from src.application.dtos.deductible_expense_summary_dto import (
-    DeductibleExpenseSummary,
+from src.application.dtos.completed_billing_summary_dto import (
+    CompletedBillingSummary,
 )
 from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
 from src.domain.ports.repositories.reporting_repository_port import (
@@ -20,44 +20,52 @@ class PostgresReportingRepository(ReportingRepositoryPort):
     These are cross-domain projections — they do not belong to any
     single aggregate. Raw SQL is intentional here.
     """
+
     _FULL_DETAIL_JSON_FIELDS = {"items", "taxes", "payments", "extra_metadata"}
 
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
         self._db_manager = manager
 
-    async def get_deductible_expenses_summary(self) -> DeductibleExpenseSummary:
-        sql = """
+    _PERIOD_FILTERS: dict[str, str] = {
+        "month": "DATE_TRUNC('month', r.created_at) = DATE_TRUNC('month', CURRENT_DATE)",
+        "year": "DATE_TRUNC('year', r.created_at) = DATE_TRUNC('year', CURRENT_DATE)",
+        "3years": "r.created_at >= CURRENT_DATE - INTERVAL '3 years'",
+        "5years": "r.created_at >= CURRENT_DATE - INTERVAL '5 years'",
+    }
+
+    async def get_completed_billing_summary(
+        self, period: str = "month"
+    ) -> CompletedBillingSummary:
+        period_filter = self._PERIOD_FILTERS.get(period)
+        if period_filter is None:
+            raise ValueError(
+                f"Periodo inválido: '{period}'. "
+                f"Opciones válidas: {', '.join(self._PERIOD_FILTERS)}"
+            )
+
+        sql = f"""
             SELECT
-                COALESCE(SUM(r.total), 0)  AS total_posibles_gastos_deducibles,
-                COUNT(r.id)                AS receipts_por_procesar
+                COALESCE(SUM(r.total), 0)  AS total_facturado,
+                COUNT(DISTINCT r.id)       AS facturas_generadas
             FROM receipts r
-            WHERE
-                EXISTS (
-                    SELECT 1
-                    FROM receipt_billing_details re_bi_d
-                    WHERE
-                        re_bi_d.receipt_id = r.id
-                        AND re_bi_d.is_billable  = TRUE
-                        AND re_bi_d.billing_status = 'PENDING'
-                )
-                AND EXISTS (
-                    SELECT 1
-                    FROM receipt_jobs_details re_job_d
-                    WHERE
-                        re_job_d.receipt_id = r.id
-                        AND re_job_d.status = 'COMPLETED'
-                );
+            INNER JOIN receipt_billing_details re_bi_d
+                ON re_bi_d.receipt_id = r.id
+            INNER JOIN receipt_jobs_details re_job_d
+                ON re_job_d.receipt_id = r.id
+            WHERE re_bi_d.is_billable = TRUE
+              AND re_bi_d.billing_status = 'COMPLETED'
+              AND re_job_d.status = 'COMPLETED'
+              AND {period_filter};
         """
         row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
 
         if not row:
-            raise ValueError("Error obteniendo reporte tickets deducibles")
+            raise ValueError("Error obteniendo resumen de facturación")
 
-        return DeductibleExpenseSummary(
-            total_posibles_gastos_deducibles=Decimal(
-                str(row["total_posibles_gastos_deducibles"])
-            ),
-            receipts_por_procesar=int(row["receipts_por_procesar"]),
+        return CompletedBillingSummary(
+            total_billed=Decimal(str(row["total_facturado"])),
+            invoices_generated=int(row["facturas_generadas"]),
+            period=period,
         )
 
     async def get_issued_cfdi_summary(self) -> IssuedCFDISummary:
@@ -160,7 +168,6 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             params["status_filter"] = status_filter
 
         return await self._db_manager.execute_sql_query_fetch_all(sql, params)
-        
 
     async def get_receipt_base_detail(self, receipt_uuid: str) -> dict[str, str | None]:
         sql = """

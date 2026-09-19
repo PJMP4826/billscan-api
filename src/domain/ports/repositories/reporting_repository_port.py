@@ -1,18 +1,21 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.application.dtos.deductible_expense_summary_dto import (
-    DeductibleExpenseSummary,
+from src.application.dtos.completed_billing_summary_dto import (
+    CompletedBillingSummary,
 )
 from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
 
 class ReportingRepositoryPort(ABC):
 
     @abstractmethod
-    async def get_deductible_expenses_summary(self) -> DeductibleExpenseSummary:
+    async def get_completed_billing_summary(
+        self, period: str = "month"
+    ) -> CompletedBillingSummary:
         """
-        Returns the total amount and count of receipts that are
-        billable, pending, and already processed (COMPLETED).
+        Returns the total amount and count of receipts that have
+        a COMPLETED billing status within the given period.
+        Valid periods: month, year, 3years, 5years.
         """
         pass
 

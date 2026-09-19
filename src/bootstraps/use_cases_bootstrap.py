@@ -34,8 +34,8 @@ from src.application.use_cases.create_fiscal_info_use_case import (
 from src.application.use_cases.initiate_billing_use_case import (
     InitiateBillingUseCase,
 )
-from src.application.use_cases.get_deductible_expenses_summary_use_case import (
-    GetDeductibleExpensesSummaryUseCase,
+from src.application.use_cases.get_completed_billing_summary_use_case import (
+    GetCompletedBillingSummaryUseCase,
 )
 from src.application.use_cases.get_issued_cfdi_summary_use_case import (
     GetIssuedCFDISummaryUseCase,
@@ -121,8 +121,8 @@ def get_initiate_billing_use_case() -> InitiateBillingUseCase:
     )
 
 
-def get_deductible_expenses_summary_use_case() -> GetDeductibleExpensesSummaryUseCase:
-    return GetDeductibleExpensesSummaryUseCase(
+def get_completed_billing_summary_use_case() -> GetCompletedBillingSummaryUseCase:
+    return GetCompletedBillingSummaryUseCase(
         reporting_repository=get_reporting_repository()
     )
 

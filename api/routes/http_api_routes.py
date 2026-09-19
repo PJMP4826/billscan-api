@@ -14,8 +14,8 @@ from api.http.controllers.upload_receipt_controller import UploadReceiptControll
 from api.http.controllers.create_fiscal_info_controller import (
     CreateFiscalInfoController,
 )
-from api.http.controllers.get_deductible_expenses_summary_controller import (
-    GetDeductibleExpensesSummaryController,
+from api.http.controllers.get_completed_billing_summary_controller import (
+    GetCompletedBillingSummaryController,
 )
 from api.http.controllers.get_issued_cfdi_summary_controller import (
     GetIssuedCFDISummaryController,
@@ -37,7 +37,7 @@ router = APIRouter(prefix="/api")
 
 receipt_controller = UploadReceiptController()
 fiscal_info_controller = CreateFiscalInfoController()
-deductible_expenses_controller = GetDeductibleExpensesSummaryController()
+completed_billing_controller = GetCompletedBillingSummaryController()
 issued_cfdi_controller = GetIssuedCFDISummaryController()
 recent_activity_controller = GetRecentActivityController()
 receipt_detail_controller = GetReceiptDetailController()
@@ -82,10 +82,12 @@ async def get_fiscal_info():
     return await get_fiscal_info_controller.handle()
 
 
-@router.get("/reporting/deductible-expenses")
-async def get_deductible_expenses_summary():
-    """Returns total amount and count of billable pending receipts."""
-    return await deductible_expenses_controller.handle()
+@router.get("/reporting/completed-billing")
+async def get_completed_billing_summary(
+    period: str = Query(default="month", description="month, year, 3years, 5years"),
+):
+    """Returns total amount and count of completed billings for the given period."""
+    return await completed_billing_controller.handle(period)
 
 
 @router.get("/reporting/issued-cfdis")

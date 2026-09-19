@@ -1,16 +1,16 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from src.bootstraps.use_cases_bootstrap import get_deductible_expenses_summary_use_case
+from src.bootstraps.use_cases_bootstrap import get_completed_billing_summary_use_case
 
 
-class GetDeductibleExpensesSummaryController:
+class GetCompletedBillingSummaryController:
     def __init__(self) -> None:
-        self._use_case = get_deductible_expenses_summary_use_case()
+        self._use_case = get_completed_billing_summary_use_case()
 
-    async def handle(self) -> JSONResponse:
+    async def handle(self, period: str = "month") -> JSONResponse:
         try:
-            result = await self._use_case.execute()
+            result = await self._use_case.execute(period)
 
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
