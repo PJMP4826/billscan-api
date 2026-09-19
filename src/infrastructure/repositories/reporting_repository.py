@@ -79,7 +79,8 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 COUNT(*) FILTER (
                     WHERE rbd.receipt_id IS NULL
                        OR rbd.is_billable = FALSE
-                ) AS non_billable
+                ) AS non_billable,
+                COALESCE(SUM(r.total), 0) AS total_spent
             FROM receipts r
             LEFT JOIN receipt_billing_details rbd
                    ON rbd.receipt_id = r.id;
@@ -93,6 +94,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total=int(row["total"]),
             billable=int(row["billable"]),
             non_billable=int(row["non_billable"]),
+            total_spent=Decimal(str(row["total_spent"])),
         )
 
     async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
