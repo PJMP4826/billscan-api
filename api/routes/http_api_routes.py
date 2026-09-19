@@ -47,6 +47,17 @@ async def get_receipt_list(
     return await receipt_list_controller.handle(page, page_size)
 
 
+@router.get("/receipts/count")
+async def get_receipt_count_summary():
+    """Returns total, billable, and non-billable receipt counts."""
+    from api.http.controllers.get_receipt_count_summary_controller import (
+        GetReceiptCountSummaryController,
+    )
+
+    receipt_count_controller = GetReceiptCountSummaryController()
+    return await receipt_count_controller.handle()
+
+
 @router.get("/receipts/{receipt_uuid}")
 async def get_receipt_detail(
     receipt_uuid: str,

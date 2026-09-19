@@ -4,6 +4,7 @@ from typing import Any
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
+from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
 from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
 
 class ReportingRepositoryPort(ABC):
@@ -37,6 +38,13 @@ class ReportingRepositoryPort(ABC):
         """
         Returns the base fiscal detail of a single receipt,
         including merchant info, fiscal info, and payment method.
+        """
+        pass
+
+    @abstractmethod
+    async def get_receipt_count_summary(self) -> ReceiptCountSummary:
+        """
+        Returns the total count of receipts, split by billable and non-billable.
         """
         pass
 

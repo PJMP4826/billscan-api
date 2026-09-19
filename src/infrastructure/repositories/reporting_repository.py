@@ -8,6 +8,7 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
+from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
 from src.application.dtos.receipt_list_item_dto import ReceiptListItem
 from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
 from src.domain.ports.repositories.reporting_repository_port import (
@@ -68,6 +69,30 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total_billed=Decimal(str(row["total_facturado"])),
             invoices_generated=int(row["facturas_generadas"]),
             period=period,
+        )
+
+    async def get_receipt_count_summary(self) -> ReceiptCountSummary:
+        sql = """
+            SELECT
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE rbd.is_billable = TRUE) AS billable,
+                COUNT(*) FILTER (
+                    WHERE rbd.receipt_id IS NULL
+                       OR rbd.is_billable = FALSE
+                ) AS non_billable
+            FROM receipts r
+            LEFT JOIN receipt_billing_details rbd
+                   ON rbd.receipt_id = r.id;
+        """
+        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
+
+        if not row:
+            raise ValueError("Error obteniendo resumen de receipts")
+
+        return ReceiptCountSummary(
+            total=int(row["total"]),
+            billable=int(row["billable"]),
+            non_billable=int(row["non_billable"]),
         )
 
     async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
