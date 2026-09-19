@@ -37,9 +37,6 @@ from src.application.use_cases.initiate_billing_use_case import (
 from src.application.use_cases.get_completed_billing_summary_use_case import (
     GetCompletedBillingSummaryUseCase,
 )
-from src.application.use_cases.get_issued_cfdi_summary_use_case import (
-    GetIssuedCFDISummaryUseCase,
-)
 from src.application.use_cases.get_recent_activity_use_case import (
     GetRecentActivityUseCase,
 )
@@ -125,10 +122,6 @@ def get_completed_billing_summary_use_case() -> GetCompletedBillingSummaryUseCas
     return GetCompletedBillingSummaryUseCase(
         reporting_repository=get_reporting_repository()
     )
-
-
-def get_issued_cfdi_summary_use_case() -> GetIssuedCFDISummaryUseCase:
-    return GetIssuedCFDISummaryUseCase(reporting_repository=get_reporting_repository())
 
 
 def get_recent_activity_use_case() -> GetRecentActivityUseCase:

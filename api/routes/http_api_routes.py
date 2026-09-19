@@ -17,9 +17,6 @@ from api.http.controllers.create_fiscal_info_controller import (
 from api.http.controllers.get_completed_billing_summary_controller import (
     GetCompletedBillingSummaryController,
 )
-from api.http.controllers.get_issued_cfdi_summary_controller import (
-    GetIssuedCFDISummaryController,
-)
 from api.http.controllers.get_recent_activity_controller import (
     GetRecentActivityController,
 )
@@ -38,7 +35,6 @@ router = APIRouter(prefix="/api")
 receipt_controller = UploadReceiptController()
 fiscal_info_controller = CreateFiscalInfoController()
 completed_billing_controller = GetCompletedBillingSummaryController()
-issued_cfdi_controller = GetIssuedCFDISummaryController()
 recent_activity_controller = GetRecentActivityController()
 receipt_detail_controller = GetReceiptDetailController()
 get_fiscal_info_controller = GetUserFiscalInfoController()
@@ -88,12 +84,6 @@ async def get_completed_billing_summary(
 ):
     """Returns total amount and count of completed billings for the given period."""
     return await completed_billing_controller.handle(period)
-
-
-@router.get("/reporting/issued-cfdis")
-async def get_issued_cfdi_summary():
-    """Returns total amount and count of issued CFDIs."""
-    return await issued_cfdi_controller.handle()
 
 
 @router.get("/reporting/recent-activity")

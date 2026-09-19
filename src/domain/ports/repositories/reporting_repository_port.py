@@ -4,7 +4,6 @@ from typing import Any
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
-from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
 
 class ReportingRepositoryPort(ABC):
 
@@ -16,14 +15,6 @@ class ReportingRepositoryPort(ABC):
         Returns the total amount and count of receipts that have
         a COMPLETED billing status within the given period.
         Valid periods: month, year, 3years, 5years.
-        """
-        pass
-
-    @abstractmethod
-    async def get_issued_cfdi_summary(self) -> IssuedCFDISummary:
-        """
-        Returns the total amount and count of receipts that have
-        an associated billing file and a COMPLETED billing status.
         """
         pass
 

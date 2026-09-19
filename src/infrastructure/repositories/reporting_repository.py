@@ -7,7 +7,6 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
-from src.application.dtos.issued_cfdi_summary_dto import IssuedCFDISummary
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
@@ -66,43 +65,6 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total_billed=Decimal(str(row["total_facturado"])),
             invoices_generated=int(row["facturas_generadas"]),
             period=period,
-        )
-
-    async def get_issued_cfdi_summary(self) -> IssuedCFDISummary:
-        sql = """
-            SELECT
-                COALESCE(SUM(r.total), 0) AS total_facturado,
-                COUNT(r.id)               AS facturas_generadas
-            FROM receipts r
-            WHERE
-                EXISTS (
-                    SELECT 1
-                    FROM billing_files bf
-                    WHERE bf.receipt_id = r.id
-                )
-                AND EXISTS (
-                    SELECT 1
-                    FROM receipt_jobs_details re_job_d
-                    WHERE
-                        re_job_d.receipt_id = r.id
-                        AND re_job_d.status = 'COMPLETED'
-                )
-                AND EXISTS (
-                    SELECT 1
-                    FROM receipt_billing_details re_bi_d
-                    WHERE
-                        re_bi_d.receipt_id = r.id
-                        AND re_bi_d.billing_status = 'COMPLETED'
-                );
-        """
-        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
-
-        if not row:
-            raise ValueError("Error obteniendo reporte de facturas")
-
-        return IssuedCFDISummary(
-            total_facturado=Decimal(str(row["total_facturado"])),
-            facturas_generadas=int(row["facturas_generadas"]),
         )
 
     async def get_recent_activity(
