@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
     ca-certificates \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # instalar dependencias de Python
@@ -27,7 +28,13 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 EXPOSE 8000
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /code
+
+# Crear usuario no-root con permisos de sudo
+RUN adduser --disabled-password --gecos '' appuser \
+    && usermod -aG sudo appuser \
+    && echo 'appuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && chown -R appuser:appuser /code
+
 USER appuser
 
 CMD ["python", "run.py"]

@@ -3,7 +3,7 @@
   "dockerComposeFile": ["../docker-compose.yml"],
   "service": "app",
   "workspaceFolder": "/code",
-  "remoteUser": "root",
+  "remoteUser": "appuser",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -22,5 +22,6 @@
       }
     }
   },
-  "mounts": []
+  "mounts": [],
+  "postCreateCommand": "sudo chown -R appuser:appuser /code/.git"
 }
