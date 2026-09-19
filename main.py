@@ -13,9 +13,9 @@ from src.bootstraps.app_lifecycle import lifespan
 warnings.filterwarnings("ignore", category=UserWarning)
 
 app = FastAPI(
-    title="BillsScan API",
+    title="BillScan API",
     docs_url="/docs",
-    description="API de la app BillsScan para la facturacion de tickets de compra",
+    description="API de la app BillScan para la facturacion de tickets de compra",
     version="1.0.0",
     lifespan=lifespan,
 )
