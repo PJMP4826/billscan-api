@@ -1,62 +1,71 @@
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     database_connection_manager,
 )
-from src.infrastructure.repositories.receipt_job_details_repository import (
-    ReceiptJobDetailsRepository,
-)
-from src.infrastructure.repositories.receipt_image_repository import (
-    ReceiptImageRepository,
-)
-from src.infrastructure.repositories.merchant_repository import MerchantRepository
-from src.infrastructure.repositories.receipt_repository import ReceiptRepository
-from src.infrastructure.repositories.receipt_billing_detail_repository import (
-    ReceiptBillingDetailRepository,
-)
-from src.infrastructure.repositories.fiscal_info_repository import (
-    FiscalInfoRepository,
-)
-from src.infrastructure.repositories.reporting_repository import (
-    PostgresReportingRepository,
-)
-from src.infrastructure.repositories.facturagpt_webhook_repository import (
-    FacturaGPTWebhookRepository,
-)
-from src.infrastructure.repositories.billing_file_repository import (
-    BillingFileRepository,
-)
 
 
-def get_receipt_job_details_repository() -> ReceiptJobDetailsRepository:
+def get_receipt_job_details_repository():
+    from src.infrastructure.repositories.receipt_job_details_repository import (
+        ReceiptJobDetailsRepository,
+    )
+
     return ReceiptJobDetailsRepository(manager=database_connection_manager)
 
 
-def get_receipt_image_repository() -> ReceiptImageRepository:
+def get_receipt_image_repository():
+    from src.infrastructure.repositories.receipt_image_repository import (
+        ReceiptImageRepository,
+    )
+
     return ReceiptImageRepository(manager=database_connection_manager)
 
 
-def get_merchant_repository() -> MerchantRepository:
+def get_merchant_repository():
+    from src.infrastructure.repositories.merchant_repository import MerchantRepository
+
     return MerchantRepository(manager=database_connection_manager)
 
 
-def get_receipt_repository() -> ReceiptRepository:
+def get_receipt_repository():
+    from src.infrastructure.repositories.receipt_repository import ReceiptRepository
+
     return ReceiptRepository(manager=database_connection_manager)
 
 
-def get_receipt_billing_detail_repository() -> ReceiptBillingDetailRepository:
+def get_receipt_billing_detail_repository():
+    from src.infrastructure.repositories.receipt_billing_detail_repository import (
+        ReceiptBillingDetailRepository,
+    )
+
     return ReceiptBillingDetailRepository(manager=database_connection_manager)
 
 
-def get_fiscal_info_repository() -> FiscalInfoRepository:
+def get_fiscal_info_repository():
+    from src.infrastructure.repositories.fiscal_info_repository import (
+        FiscalInfoRepository,
+    )
+
     return FiscalInfoRepository(manager=database_connection_manager)
 
 
-def get_reporting_repository() -> PostgresReportingRepository:
+def get_reporting_repository():
+    from src.infrastructure.repositories.reporting_repository import (
+        PostgresReportingRepository,
+    )
+
     return PostgresReportingRepository(manager=database_connection_manager)
 
 
-def get_facturagpt_webhook_repository() -> FacturaGPTWebhookRepository:
+def get_facturagpt_webhook_repository():
+    from src.infrastructure.repositories.facturagpt_webhook_repository import (
+        FacturaGPTWebhookRepository,
+    )
+
     return FacturaGPTWebhookRepository(manager=database_connection_manager)
 
 
-def get_billing_file_repository() -> BillingFileRepository:
+def get_billing_file_repository():
+    from src.infrastructure.repositories.billing_file_repository import (
+        BillingFileRepository,
+    )
+
     return BillingFileRepository(manager=database_connection_manager)
