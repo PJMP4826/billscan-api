@@ -1,7 +1,7 @@
 import json
-# import base64
-# import hashlib
-# import hmac
+import base64
+import hashlib
+import hmac
 
 from src.config.logger import logger
 
@@ -27,32 +27,28 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
     """
 
     def __init__(self, webhook_secret: str) -> None:
-        # # Strip the "whsec_" prefix and decode from base64
-        # raw = webhook_secret.replace("whsec_", "")
-        # # Pad base64 if needed
-        # self._raw_key = base64.b64decode(raw + "==")
-        pass
+        raw: str = webhook_secret.replace("whsec_", "")
+        self._raw_key: bytes = base64.urlsafe_b64decode(raw + "==")
 
     def verify_signature(self, headers: dict[str, str], raw_body: bytes) -> bool:
-        # """
-        # Recomputes the expected HMAC-SHA256 signature and compares it
-        # against the x-facturagpt-signature header using a constant-time
-        # comparison to prevent timing attacks.
+        """
+        Recomputes the expected HMAC-SHA256 signature and compares it
+        against the x-facturagpt-signature header using a constant-time
+        comparison to prevent timing attacks.
 
-        # Returns False instead of raising — signature failure is a business
-        # decision for the caller (log, discard, alert), not an exception.
-        # """
-        # timestamp = headers.get("x-facturagpt-timestamp", "")
-        # signature = headers.get("x-facturagpt-signature", "")
+        Returns False instead of raising — signature failure is a business
+        decision for the caller (log, discard, alert), not an exception.
+        """
+        timestamp: str = headers.get("x-facturagpt-timestamp", "")
+        signature: str = headers.get("x-facturagpt-signature", "")
 
-        # if not timestamp or not signature:
-        #     return False
+        if not timestamp or not signature:
+            return False
 
-        # msg = f"{timestamp}.".encode() + raw_body
-        # expected = "v1=" + hmac.new(self._raw_key, msg, hashlib.sha256).hexdigest()
+        msg: bytes = f"{timestamp}.".encode() + raw_body
+        expected: str = "v1=" + hmac.new(self._raw_key, msg, hashlib.sha256).hexdigest()
 
-        # return hmac.compare_digest(expected, signature)
-        return True
+        return hmac.compare_digest(expected, signature)
 
     def parse_event(
         self, raw_body: dict[str, str | bool | dict[str, str]]
@@ -70,19 +66,19 @@ class FacturaGPTWebhookHandler(BillingWebhookHandlerPort):
                 f"Could not parse FacturaGPT webhook payload: {exc}"
             ) from exc
 
-        return self._map_event_to_result(event)
+        return self.map_event_to_result(event)
 
-    def _map_event_to_result(self, event: FacturaGPTWebhookEvent) -> InvoiceResult:
+    def map_event_to_result(self, event: FacturaGPTWebhookEvent) -> InvoiceResult:
         try:
-            status = BillingStatus(event.status.upper())
+            status: BillingStatus = BillingStatus(event.status.upper())
         except Exception as e:
             raise ValueError(e)
 
-        files = None
-        cfdi = None
-        delivery_method = None
-        error_code = None
-        error_msg = None
+        files: InvoiceFiles | None = None
+        cfdi: CfdiSummary | None = None
+        delivery_method: DeliveryMethod | None = None
+        error_code: str | None = None
+        error_msg: str | None = None
 
         web_hook_result_event: BillingWebHookEventType | None = event.event
 
