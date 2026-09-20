@@ -4,13 +4,16 @@ from fastapi.responses import JSONResponse
 from api.http.controllers.receive_facturagpt_webhook_controller import (
     ReceiveFacturaGPTWebhookController,
 )
+from api.http.requests.webhook_event_request import WebHookEventRequest
 
 router = APIRouter()
 
 
 @router.post("/webhooks/facturagpt")
 async def webhooks_facturagpt(
-    request: Request, background_tasks: BackgroundTasks
+    request: Request,
+    body: WebHookEventRequest,
+    background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     """
     Endpoint de recepción de webhooks de FacturaGPT.
@@ -22,4 +25,4 @@ async def webhooks_facturagpt(
       absorben con la idempotency_key).
     """
     controller = ReceiveFacturaGPTWebhookController()
-    return await controller.handle(request=request, background_tasks=background_tasks)
+    return await controller.handle(request=request, body=body, background_tasks=background_tasks)

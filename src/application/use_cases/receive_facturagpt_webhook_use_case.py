@@ -8,7 +8,7 @@ las excepciones a la respuesta HTTP.
 1. Verificar la firma HMAC (v1=...) sobre `${timestamp}.${raw_body}`.
    Firma inválida -> lanza `BillingWebhookSignatureError` (401); NO se
    almacena ni se encola nada.
-2. Decodificar el JSON crudo y parsearlo a dominio (`InvoiceResult`).
+2. Parsear el payload a dominio (`InvoiceResult`).
    Payload no parseable -> lanza `BillingWebhookParseError` (400).
 3. Store-before-process: INSERT ... ON CONFLICT DO NOTHING del payload crudo
    (la BD es la fuente de verdad para el worker posterior).
@@ -24,7 +24,7 @@ las excepciones a la respuesta HTTP.
    body ni idempotency_key en la respuesta.
 """
 
-import json
+from typing import Any
 
 from src.config.logger import logger
 from src.application.commands.facturagpt_webhook_delivery import (
@@ -39,7 +39,7 @@ from src.domain.ports.repositories.facturagpt_webhook_repository_port import (
 )
 from src.shared.errors.billing_exceptions import (
     BillingWebhookParseError,
-    # BillingWebhookSignatureError,
+    BillingWebhookSignatureError,
 )
 
 
@@ -62,29 +62,25 @@ class ReceiveFacturaGPTWebhookUseCase:
         self._webhook_repository = webhook_repository
         self._queue_publisher = queue_publisher
 
-    async def execute(self, delivery: FacturaGPTWebhookDelivery) -> None:
+    async def execute(self, delivery: FacturaGPTWebhookDelivery, body: dict[str, Any]) -> None:
         # Verificación de firma sobre el body crudo
-        # if not self._webhook_handler.verify_signature(
-        #     headers=delivery.headers, raw_body=delivery.raw_body
-        # ):
-        #     logger.warning("Webhook FacturaGPT con firma inválida. Se descarta sin procesar.")
-        #     raise BillingWebhookSignatureError("La firma del webhook no es válida.")
+        if not self._webhook_handler.verify_signature(
+            headers=delivery.headers, raw_body=delivery.raw_body
+        ):
+            logger.warning("Webhook FacturaGPT con firma inválida. Se descarta sin procesar.")
+            raise BillingWebhookSignatureError("La firma del webhook no es válida.")
 
-        # Decodificar + parsear a dominio (extraer idempotencia)
+        # El body ya viene validado desde el endpoint (WebHookEventRequest).
+        # Se pasa como dict para re-parsear en el handler (Pydantic model_validate
+        # sobre un dict es trivial en memoria).
+        
         try:
-            payload = json.loads(delivery.raw_body.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            logger.error("Webhook FacturaGPT con body no JSON válido: %s", exc)
-            raise BillingWebhookParseError(
-                "El body del webhook no es JSON válido."
-            ) from exc
-
-        try:
-            invoice_result = self._webhook_handler.parse_event(payload)
-        except BillingWebhookParseError as exc:
-            # No re-envolver: parse_event ya lanza BillingWebhookParseError.
+            invoice_result = self._webhook_handler.parse_event(body)
+        except Exception as exc:
             logger.error("Webhook FacturaGPT no parseable: %s", exc)
-            raise
+            raise BillingWebhookParseError(
+                f"Could not parse FacturaGPT webhook payload: {exc}"
+            ) from exc
 
         event = invoice_result.event
         event_type = event.value if event else "unknown"
@@ -108,7 +104,7 @@ class ReceiveFacturaGPTWebhookUseCase:
             idempotency_key=idempotency_key,
             event_type=event_type,
             session_id=session_id,
-            payload=payload,
+            payload=body,
         )
 
         if not is_new:

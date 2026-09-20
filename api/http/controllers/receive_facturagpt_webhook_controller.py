@@ -19,6 +19,7 @@ reintenta (semántica at-least-once).
 from fastapi import BackgroundTasks, Request, status
 from fastapi.responses import JSONResponse
 
+from api.http.requests.webhook_event_request import WebHookEventRequest
 from src.config.logger import logger
 from src.application.commands.facturagpt_webhook_delivery import (
     FacturaGPTWebhookDelivery,
@@ -35,7 +36,7 @@ class ReceiveFacturaGPTWebhookController:
         pass
 
     async def handle(
-        self, request: Request, background_tasks: BackgroundTasks
+        self, request: Request, body: WebHookEventRequest, background_tasks: BackgroundTasks
     ) -> JSONResponse:
         # El body se lee como bytes crudos: la firma HMAC se verifica sobre
         # el body exacto que envió FacturaGPT, no sobre un JSON re-serializado.
@@ -48,7 +49,7 @@ class ReceiveFacturaGPTWebhookController:
             use_case = get_receive_facturagpt_webhook_use_case(
                 background_tasks=background_tasks
             )
-            await use_case.execute(delivery=delivery)
+            await use_case.execute(delivery=delivery, body=body.model_dump())
         except BillingWebhookSignatureError as e:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
