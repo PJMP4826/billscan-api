@@ -44,6 +44,7 @@ from src.domain.ports.repositories.receipt_billing_detail_repository_port import
     ReceiptBillingDetailRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
+from src.infrastructure.cfdi_parser import CfdiParser
 from src.shared.errors.billing_exceptions import BillingProviderError
 
 _SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
@@ -164,10 +165,8 @@ class ProcessFacturaGPTWebhookUseCase:
         if event is BillingWebHookEventType.COMPLETED:
             await self._apply_completed(
                 receipt_id=receipt_id,
-                receipt_uuid=receipt_uuid,
                 idempotency_key=idempotency_key,
                 invoice_result=invoice_result,
-                raw_payload=raw_payload,
             )
         else:  # FAILED
             await self._apply_failed(
@@ -189,18 +188,23 @@ class ProcessFacturaGPTWebhookUseCase:
     async def _apply_completed(
         self,
         receipt_id: int,
-        receipt_uuid: str,
         idempotency_key: str,
         invoice_result: InvoiceResult,
-        raw_payload: dict[str, Any],
     ) -> None:
         files = invoice_result.files
 
         # 1) Descargar + almacenar XML/PDF bajo claves determinísticas.
+
         xml_key = pdf_key = None
+        cfdi_content = None
         if files and files.xml_url:
+            xml_content, mime_type = await self._download_invoce_content(
+                url=files.xml_url
+            )
+            cfdi_content = CfdiParser.parse_bytes(xml_content=xml_content)
             xml_key = await self._store_invoice_file(
-                url=files.xml_url,
+                content_data=xml_content,
+                mime_type=mime_type,
                 file_type=BillingFileType.XML,
                 folio=(
                     invoice_result.cfdi_summary.folio_fiscal
@@ -210,8 +214,12 @@ class ProcessFacturaGPTWebhookUseCase:
             )
 
         if files and files.pdf_url:
+            pdf_content, mime_type = await self._download_invoce_content(
+                url=files.pdf_url
+            )
             pdf_key = await self._store_invoice_file(
-                url=files.pdf_url,
+                content_data=pdf_content,
+                mime_type=mime_type,
                 file_type=BillingFileType.PDF,
                 folio=(
                     invoice_result.cfdi_summary.folio_fiscal
@@ -225,14 +233,14 @@ class ProcessFacturaGPTWebhookUseCase:
             receipt_id=receipt_id,
             xml_key=xml_key,
             pdf_key=pdf_key,
-        )
+        )        
 
         # 3) Persistir el resultado de facturación (cfdi_summary crudo).
         await self._billing_detail_repository.update_billing_status(
             receipt_id=receipt_id,
             billing_status=BillingStatus.COMPLETED.value,
             facturagpt_session_id=invoice_result.session_id,
-            cfdi_summary=raw_payload.get("cfdi_summary"),
+            cfdi_content=cfdi_content,
             completed_at=invoice_result.completed_at,
         )
 
@@ -244,9 +252,13 @@ class ProcessFacturaGPTWebhookUseCase:
             pdf_key,
         )
 
+    async def _download_invoce_content(self, url: str) -> tuple[bytes, str]:
+        return await self._billing_provider.download_invoice_file(url)
+
     async def _store_invoice_file(
         self,
-        url: str,
+        content_data: bytes,
+        mime_type: str,
         file_type: BillingFileType,
         folio: str | None,
     ) -> str:
@@ -259,18 +271,16 @@ class ProcessFacturaGPTWebhookUseCase:
         base = _safe_filename(folio, "factura")
         key = f"{base}.{file_type.extension}"
 
-        data, content_type = await self._billing_provider.download_invoice_file(url)
-
-        if content_type and "text/html" in content_type:
+        if "text/html" in mime_type:
             logger.error(
                 "FacturaGPT devolvió HTML en vez de archivo (url=%s, content_type=%s). ",
-                url, content_type,
+                mime_type,
             )
             raise BillingProviderError(
                 "El proxy de descarga devolvió HTML en vez del archivo de factura."
             )
 
-        await self._file_storage.upload(key=key, data=data, mime_type=content_type)
+        await self._file_storage.upload(key=key, data=content_data, mime_type=mime_type)
         logger.info("Archivo %s del CFDI almacenado en key='%s'", file_type.value, key)
         return key
 

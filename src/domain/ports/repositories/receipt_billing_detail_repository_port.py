@@ -20,7 +20,7 @@ class ReceiptBillingDetailRepositoryPort(ABC):
         facturagpt_session_id: str | None = None,
         billing_error_code: str | None = None,
         billing_error_message: str | None = None,
-        cfdi_summary: dict[str, Any] | None = None,
+        cfdi_content: dict[str, Any] | None = None,
         completed_at: str | None = None,
     ) -> None:
         pass

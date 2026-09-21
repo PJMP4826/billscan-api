@@ -120,7 +120,7 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         facturagpt_session_id: str | None = None,
         billing_error_code: str | None = None,
         billing_error_message: str | None = None,
-        cfdi_summary: dict[str, Any] | None = None,
+        cfdi_content: dict[str, Any] | None = None,
         completed_at: str | None = None,
     ) -> None:
         """Actualiza el estado de facturación, típicamente desde un
@@ -133,7 +133,7 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         existente) — esto hace al UPDATE idempotente ante reintentos.
         """
         cfdi_summary_json = (
-            json.dumps(cfdi_summary) if cfdi_summary is not None else None
+            json.dumps(cfdi_content) if cfdi_content is not None else None
         )
 
         sql = """
