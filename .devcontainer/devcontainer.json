@@ -18,7 +18,8 @@
       ],
       "settings": {
         "editor.formatOnSave": true,
-        "python.formatting.provider": "none"
+        "python.formatting.provider": "none",
+        "python.defaultInterpreterPath": "/home/appuser/venv/bin/python"
       }
     }
   },
