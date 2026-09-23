@@ -5,15 +5,17 @@ from typing import Any
 from satcfdi.cfdi import CFDI  # type: ignore
 from satcfdi.models.code import Code  # type: ignore
 
+from src.application.dtos.cfdi import CfdiDto
+
 
 class CfdiParser:
     """
     Service adapter para parsear contenido XML CFDI (SAT) desde bytes
-    y retornar un diccionario limpio serializable.
+    y retornar un CfdiDto tipado.
     """
 
     @staticmethod
-    def parse_bytes(xml_content: bytes) -> dict[str, Any]:
+    def parse_bytes(xml_content: bytes) -> CfdiDto:
         """
         Parsea el contenido XML de CFDI recibido como bytes.
 
@@ -21,7 +23,7 @@ class CfdiParser:
             xml_content (bytes): El contenido crudo del archivo XML CFDI.
 
         Returns:
-            Dict[str, Any]: Diccionario con los datos de la factura limpios.
+            CfdiDto: Objeto tipado con los datos del CFDI de tipo Ingreso.
         """
 
         try:
@@ -54,10 +56,19 @@ class CfdiParser:
             # pero esto asegura consistencia si hay Decimal o fechas anidadas.
             factura_dict = CfdiParser._clean_dict_values(factura_dict)  # type: ignore
 
-            return factura_dict
+            tipo_comprobante = str(factura_dict.get("TipoDeComprobante", ""))
+            if not tipo_comprobante.startswith("I"):
+                raise ValueError(
+                    "Solo se admiten CFDI de tipo Ingreso (I); "
+                    f"se recibió '{tipo_comprobante or 'desconocido'}'."
+                )
+
+            return CfdiDto.from_dict(factura_dict)
 
         except UnicodeDecodeError:
             raise ValueError("El contenido XML no es válido UTF-8.")
+        except ValueError:
+            raise
         except Exception as e:
             raise ValueError(f"Error al parsear el XML CFDI: {e}")
 

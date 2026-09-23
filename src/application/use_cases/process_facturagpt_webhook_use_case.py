@@ -26,6 +26,7 @@ import re
 from typing import Any
 
 from src.config.logger import logger
+from src.application.dtos.cfdi import CfdiDto
 from src.application.dtos.invoice_result_dto import InvoiceResult
 
 from src.domain.enums.billing_file_type import BillingFileType
@@ -44,7 +45,7 @@ from src.domain.ports.repositories.receipt_billing_detail_repository_port import
     ReceiptBillingDetailRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
-from src.infrastructure.cfdi_parser import CfdiParser
+from src.infrastructure.adapters.cfdi_parser import CfdiParser
 from src.shared.errors.billing_exceptions import BillingProviderError
 
 _SAFE_CHARS = re.compile(r"[^A-Za-z0-9_-]+")
@@ -196,7 +197,7 @@ class ProcessFacturaGPTWebhookUseCase:
         # 1) Descargar + almacenar XML/PDF bajo claves determinísticas.
 
         xml_key = pdf_key = None
-        cfdi_content = None
+        cfdi_content: CfdiDto | None = None
         if files and files.xml_url:
             xml_content, mime_type = await self._download_invoce_content(
                 url=files.xml_url
@@ -240,7 +241,7 @@ class ProcessFacturaGPTWebhookUseCase:
             receipt_id=receipt_id,
             billing_status=BillingStatus.COMPLETED.value,
             facturagpt_session_id=invoice_result.session_id,
-            cfdi_content=cfdi_content,
+            cfdi_content=cfdi_content.to_dict() if cfdi_content is not None else None,
             completed_at=invoice_result.completed_at,
         )
 
