@@ -67,31 +67,31 @@ class CfdiDto:
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "Emisor": self.emisor.to_dict(),
-            "Receptor": self.receptor.to_dict(),
-            "Conceptos": [concepto.to_dict() for concepto in self.conceptos],
-            "Complemento": self.complemento.to_dict(),
-            "Version": self.version,
-            "Fecha": self.fecha,
-            "FormaPago": self.forma_pago,
-            "SubTotal": self.sub_total,
-            "Moneda": self.moneda,
-            "Total": self.total,
-            "TipoDeComprobante": self.tipo_de_comprobante,
-            "Exportacion": self.exportacion,
-            "MetodoPago": self.metodo_pago,
-            "LugarExpedicion": self.lugar_expedicion,
+            "emisor": self.emisor.to_dict(),
+            "receptor": self.receptor.to_dict(),
+            "conceptos": [concepto.to_dict() for concepto in self.conceptos],
+            "complemento": self.complemento.to_dict(),
+            "version": self.version,
+            "fecha": self.fecha,
+            "forma_pago": self.forma_pago,
+            "sub_total": self.sub_total,
+            "moneda": self.moneda,
+            "total": self.total,
+            "tipo_de_comprobante": self.tipo_de_comprobante,
+            "exportacion": self.exportacion,
+            "metodo_pago": self.metodo_pago,
+            "lugar_expedicion": self.lugar_expedicion,
         }
         if self.impuestos is not None:
-            result["Impuestos"] = self.impuestos.to_dict()
+            result["impuestos"] = self.impuestos.to_dict()
         if self.serie is not None:
-            result["Serie"] = self.serie
+            result["serie"] = self.serie
         if self.folio is not None:
-            result["Folio"] = self.folio
+            result["folio"] = self.folio
         if self.condiciones_de_pago is not None:
-            result["CondicionesDePago"] = self.condiciones_de_pago
+            result["condiciones_de_pago"] = self.condiciones_de_pago
         if self.tipo_cambio is not None:
-            result["TipoCambio"] = self.tipo_cambio
+            result["tipo_cambio"] = self.tipo_cambio
         if self.descuento is not None:
-            result["Descuento"] = self.descuento
+            result["descuento"] = self.descuento
         return result

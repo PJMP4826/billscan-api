@@ -24,9 +24,9 @@ class ReceptorDto:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "Rfc": self.rfc,
-            "Nombre": self.nombre,
-            "DomicilioFiscalReceptor": self.domicilio_fiscal_receptor,
-            "RegimenFiscalReceptor": self.regimen_fiscal_receptor,
-            "UsoCFDI": self.uso_cfdi,
+            "rfc": self.rfc,
+            "nombre": self.nombre,
+            "domicilio_fiscal_receptor": self.domicilio_fiscal_receptor,
+            "regimen_fiscal_receptor": self.regimen_fiscal_receptor,
+            "uso_cfdi": self.uso_cfdi,
         }

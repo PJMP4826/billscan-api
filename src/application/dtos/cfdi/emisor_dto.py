@@ -20,7 +20,7 @@ class EmisorDto:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "Rfc": self.rfc,
-            "Nombre": self.nombre,
-            "RegimenFiscal": self.regimen_fiscal,
+            "rfc": self.rfc,
+            "nombre": self.nombre,
+            "regimen_fiscal": self.regimen_fiscal,
         }

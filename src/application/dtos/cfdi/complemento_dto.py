@@ -22,10 +22,10 @@ class TimbreFiscalDigitalDto:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "Version": self.version,
-            "UUID": self.uuid,
-            "FechaTimbrado": self.fecha_timbrado,
-            "RfcProvCertif": self.rfc_prov_certif,
+            "version": self.version,
+            "uuid": self.uuid,
+            "fecha_timbrado": self.fecha_timbrado,
+            "rfc_prov_certif": self.rfc_prov_certif,
         }
 
 
@@ -45,8 +45,8 @@ class CfdiRegistroFiscalDto:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "Version": self.version,
-            "Folio": self.folio,
+            "version": self.version,
+            "folio": self.folio,
         }
 
 
@@ -73,8 +73,8 @@ class ComplementoDto:
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "TimbreFiscalDigital": self.timbre_fiscal_digital.to_dict(),
+            "timbre_fiscal_digital": self.timbre_fiscal_digital.to_dict(),
         }
         if self.cfdi_registro_fiscal is not None:
-            result["CFDIRegistroFiscal"] = self.cfdi_registro_fiscal.to_dict()
+            result["cfdi_registro_fiscal"] = self.cfdi_registro_fiscal.to_dict()
         return result

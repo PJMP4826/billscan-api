@@ -43,20 +43,20 @@ class ConceptosDto:
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "ClaveProdServ": self.clave_prod_serv,
-            "Cantidad": self.cantidad,
-            "ClaveUnidad": self.clave_unidad,
-            "Descripcion": self.descripcion,
-            "ValorUnitario": self.valor_unitario,
-            "Importe": self.importe,
-            "ObjetoImp": self.objeto_imp,
+            "clave_prod_serv": self.clave_prod_serv,
+            "cantidad": self.cantidad,
+            "clave_unidad": self.clave_unidad,
+            "descripcion": self.descripcion,
+            "valor_unitario": self.valor_unitario,
+            "importe": self.importe,
+            "objeto_imp": self.objeto_imp,
         }
         if self.impuestos is not None:
-            result["Impuestos"] = self.impuestos.to_dict()
+            result["impuestos"] = self.impuestos.to_dict()
         if self.no_identificacion is not None:
-            result["NoIdentificacion"] = self.no_identificacion
+            result["no_identificacion"] = self.no_identificacion
         if self.unidad is not None:
-            result["Unidad"] = self.unidad
+            result["unidad"] = self.unidad
         if self.descuento is not None:
-            result["Descuento"] = self.descuento
+            result["descuento"] = self.descuento
         return result

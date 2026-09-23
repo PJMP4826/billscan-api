@@ -24,11 +24,11 @@ class TrasladoDto:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "Base": self.base,
-            "Impuesto": self.impuesto,
-            "TipoFactor": self.tipo_factor,
-            "TasaOCuota": self.tasa_o_cuota,
-            "Importe": self.importe,
+            "base": self.base,
+            "impuesto": self.impuesto,
+            "tipo_factor": self.tipo_factor,
+            "tasa_o_cuota": self.tasa_o_cuota,
+            "importe": self.importe,
         }
 
 
@@ -52,11 +52,11 @@ class ImpuestosDto:
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
-            "Traslados": {
+            "traslados": {
                 key: traslado.to_dict()
                 for key, traslado in self.traslados.items()
             },
         }
         if self.total_impuestos_trasladados is not None:
-            result["TotalImpuestosTrasladados"] = self.total_impuestos_trasladados
+            result["total_impuestos_trasladados"] = self.total_impuestos_trasladados
         return result
