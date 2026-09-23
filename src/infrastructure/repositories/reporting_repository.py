@@ -322,7 +322,10 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 ON r.id = rbd.receipt_id
             WHERE r.user_id = :user_id
               AND rbd.cfdi_summary IS NOT NULL
-              AND rbd.cfdi_summary->'Emisor' IS NOT NULL
+              AND (
+                    rbd.cfdi_summary->'emisor' IS NOT NULL
+                 OR rbd.cfdi_summary->'Emisor' IS NOT NULL
+              )
         """
         count_sql = f"SELECT COUNT(*) AS total {where_clause};"
         count_row = await self._db_manager.execute_sql_query_fetch_first(
@@ -330,16 +333,36 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
         total = int(count_row["total"]) if count_row else 0
 
+        # COALESCE por forma: filas nuevas se guardan en snake_case (to_dict
+        # del CfdiDto); las legadas en PascalCase (claves SAT originales).
         sql = f"""
             SELECT
                 r.receipt_uuid,
-                rbd.cfdi_summary->'Emisor'->>'Nombre'  AS emisor_nombre,
-                (rbd.cfdi_summary->>'Total')::numeric    AS total,
-                rbd.cfdi_summary->>'Serie'               AS serie,
-                rbd.cfdi_summary->>'Folio'               AS folio,
-                rbd.cfdi_summary->'Receptor'->>'UsoCFDI' AS uso_cfdi
+                COALESCE(
+                    rbd.cfdi_summary->'emisor'->>'nombre',
+                    rbd.cfdi_summary->'Emisor'->>'Nombre'
+                ) AS emisor_nombre,
+                COALESCE(
+                    rbd.cfdi_summary->>'total',
+                    rbd.cfdi_summary->>'Total'
+                )::numeric AS total,
+                COALESCE(
+                    rbd.cfdi_summary->>'serie',
+                    rbd.cfdi_summary->>'Serie'
+                ) AS serie,
+                COALESCE(
+                    rbd.cfdi_summary->>'folio',
+                    rbd.cfdi_summary->>'Folio'
+                ) AS folio,
+                COALESCE(
+                    rbd.cfdi_summary->'receptor'->>'uso_cfdi',
+                    rbd.cfdi_summary->'Receptor'->>'UsoCFDI'
+                ) AS uso_cfdi
             {where_clause}
-            ORDER BY rbd.cfdi_summary->>'Fecha' DESC
+            ORDER BY COALESCE(
+                rbd.cfdi_summary->>'fecha',
+                rbd.cfdi_summary->>'Fecha'
+            ) DESC
             LIMIT :limit OFFSET :offset;
         """
         rows = await self._db_manager.execute_sql_query_fetch_all(
