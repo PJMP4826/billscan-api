@@ -1,4 +1,6 @@
 from src.application.dtos.cfdi.cfdi_dto import CfdiDto
+from src.application.dtos.cfdi.cfdi_list_item_dto import CfdiListItem
+from src.application.dtos.cfdi.cfdi_list_response_dto import CfdiListResponse
 from src.application.dtos.cfdi.complemento_dto import (
     CfdiRegistroFiscalDto,
     ComplementoDto,
@@ -11,6 +13,8 @@ from src.application.dtos.cfdi.receptor_dto import ReceptorDto
 
 __all__ = [
     "CfdiDto",
+    "CfdiListItem",
+    "CfdiListResponse",
     "CfdiRegistroFiscalDto",
     "ComplementoDto",
     "ConceptosDto",

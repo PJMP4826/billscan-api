@@ -4,6 +4,7 @@ from typing import Any
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
+from src.application.dtos.cfdi import CfdiListResponse
 from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
 from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
 
@@ -61,5 +62,16 @@ class ReportingRepositoryPort(ABC):
         """
         Returns the full detail of a receipt including aggregated
         items, taxes, and payments as JSON arrays.
+        """
+        pass
+
+    @abstractmethod
+    async def get_cfdi_list(
+        self, user_id: str, page: int = 1, page_size: int = 20
+    ) -> CfdiListResponse:
+        """
+        Returns a paginated projection of the CFDIs issued for the given
+        user (emisor name, total, serie, folio, uso CFDI) extracted from
+        the `cfdi_summary` JSONB column without hydrating the full CfdiDto.
         """
         pass

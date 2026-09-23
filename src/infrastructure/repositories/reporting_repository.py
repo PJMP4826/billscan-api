@@ -5,6 +5,7 @@ from src.domain.enums.billing_status import BillingStatus
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
+from src.application.dtos.cfdi import CfdiListItem, CfdiListResponse
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
@@ -309,3 +310,57 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             raise ValueError("Ticket no encontrado")
 
         return parse_row_to_str(row=result, json_fields=self._FULL_DETAIL_JSON_FIELDS)
+
+    async def get_cfdi_list(
+        self, user_id: str, page: int = 1, page_size: int = 20
+    ) -> CfdiListResponse:
+        offset = (page - 1) * page_size
+
+        where_clause = """
+            FROM receipt_billing_details rbd
+            INNER JOIN receipts r
+                ON r.id = rbd.receipt_id
+            WHERE r.user_id = :user_id
+              AND rbd.cfdi_summary IS NOT NULL
+              AND rbd.cfdi_summary->'Emisor' IS NOT NULL
+        """
+        count_sql = f"SELECT COUNT(*) AS total {where_clause};"
+        count_row = await self._db_manager.execute_sql_query_fetch_first(
+            count_sql, {"user_id": user_id}
+        )
+        total = int(count_row["total"]) if count_row else 0
+
+        sql = f"""
+            SELECT
+                r.receipt_uuid,
+                rbd.cfdi_summary->'Emisor'->>'Nombre'  AS emisor_nombre,
+                (rbd.cfdi_summary->>'Total')::numeric    AS total,
+                rbd.cfdi_summary->>'Serie'               AS serie,
+                rbd.cfdi_summary->>'Folio'               AS folio,
+                rbd.cfdi_summary->'Receptor'->>'UsoCFDI' AS uso_cfdi
+            {where_clause}
+            ORDER BY rbd.cfdi_summary->>'Fecha' DESC
+            LIMIT :limit OFFSET :offset;
+        """
+        rows = await self._db_manager.execute_sql_query_fetch_all(
+            sql, {"user_id": user_id, "limit": page_size, "offset": offset}
+        )
+
+        items = [
+            CfdiListItem(
+                receipt_uuid=row["receipt_uuid"],
+                emisor_nombre=row["emisor_nombre"],
+                total=Decimal(str(row["total"])),
+                serie=row["serie"],
+                folio=row["folio"],
+                uso_cfdi=row["uso_cfdi"],
+            )
+            for row in rows
+        ]
+
+        return CfdiListResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
