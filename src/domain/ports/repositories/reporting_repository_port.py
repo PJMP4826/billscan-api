@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from src.application.dtos.cfdi_response_dto import CfdiResponseDto
 from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
@@ -73,5 +74,16 @@ class ReportingRepositoryPort(ABC):
         Returns a paginated projection of the CFDIs issued for the given
         user (emisor name, total, serie, folio, uso CFDI) extracted from
         the `cfdi_summary` JSONB column without hydrating the full CfdiDto.
+        """
+        pass
+
+    @abstractmethod
+    async def get_cfdi_detail(
+        self, user_id: str, receipt_uuid: str
+    ) -> CfdiResponseDto:
+        """
+        Returns the stored content of a single CFDI (`cfdi_summary` JSONB)
+        plus the storage keys of its XML and PDF files. Raises ValueError
+        when the receipt has no CFDI content.
         """
         pass

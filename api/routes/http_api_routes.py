@@ -62,6 +62,20 @@ async def get_cfdi_list(
     return await cfdi_list_controller.handle(page, page_size)
 
 
+@router.get("/cfdis/{receipt_uuid}")
+async def get_cfdi_detail(receipt_uuid: str):
+    """Returns the full CFDI content (snake_case) plus presigned XML/PDF urls."""
+    from api.http.controllers.get_cfdi_detail_controller import (
+        GetCfdiDetailController,
+    )
+    from api.http.requests.get_cfdi_detail_request import GetCfdiDetailRequest
+
+    cfdi_detail_controller = GetCfdiDetailController()
+    return await cfdi_detail_controller.handle(
+        request=GetCfdiDetailRequest(receipt_uuid=receipt_uuid)
+    )
+
+
 @router.get("/receipts/{receipt_uuid}")
 async def get_receipt_detail(
     receipt_uuid: str,

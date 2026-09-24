@@ -166,6 +166,21 @@ def get_cfdi_list_use_case():
     )
 
 
+def get_cfdi_detail_use_case():
+    from src.application.use_cases.get_cfdi_detail_use_case import (
+        GetCfdiDetailUseCase,
+    )
+    from src.bootstraps.services.infrastructure_bootstrap_services import (
+        get_cloudflare_r2_file_storage_adapter,
+    )
+    from .repositories.repositories_bootstrap import get_reporting_repository
+
+    return GetCfdiDetailUseCase(
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
+        reporting_repository=get_reporting_repository(),
+    )
+
+
 def get_recent_activity_use_case():
     from src.application.use_cases.get_recent_activity_use_case import (
         GetRecentActivityUseCase,

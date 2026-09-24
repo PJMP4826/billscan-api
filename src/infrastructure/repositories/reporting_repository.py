@@ -1,6 +1,9 @@
 from decimal import Decimal
 from typing import Any
 
+from src.application.dtos.cfdi.cfdi_dto import CfdiDto
+from src.application.dtos.cfdi_response_dto import CfdiResponseDto
+from src.application.dtos.invoice_files_dto import InvoiceFiles
 from src.domain.enums.billing_status import BillingStatus
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
@@ -98,7 +101,9 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total_spent=Decimal(str(row["total_spent"])),
         )
 
-    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
+    async def get_receipt_list(
+        self, page: int = 1, page_size: int = 20
+    ) -> ReceiptListResponse:
         offset = (page - 1) * page_size
 
         count_sql = """
@@ -386,4 +391,51 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             total=total,
             page=page,
             page_size=page_size,
+        )
+
+    async def get_cfdi_detail(self, user_id: str, receipt_uuid: str) -> CfdiResponseDto:
+        sql = """
+            SELECT
+                r.receipt_uuid,
+                rbd.cfdi_summary,
+                (
+                    SELECT bf.file_key
+                    FROM billing_files bf
+                    WHERE bf.receipt_id = r.id
+                      AND bf.file_type = 'XML'
+                    ORDER BY bf.created_at DESC
+                    LIMIT 1
+                ) AS xml_key,
+                (
+                    SELECT bf.file_key
+                    FROM billing_files bf
+                    WHERE bf.receipt_id = r.id
+                      AND bf.file_type = 'PDF'
+                    ORDER BY bf.created_at DESC
+                    LIMIT 1
+                ) AS pdf_key
+            FROM receipts r
+            INNER JOIN receipt_billing_details rbd
+                ON rbd.receipt_id = r.id
+            WHERE r.receipt_uuid = :receipt_uuid
+              AND r.user_id = :user_id
+              AND rbd.cfdi_summary IS NOT NULL
+              AND (
+                    rbd.cfdi_summary->'emisor' IS NOT NULL
+                 OR rbd.cfdi_summary->'Emisor' IS NOT NULL
+              );
+        """
+        result = await self._db_manager.execute_sql_query_fetch_first(
+            sql, {"receipt_uuid": receipt_uuid, "user_id": user_id}
+        )
+
+        if not result:
+            raise ValueError("CFDI no encontrado")
+
+        result_parsed = parse_row_to_str(row=result, json_fields={"cfdi_summary"})
+
+        return CfdiResponseDto(
+            receipt_uuid=result["receipt_uuid"],
+            cfdi=CfdiDto.from_dict(data=result_parsed["cfdi_summary"]),
+            invoice=InvoiceFiles(xml_url=result["xml_key"], pdf_url=result["pdf_key"]),
         )
