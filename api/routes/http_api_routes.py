@@ -48,6 +48,20 @@ async def get_receipt_list(
 
 
 
+@router.get("/cfdis")
+async def get_cfdi_list(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=50),
+):
+    """Returns a paginated list of the CFDIs issued for the user."""
+    from api.http.controllers.get_cfdi_list_controller import (
+        GetCfdiListController,
+    )
+
+    cfdi_list_controller = GetCfdiListController()
+    return await cfdi_list_controller.handle(page, page_size)
+
+
 @router.get("/receipts/{receipt_uuid}")
 async def get_receipt_detail(
     receipt_uuid: str,
