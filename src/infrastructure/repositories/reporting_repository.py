@@ -28,8 +28,6 @@ class PostgresReportingRepository(ReportingRepositoryPort):
     single aggregate. Raw SQL is intentional here.
     """
 
-    _FULL_DETAIL_JSON_FIELDS = {"items", "taxes", "payments", "extra_metadata"}
-
     def __init__(self, manager: SQLDatabaseConnectionManager) -> None:
         self._db_manager = manager
 
@@ -225,96 +223,6 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             params["status_filter"] = status_filter
 
         return await self._db_manager.execute_sql_query_fetch_all(sql, params)
-
-    async def get_receipt_base_detail(self, receipt_uuid: str) -> dict[str, str | None]:
-        sql = """
-            SELECT
-                r.receipt_uuid,
-                m.name                          AS merchant_name,
-                m.tax_id                        AS merchant_rfc,
-                r.transaction_date              AS fecha_ticket,
-                r.subtotal,
-                COALESCE(r.total_discount, 0)   AS descuento,
-                COALESCE(r.amount_paid,    0)   AS monto_pagado,
-                COALESCE(r.change,         0)   AS cambio,
-                r.total                         AS total_ticket,
-                ri.file_key,
-                f_info.use_cfdi_default         AS uso_cfdi,
-                r.payment_method_code           AS metodo_pago_codigo,
-                pm.description                  AS metodo_pago_descripcion
-            FROM receipts r
-            LEFT JOIN merchants m
-                   ON r.merchant_id       = m.id
-            LEFT JOIN receipt_images ri
-                   ON ri.receipt_id       = r.id
-                  AND ri.page_number      = 1
-            LEFT JOIN users u
-                   ON r.user_id           = u.id
-            LEFT JOIN fiscal_info f_info
-                   ON u.id               = f_info.user_id
-            LEFT JOIN payment_methods pm
-                   ON r.payment_method_code = pm.code
-            WHERE r.receipt_uuid = :receipt_uuid;
-        """
-
-        result = await self._db_manager.execute_sql_query_fetch_first(
-            sql, {"receipt_uuid": receipt_uuid}
-        )
-
-        if not result:
-            raise ValueError("Ticket no encontrado")
-
-        return parse_row_to_str(row=result)
-
-    async def get_receipt_full_detail(self, receipt_uuid: str) -> dict[str, Any | None]:
-        sql = """
-            SELECT
-                r.*,
-                m.name                  AS merchant_name,
-                m.tax_id                AS merchant_tax_id,
-                rbd.billing_status,
-                rbd.billing_url,
-                rbd.billing_code,
-                ri.file_key,
-                (
-                    SELECT JSON_AGG(items)
-                    FROM (
-                        SELECT * FROM receipt_items
-                        WHERE receipt_id = r.id
-                    ) AS items
-                ) AS items,
-                (
-                    SELECT JSON_AGG(taxes)
-                    FROM (
-                        SELECT * FROM receipt_taxes
-                        WHERE receipt_id = r.id
-                    ) AS taxes
-                ) AS taxes,
-                (
-                    SELECT JSON_AGG(payments)
-                    FROM (
-                        SELECT * FROM receipt_payments
-                        WHERE receipt_id = r.id
-                    ) AS payments
-                ) AS payments
-            FROM receipts r
-            LEFT JOIN merchants m
-                   ON r.merchant_id  = m.id
-            LEFT JOIN receipt_billing_details rbd
-                   ON rbd.receipt_id = r.id
-            LEFT JOIN receipt_images ri
-                ON ri.receipt_id = r.id
-                AND ri.page_number = 1
-            WHERE r.receipt_uuid = :receipt_uuid;
-        """
-        result = await self._db_manager.execute_sql_query_fetch_first(
-            sql, {"receipt_uuid": receipt_uuid}
-        )
-
-        if not result:
-            raise ValueError("Ticket no encontrado")
-
-        return parse_row_to_str(row=result, json_fields=self._FULL_DETAIL_JSON_FIELDS)
 
     async def get_cfdi_list(
         self, user_id: str, page: int = 1, page_size: int = 20
