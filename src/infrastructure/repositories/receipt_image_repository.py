@@ -3,6 +3,7 @@ from typing import Any
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
+from src.shared.errors.base_exception import NotFoundError
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
 from src.domain.ports.repositories.receipt_image_repository_port import ReceiptImageRepositoryPort
 
@@ -115,6 +116,23 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
         return await self._db_manager.execute_sql_query_fetch_all(
             sql, {"receipt_id": receipt_id}
         )
+
+    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> dict[str, Any]:
+        sql = """
+            SELECT
+                file_key,
+            FROM receipt_images
+            WHERE receipt_uuid = :receipt_uuid
+            ORDER BY page_number, id;
+        """
+        result = await self._db_manager.execute_sql_query_fetch_first(
+            sql, {"receipt_uuid": receipt_uuid}
+        )
+
+        if not result:
+            raise NotFoundError("Imagen no encontrada")
+
+        return result
 
     async def find_by_job_id(self, receipt_job_id: int) -> list[dict[str, Any]]:
         """Útil antes de que exista receipt_id -- p.ej. para que el
