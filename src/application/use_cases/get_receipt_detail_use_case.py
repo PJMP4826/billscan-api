@@ -1,8 +1,14 @@
-from typing import Literal
 from typing import Any
+from datetime import date, datetime, time
+from decimal import Decimal
+from enum import Enum
+
 from src.domain.ports.file_storage_port import FileStoragePort
-from src.domain.ports.repositories.reporting_repository_port import (
-    ReportingRepositoryPort,
+from src.domain.ports.repositories.receipt_image_repository_port import (
+    ReceiptImageRepositoryPort,
+)
+from src.domain.ports.repositories.receipt_repository_port import (
+    ReceiptRepositoryPort,
 )
 
 
@@ -10,26 +16,36 @@ class GetReceiptDetailUseCase:
     def __init__(
         self,
         file_storage: FileStoragePort,
-        reporting_repository: ReportingRepositoryPort,
+        receipt_repository: ReceiptRepositoryPort,
+        receipt_image_repository: ReceiptImageRepositoryPort,
     ) -> None:
         self._file_storage = file_storage
-        self._reporting_repository = reporting_repository
+        self._receipt_repository = receipt_repository
+        self._receipt_image_repository = receipt_image_repository
 
-    async def execute(
-        self, receipt_uuid: str, detail_level: Literal["base", "full"] = "base"
-    ) -> dict[str, Any | None]:
+    async def execute(self, receipt_uuid: str) -> dict[str, Any | None]:
+        receipt = await self._receipt_repository.find_by_uuid(receipt_uuid)
 
-        if detail_level == "full":
-            rows = await self._reporting_repository.get_receipt_full_detail(
-                receipt_uuid=receipt_uuid,
-            )
-        else:
-            rows = await self._reporting_repository.get_receipt_base_detail(
-                receipt_uuid=receipt_uuid,
-            )
+        data = self._json_safe(receipt.to_dict())
+        file_key = self._receipt_image_repository.find_key_by_receipt_uuid(
+            receipt_uuid=receipt.receipt_uuid
+        )
+        file_url = await self._file_storage.get_url(str(file_key))
 
-        if file_key := rows.pop("file_key", None):
-            file_url = await self._file_storage.get_url(str(file_key))
-            rows["file_url"] = file_url 
+        data.update({"file_url": file_url})
 
-        return rows
+        return data
+
+    def _json_safe(self, value: Any) -> Any:
+            """Convierte valores no serializables por json a tipos JSON-safe."""
+            if isinstance(value, Enum):
+                return self._json_safe(value.value)
+            if isinstance(value, Decimal):
+                return str(value)
+            if isinstance(value, (datetime, date, time)):
+                return value.isoformat()
+            if isinstance(value, dict):
+                return {key: self._json_safe(item) for key, item in value.items()} # type: ignore
+            if isinstance(value, (list, tuple)):
+                return [self._json_safe(item) for item in value] # type: ignore
+            return value
