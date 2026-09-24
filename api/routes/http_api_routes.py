@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import (
     APIRouter,
     UploadFile,
@@ -77,11 +75,8 @@ async def get_cfdi_detail(receipt_uuid: str):
 
 
 @router.get("/receipts/{receipt_uuid}")
-async def get_receipt_detail(
-    receipt_uuid: str,
-    detail_level: Literal["base", "full"] = Query(default="base"),
-):
-    """Returns the detail (base or full) of a receipt including items, taxes and payments."""
+async def get_receipt_detail(receipt_uuid: str):
+    """Returns the full Receipt aggregate as JSON, including a presigned image url."""
     from api.http.controllers.get_receipt_detail_controller import (
         GetReceiptDetailController,
     )
@@ -89,9 +84,7 @@ async def get_receipt_detail(
 
     receipt_detail_controller = GetReceiptDetailController()
     return await receipt_detail_controller.handle(
-        request=GetReceiptDetailRequest(
-            receipt_uuid=receipt_uuid, detail_level=detail_level
-        )
+        request=GetReceiptDetailRequest(receipt_uuid=receipt_uuid)
     )
 
 

@@ -1,7 +1,5 @@
-from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class GetReceiptDetailRequest(BaseModel):
     receipt_uuid: str
-    detail_level: Literal["base", "full"] = Field(default="base")
