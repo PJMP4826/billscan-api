@@ -150,9 +150,7 @@ def get_receipt_list_use_case():
     )
     from .repositories.repositories_bootstrap import get_reporting_repository
 
-    return GetReceiptListUseCase(
-        reporting_repository=get_reporting_repository()
-    )
+    return GetReceiptListUseCase(reporting_repository=get_reporting_repository())
 
 
 def get_cfdi_list_use_case():
@@ -161,9 +159,7 @@ def get_cfdi_list_use_case():
     )
     from .repositories.repositories_bootstrap import get_reporting_repository
 
-    return GetCfdiListUseCase(
-        reporting_repository=get_reporting_repository()
-    )
+    return GetCfdiListUseCase(reporting_repository=get_reporting_repository())
 
 
 def get_cfdi_detail_use_case():
@@ -203,11 +199,15 @@ def get_receipt_detail_use_case():
     from src.bootstraps.services.infrastructure_bootstrap_services import (
         get_cloudflare_r2_file_storage_adapter,
     )
-    from .repositories.repositories_bootstrap import get_reporting_repository
+    from .repositories.repositories_bootstrap import (
+        get_receipt_repository,
+        get_receipt_image_repository,
+    )
 
     return GetReceiptDetailUseCase(
         file_storage=get_cloudflare_r2_file_storage_adapter(),
-        reporting_repository=get_reporting_repository(),
+        receipt_repository=get_receipt_repository(),
+        receipt_image_repository=get_receipt_image_repository(),
     )
 
 
