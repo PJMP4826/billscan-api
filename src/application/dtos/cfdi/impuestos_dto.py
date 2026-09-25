@@ -4,13 +4,17 @@ from typing import Any
 
 @dataclass
 class TrasladoDto:
-    """Un traslado de impuesto (ej. IVA) dentro de un nodo Impuestos."""
+    """Un traslado de impuesto (ej. IVA) dentro de un nodo Impuestos.
+
+    `tasa_o_cuota` e `importe` son opcionales: en CFDI 4.0 el esquema del SAT
+    omite ambos atributos cuando `TipoFactor` es `Exento`.
+    """
 
     base: float
     impuesto: str
     tipo_factor: str
-    tasa_o_cuota: float
-    importe: float
+    tasa_o_cuota: float | None = None
+    importe: float | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TrasladoDto":
@@ -18,18 +22,21 @@ class TrasladoDto:
             base=data["Base"],
             impuesto=data["Impuesto"],
             tipo_factor=data["TipoFactor"],
-            tasa_o_cuota=data["TasaOCuota"],
-            importe=data["Importe"],
+            tasa_o_cuota=data.get("TasaOCuota"),
+            importe=data.get("Importe"),
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "base": self.base,
             "impuesto": self.impuesto,
             "tipo_factor": self.tipo_factor,
-            "tasa_o_cuota": self.tasa_o_cuota,
-            "importe": self.importe,
         }
+        if self.tasa_o_cuota is not None:
+            result["tasa_o_cuota"] = self.tasa_o_cuota
+        if self.importe is not None:
+            result["importe"] = self.importe
+        return result
 
 
 @dataclass
