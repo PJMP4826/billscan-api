@@ -117,13 +117,14 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
             sql, {"receipt_id": receipt_id}
         )
 
-    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> dict[str, Any]:
+    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> str:
         sql = """
             SELECT
-                file_key,
-            FROM receipt_images
-            WHERE receipt_uuid = :receipt_uuid
-            ORDER BY page_number, id;
+                file_key
+            FROM receipt_images ri
+            INNER JOIN receipts r ON ri.receipt_id = r.id
+            WHERE r.receipt_uuid = :receipt_uuid
+            ORDER BY ri.page_number, r.id;
         """
         result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"receipt_uuid": receipt_uuid}
@@ -132,7 +133,7 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
         if not result:
             raise NotFoundError("Imagen no encontrada")
 
-        return result
+        return result["file_key"]
 
     async def find_by_job_id(self, receipt_job_id: int) -> list[dict[str, Any]]:
         """Útil antes de que exista receipt_id -- p.ej. para que el

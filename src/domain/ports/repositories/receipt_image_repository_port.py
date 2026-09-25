@@ -41,7 +41,7 @@ class ReceiptImageRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> dict[str, Any]:
+    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> str:
         """Recupera la primera imágen asociada a un receipt_id."""
         pass
 

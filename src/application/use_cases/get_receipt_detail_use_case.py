@@ -27,7 +27,7 @@ class GetReceiptDetailUseCase:
         receipt = await self._receipt_repository.find_by_uuid(receipt_uuid)
 
         data = self._json_safe(receipt.to_dict())
-        file_key = self._receipt_image_repository.find_key_by_receipt_uuid(
+        file_key = await self._receipt_image_repository.find_key_by_receipt_uuid(
             receipt_uuid=receipt.receipt_uuid
         )
         file_url = await self._file_storage.get_url(str(file_key))
