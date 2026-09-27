@@ -5,12 +5,22 @@ from src.domain.enums.billing_status import BillingStatus
 
 
 @dataclass(frozen=True)
-class ReceiptListItem:
+class ReceiptListItemData:
     receipt_uuid: str
     merchant_name: str | None
     registered_at: str
     total: Decimal
     status: BillingStatus
+    file_key: str
+
+@dataclass(frozen=True)
+class ReceiptListItemResponse:
+    receipt_uuid: str
+    merchant_name: str | None
+    registered_at: str
+    total: Decimal
+    status: BillingStatus
+    file_url: str  
 
     def to_dict(self) -> dict[str, str]:
         return {
@@ -19,4 +29,5 @@ class ReceiptListItem:
             "fecha_registro": self.registered_at,
             "total": str(self.total),
             "estado": self.status.value,
+            "file_url": self.file_url
         }

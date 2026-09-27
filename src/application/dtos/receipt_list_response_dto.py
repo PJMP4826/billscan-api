@@ -1,12 +1,23 @@
 from typing import Any
 from dataclasses import dataclass
 
-from src.application.dtos.receipt_list_item_dto import ReceiptListItem
+from src.application.dtos.receipt_list_item_dto import (
+    ReceiptListItemData,
+    ReceiptListItemResponse,
+)
+
+
+@dataclass(frozen=True)
+class ReceiptListData:
+    items: list[ReceiptListItemData]
+    total: int
+    page: int
+    page_size: int
 
 
 @dataclass(frozen=True)
 class ReceiptListResponse:
-    items: list[ReceiptListItem]
+    items: list[ReceiptListItemResponse]
     total: int
     page: int
     page_size: int
