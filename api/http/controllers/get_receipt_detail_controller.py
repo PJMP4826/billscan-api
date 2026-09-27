@@ -18,7 +18,7 @@ class GetReceiptDetailController:
                 status_code=status.HTTP_200_OK,
                 content={
                     "status": 200,
-                    "data": result,
+                    "data": result.to_dict(),
                 },
             )
 
@@ -49,3 +49,5 @@ class GetReceiptDetailController:
                     "message": str(e),
                 },
             )
+
+   
