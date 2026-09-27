@@ -148,9 +148,15 @@ def get_receipt_list_use_case():
     from src.application.use_cases.get_receipt_list_use_case import (
         GetReceiptListUseCase,
     )
+    from src.bootstraps.services.infrastructure_bootstrap_services import (
+        get_cloudflare_r2_file_storage_adapter,
+    )
     from .repositories.repositories_bootstrap import get_reporting_repository
 
-    return GetReceiptListUseCase(reporting_repository=get_reporting_repository())
+    return GetReceiptListUseCase(
+        reporting_repository=get_reporting_repository(),
+        file_storage=get_cloudflare_r2_file_storage_adapter(),
+    )
 
 
 def get_cfdi_list_use_case():
