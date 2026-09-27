@@ -13,8 +13,8 @@ from src.application.dtos.completed_billing_summary_dto import (
     CompletedBillingSummary,
 )
 from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
-from src.application.dtos.receipt_list_item_dto import ReceiptListItem
-from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
+from src.application.dtos.receipt_list_item_dto import ReceiptListItemData
+from src.application.dtos.receipt_list_response_dto import ReceiptListData
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
@@ -101,7 +101,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
 
     async def get_receipt_list(
         self, page: int = 1, page_size: int = 20
-    ) -> ReceiptListResponse:
+    ) -> ReceiptListData:
         offset = (page - 1) * page_size
 
         count_sql = """
@@ -129,12 +129,15 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                         LIMIT 1
                     )
                     ELSE rbd.billing_status
-                END AS status
+                END AS "status",
+                rimg.file_key
             FROM receipts r
             LEFT JOIN merchants m
-                   ON r.merchant_id = m.id
+                    ON r.merchant_id = m.id
             LEFT JOIN receipt_billing_details rbd
-                   ON rbd.receipt_id = r.id
+                    ON rbd.receipt_id = r.id
+            INNER JOIN receipt_images rimg
+                    ON rimg.receipt_id = r.id
             ORDER BY r.created_at DESC
             LIMIT :limit OFFSET :offset;
         """
@@ -143,17 +146,18 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
 
         items = [
-            ReceiptListItem(
+            ReceiptListItemData(
                 receipt_uuid=row["receipt_uuid"],
                 merchant_name=row["merchant_name"],
                 registered_at=row["registered_at"],
                 total=Decimal(str(row["total"])),
                 status=BillingStatus(row["status"] or "UNKNOWN"),
+                file_key=row["file_key"],
             )
             for row in rows
         ]
 
-        return ReceiptListResponse(
+        return ReceiptListData(
             items=items,
             total=total,
             page=page,

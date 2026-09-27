@@ -7,7 +7,7 @@ from src.application.dtos.completed_billing_summary_dto import (
 )
 from src.application.dtos.cfdi import CfdiListResponse
 from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
-from src.application.dtos.receipt_list_response_dto import ReceiptListResponse
+from src.application.dtos.receipt_list_response_dto import ReceiptListData
 
 class ReportingRepositoryPort(ABC):
 
@@ -43,7 +43,7 @@ class ReportingRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
+    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListData:
         """
         Returns a paginated list of receipts with merchant name,
         registration date, total, and billing status.
