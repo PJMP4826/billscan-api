@@ -31,11 +31,9 @@ class TrasladoDto:
             "base": self.base,
             "impuesto": self.impuesto,
             "tipo_factor": self.tipo_factor,
+            "tasa_o_cuota": self.tasa_o_cuota,
+            "importe": self.importe,
         }
-        if self.tasa_o_cuota is not None:
-            result["tasa_o_cuota"] = self.tasa_o_cuota
-        if self.importe is not None:
-            result["importe"] = self.importe
         return result
 
 
@@ -63,7 +61,6 @@ class ImpuestosDto:
                 key: traslado.to_dict()
                 for key, traslado in self.traslados.items()
             },
+            "total_impuestos_trasladados": self.total_impuestos_trasladados,
         }
-        if self.total_impuestos_trasladados is not None:
-            result["total_impuestos_trasladados"] = self.total_impuestos_trasladados
         return result

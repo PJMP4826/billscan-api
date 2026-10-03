@@ -81,17 +81,11 @@ class CfdiDto:
             "exportacion": self.exportacion,
             "metodo_pago": self.metodo_pago,
             "lugar_expedicion": self.lugar_expedicion,
+            "impuestos": self.impuestos.to_dict() if self.impuestos is not None else None,
+            "serie": self.serie,
+            "folio": self.folio,
+            "condiciones_de_pago": self.condiciones_de_pago,
+            "tipo_cambio": self.tipo_cambio,
+            "descuento": self.descuento,
         }
-        if self.impuestos is not None:
-            result["impuestos"] = self.impuestos.to_dict()
-        if self.serie is not None:
-            result["serie"] = self.serie
-        if self.folio is not None:
-            result["folio"] = self.folio
-        if self.condiciones_de_pago is not None:
-            result["condiciones_de_pago"] = self.condiciones_de_pago
-        if self.tipo_cambio is not None:
-            result["tipo_cambio"] = self.tipo_cambio
-        if self.descuento is not None:
-            result["descuento"] = self.descuento
         return result

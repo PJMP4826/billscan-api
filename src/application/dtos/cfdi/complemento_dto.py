@@ -74,7 +74,10 @@ class ComplementoDto:
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
             "timbre_fiscal_digital": self.timbre_fiscal_digital.to_dict(),
+            "cfdi_registro_fiscal": (
+                self.cfdi_registro_fiscal.to_dict()
+                if self.cfdi_registro_fiscal is not None
+                else None
+            ),
         }
-        if self.cfdi_registro_fiscal is not None:
-            result["cfdi_registro_fiscal"] = self.cfdi_registro_fiscal.to_dict()
         return result

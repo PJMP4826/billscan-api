@@ -50,13 +50,9 @@ class ConceptosDto:
             "valor_unitario": self.valor_unitario,
             "importe": self.importe,
             "objeto_imp": self.objeto_imp,
+            "impuestos": self.impuestos.to_dict() if self.impuestos is not None else None,
+            "no_identificacion": self.no_identificacion,
+            "unidad": self.unidad,
+            "descuento": self.descuento,
         }
-        if self.impuestos is not None:
-            result["impuestos"] = self.impuestos.to_dict()
-        if self.no_identificacion is not None:
-            result["no_identificacion"] = self.no_identificacion
-        if self.unidad is not None:
-            result["unidad"] = self.unidad
-        if self.descuento is not None:
-            result["descuento"] = self.descuento
         return result
