@@ -3,7 +3,7 @@ from src.domain.enums.tax_regime import TaxRegime
 
 
 @dataclass
-class BillingCustomerInfo:
+class BillingCustomerInfoDto:
     """Fiscal identity of the invoice recipient."""
 
     razon_social: str

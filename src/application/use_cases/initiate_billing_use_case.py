@@ -9,7 +9,7 @@ from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.sat_payment_methods import SatPaymentMethodCode
 from src.application.commands.invoice_request_command import InvoiceRequestCommand
 from src.domain.ports.file_storage_port import FileStoragePort
-from src.domain.value_objects.billing_customer import BillingCustomerInfo
+from src.application.dtos.billing_customer_dto import BillingCustomerInfoDto
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
 )
@@ -66,7 +66,7 @@ class InitiateBillingUseCase:
                 user_id=user_id
             )
 
-            user_info = BillingCustomerInfo(
+            user_info = BillingCustomerInfoDto(
                 razon_social=self._encryptor.decrypt(fiscal_user_info["razon_social"]),
                 rfc=self._encryptor.decrypt(fiscal_user_info["rfc"]),
                 email=self._encryptor.decrypt(fiscal_user_info["fiscal_email"]),
