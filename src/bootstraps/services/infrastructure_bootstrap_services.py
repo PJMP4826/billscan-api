@@ -1,7 +1,6 @@
 from src.config.settings import settings
 from fastapi import BackgroundTasks
 
-
 _facturagpt_billing_adapter_instance = None
 _facturagpt_webhook_handler_instance = None
 
@@ -31,6 +30,21 @@ def get_llama_index_ai_extractor_service():
     return LlamaIndexAiExtractor(
         http_adapter=get_http_client_adapter(), llm_provider=llm_provider
     )
+
+
+def get_billing_customer_info_extractor():
+    """Extractor de datos fiscales a partir de una CSF (PDF, JPG o PNG)."""
+    from csf_scraper import GeminiImageReader
+
+    from src.infrastructure.adapters.billing_customer_info_extractor import (
+        BillingCustomerInfoExtractor,
+    )
+
+    image_reader = GeminiImageReader(
+        api_key=settings.google_api_key,
+        model_name=settings.llm_gemini_model,
+    )
+    return BillingCustomerInfoExtractor(image_reader=image_reader)
 
 
 def get_cloudflare_r2_file_storage_adapter():
