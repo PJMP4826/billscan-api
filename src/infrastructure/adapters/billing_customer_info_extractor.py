@@ -1,6 +1,7 @@
 import asyncio
 import os
 import tempfile
+from collections.abc import Awaitable, Callable
 from typing import Final
 
 import puremagic
@@ -39,11 +40,20 @@ from src.domain.ports.billing_customer_info_extractor_port import (
 from src.shared.errors.base_exception import BadRequestError
 from src.shared.errors.infrastructure_exceptions import InfrastructureException
 
-#: Tipos de CSF aceptados y la extensión con la que se materializa el archivo.
-_CSF_KINDS: Final[dict[str, str]] = {
-    "application/pdf": "pdf",
-    "image/jpeg": "jpg",
-    "image/png": "png",
+#: Persona que devuelve cualquier estrategia de lectura.
+_Persona = PersonaMoral | PersonaFisica
+
+#: Firma de una estrategia de lectura: (scraper, ruta) -> persona.
+_CsfReader = Callable[[Scraper, str], Awaitable[_Persona]]
+
+#: Alias MIME que mandan algunos clientes para formatos que ya soportamos.
+#: ``.jpg`` y ``.jpeg`` son el mismo formato, pero el MIME no estándar
+#: ``image/jpg`` es común en navegadores y móviles.
+_MIME_ALIASES: Final[dict[str, str]] = {
+    "image/jpg": "image/jpeg",
+    "image/pjpeg": "image/jpeg",
+    "image/jfif": "image/jpeg",
+    "image/x-png": "image/png",
 }
 
 #: Fallos que significan "el archivo no sirve" (entrada inválida del cliente).
@@ -66,19 +76,30 @@ class BillingCustomerInfoExtractor(BillingCustomerInfoExtractorPort):
         # lectura (``ImageReaderPort``) con ``CsfImageExtractor``.
         self._image_extractor = CsfImageExtractor(image_reader)
 
+        # Estrategias de lectura: MIME type -> (sufijo del temporal, lector).
+        # Agregar un formato soportado es agregar una entrada aquí.
+        self._readers: dict[str, tuple[str, _CsfReader]] = {
+            "application/pdf": ("pdf", self._read_pdf),
+            "image/jpeg": ("jpg", self._read_image),
+            "image/png": ("png", self._read_image),
+        }
+
+    async def _read_pdf(self, scraper: Scraper, file_path: str) -> _Persona:
+        return await scraper.obtain_from_pdf_path(path=file_path)
+
+    async def _read_image(self, scraper: Scraper, file_path: str) -> _Persona:
+        return await scraper.obtain_from_image_path(path=file_path)
+
     async def extract(self, file_bytes: bytes, mime_type: str) -> CsfFiscalIdentityDto:
-        kind = self._detect_kind(file_bytes, mime_type)
+        suffix, read = self._readers[self._detect_kind(file_bytes, mime_type)]
 
         file_path = await asyncio.to_thread(
-            self._write_temp_file, file_bytes, f".{_CSF_KINDS[kind]}"
+            self._write_temp_file, file_bytes, f".{suffix}"
         )
 
         try:
             async with Scraper.create(image_extractor=self._image_extractor) as scraper:
-                if kind == "application/pdf":
-                    person = await scraper.obtain_from_pdf_path(path=file_path)
-                else:
-                    person = await scraper.obtain_from_image_path(path=file_path)
+                person = await read(scraper, file_path)
         except _INVALID_INPUT_EXCEPTIONS as exception:
             raise BadRequestError(
                 "No se pudieron leer los datos fiscales del archivo. "
@@ -129,18 +150,19 @@ class BillingCustomerInfoExtractor(BillingCustomerInfoExtractorPort):
         """Determina el tipo real del archivo (magic bytes primero).
 
         El ``mime_type`` que manda el cliente es solo una pista: puede venir con
-        parámetros (``application/pdf; boundary=...``) o ser genérico.
+        parámetros (``application/pdf; boundary=...``), ser genérico o usar un
+        alias no estándar (``image/jpg``).
         """
         try:
             guessed = str(puremagic.from_string(file_bytes, mime=True))  # type: ignore
         except puremagic.PureError:
             guessed = None
 
-        if guessed in _CSF_KINDS:
+        if guessed in self._readers:
             return guessed
 
-        hinted = (mime_type or "").split(";", 1)[0].strip().lower()
-        if hinted in _CSF_KINDS:
+        hinted = self._normalize_mime(mime_type)
+        if hinted in self._readers:
             return hinted
 
         raise BadRequestError(
@@ -149,6 +171,12 @@ class BillingCustomerInfoExtractor(BillingCustomerInfoExtractorPort):
             error_code="UNSUPPORTED_CSF_FORMAT",
             details={"mime_type": mime_type, "detected": guessed},
         )
+
+    @staticmethod
+    def _normalize_mime(mime_type: str) -> str:
+        """Descarta parámetros y resuelve alias (``image/jpg`` -> ``image/jpeg``)."""
+        normalized = (mime_type or "").split(";", 1)[0].strip().lower()
+        return _MIME_ALIASES.get(normalized, normalized)
 
     def _write_temp_file(self, file_bytes: bytes, suffix: str) -> str:
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
