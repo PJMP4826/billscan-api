@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     sudo \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear usuario no-root con permisos de sudo (necesario para devcontainer)
