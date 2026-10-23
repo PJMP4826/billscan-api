@@ -7,8 +7,10 @@ from fastapi import (
     Form,
     Query,
 )
+from pydantic import EmailStr
 
 from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
+from src.domain.enums.invoice_use import InvoiceUse
 
 router = APIRouter(prefix="/api")
 
@@ -43,7 +45,6 @@ async def get_receipt_list(
 
     receipt_list_controller = GetReceiptListController()
     return await receipt_list_controller.handle(page, page_size)
-
 
 
 @router.get("/cfdis")
@@ -99,6 +100,32 @@ async def create_fiscal_info(payload: CreateFiscalInfoRequest):
     return await fiscal_info_controller.handle(request_data=payload)
 
 
+@router.post("/fiscal-info/csf")
+async def create_fiscal_info_from_csf(
+    file: UploadFile = File(..., alias="file"),
+    email: EmailStr = Form(..., description="Email de contacto fiscal"),
+    use_cfdi_code_default: InvoiceUse = Form(
+        ..., description="Código de uso de CFDI por defecto (ej. 'G03')"
+    ),
+):
+    """Registers the fiscal info extracted from a CSF (PDF, JPG or PNG)."""
+    from api.http.controllers.create_fiscal_info_from_csf_controller import (
+        CreateFiscalInfoFromCsfController,
+    )
+    from api.http.requests.fiscal_info_from_csf_request import (
+        CreateFiscalInfoFromCsfRequest,
+    )
+
+    fiscal_info_controller = CreateFiscalInfoFromCsfController()
+    return await fiscal_info_controller.handle(
+        file=file,
+        request_data=CreateFiscalInfoFromCsfRequest(
+            email=email,
+            use_cfdi_code_default=use_cfdi_code_default,
+        ),
+    )
+
+
 @router.get("/fiscal-info")
 async def get_fiscal_info():
     from api.http.controllers.get_fiscal_info_controller import (
@@ -107,6 +134,7 @@ async def get_fiscal_info():
 
     get_fiscal_info_controller = GetUserFiscalInfoController()
     return await get_fiscal_info_controller.handle()
+
 
 @router.get("/reporting/receipts/count")
 async def get_receipt_count_summary():
@@ -117,6 +145,7 @@ async def get_receipt_count_summary():
 
     receipt_count_controller = GetReceiptCountSummaryController()
     return await receipt_count_controller.handle()
+
 
 @router.get("/reporting/completed-billing")
 async def get_completed_billing_summary(
