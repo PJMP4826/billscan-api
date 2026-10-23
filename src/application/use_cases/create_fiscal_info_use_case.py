@@ -1,20 +1,18 @@
-from datetime import date
+from datetime import datetime
 
-from src.config.logger import logger
-from src.domain.ports.repositories.fiscal_info_repository_port import (
-    FiscalInfoRepositoryPort,
+from src.application.dtos.billing_customer_regime_dto import BillingCustomerRegimeDto
+from src.application.use_cases.persist_fiscal_info_use_case import (
+    PersistFiscalInfoUseCase,
 )
-from src.domain.enums.tax_regime import TaxRegime
-from src.shared.errors.infrastructure_exceptions import PostgresDBException
-from src.domain.ports.data_encryptor import DataEncryptor
 
 
-class CreateFiscalInfoUseCase:
-    def __init__(
-        self, fiscal_info_repository: FiscalInfoRepositoryPort, encryptor: DataEncryptor
-    ) -> None:
-        self._fiscal_info_repository = fiscal_info_repository
-        self._encryptor = encryptor
+class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
+    """Registra la información fiscal que el usuario envía ya capturada.
+
+    La parte común (encriptar + persistir) vive en
+    :class:`~src.application.use_cases.persist_fiscal_info_use_case.PersistFiscalInfoUseCase`;
+    aquí solo se valida el régimen que llegó en la request.
+    """
 
     async def execute(
         self,
@@ -25,37 +23,21 @@ class CreateFiscalInfoUseCase:
         cp: str,
         address: str | None,
         regimen_code: str,
-        use_cfdi_code_default: str
+        fecha_alta_sat: datetime,
+        use_cfdi_code_default: str,
     ) -> None:
         """Crea la información fiscal de un usuario y agrega un régimen."""
-        try:
-            encrypted_rfc = self._encryptor.encrypt(rfc)
-            encrypted_email = self._encryptor.encrypt(email)
-            encrypted_razon_social = self._encryptor.encrypt(razon_social)
-            encrypted_address = self._encryptor.encrypt(address) if address else None
-            encrypted_cp = self._encryptor.encrypt(cp)
+        regimen = self._resolve_regimen(regimen_code)
 
-            fiscal_info_id = await self._fiscal_info_repository.insert_fiscal_info(
-                user_id=user_id,
-                rfc=encrypted_rfc,
-                razon_social=encrypted_razon_social,
-                email=encrypted_email,
-                cp=encrypted_cp,
-                address=encrypted_address,
-                use_cfdi_code_default=use_cfdi_code_default
-            )
-
-            valid_regimen = TaxRegime(regimen_code)
-
-            await self._fiscal_info_repository.add_regimen(
-                fiscal_info_id=fiscal_info_id,
-                regimen_code=valid_regimen.value,
-                regimen_description=valid_regimen.description,
-                fecha_alta=date.today(),
-            )
-        except ValueError as e:
-            logger.debug(f"Régimen fiscal {regimen_code} no válido: {e}")
-            raise ValueError(f"Régimen fiscal {regimen_code} no válido") from e
-        except PostgresDBException as e:
-            logger.debug(f"Error al registrar información fiscal: {e}")
-            raise
+        await self._persist_fiscal_info(
+            user_id=user_id,
+            rfc=rfc,
+            razon_social=razon_social,
+            email=email,
+            cp=cp,
+            address=address,
+            regimens=[
+                BillingCustomerRegimeDto(code=regimen, fecha_alta_sat=fecha_alta_sat)
+            ],
+            use_cfdi_code_default=use_cfdi_code_default,
+        )
