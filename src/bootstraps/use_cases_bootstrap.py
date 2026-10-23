@@ -80,6 +80,23 @@ def get_create_fiscal_info_use_case():
     )
 
 
+def get_create_fiscal_info_from_csf_use_case():
+    from src.application.use_cases.create_fiscal_info_from_csf_use_case import (
+        CreateFiscalInfoFromCsfUseCase,
+    )
+    from src.bootstraps.services.infrastructure_bootstrap_services import (
+        get_fernet_encryptor,
+        get_billing_customer_info_extractor,
+    )
+    from .repositories.repositories_bootstrap import get_fiscal_info_repository
+
+    return CreateFiscalInfoFromCsfUseCase(
+        fiscal_info_repository=get_fiscal_info_repository(),
+        encryptor=get_fernet_encryptor(),
+        extractor=get_billing_customer_info_extractor(),
+    )
+
+
 def get_user_fiscal_info_use_case():
     from src.application.use_cases.get_user_fiscal_info_use_case import (
         GetUserFiscalInfoUseCase,
