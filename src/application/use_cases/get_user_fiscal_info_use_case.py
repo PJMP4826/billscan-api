@@ -27,6 +27,10 @@ class GetUserFiscalInfoUseCase:
         # Mapeo seguro (maneja NULLs del LEFT JOIN)
         regimen_data = raw_data.get("regimen_id")
 
+        # Lista completa de regímenes del RFC para que el cliente pueda elegir
+        # con cuál facturar (el régimen se envía en la request del ticket).
+        raw_regimens = await self._repository.get_regimens_by_user_id(user_id=user_id)
+
         return {
             "rfc": self._encryptor.decrypt(raw_data["rfc"]),
             "razon_social": self._encryptor.decrypt(raw_data["razon_social"]),
@@ -43,4 +47,16 @@ class GetUserFiscalInfoUseCase:
                 if regimen_data
                 else None
             ),
+            "regimenes": [
+                {
+                    "code": regimen["code"],
+                    "description": regimen["description"],
+                    "fecha_alta": (
+                        str(regimen["fecha_alta"])
+                        if regimen.get("fecha_alta") is not None
+                        else None
+                    ),
+                }
+                for regimen in raw_regimens
+            ],
         }
