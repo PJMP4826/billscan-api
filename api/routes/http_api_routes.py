@@ -11,6 +11,7 @@ from pydantic import EmailStr
 
 from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 from src.domain.enums.invoice_use import InvoiceUse
+from src.domain.enums.tax_regime import TaxRegime
 
 router = APIRouter(prefix="/api")
 
@@ -21,6 +22,14 @@ async def upload_files(
     files: list[UploadFile] | None = File(default=None, alias="files[]"),
     groups: str | None = Form(default=None, alias="groups[]"),
     auto_billing: bool = Form(default=False),
+    uso_cfdi: InvoiceUse | None = Form(
+        default=None,
+        description="Código SAT de uso de CFDI elegido por el usuario (ej. 'G03')",
+    ),
+    regimen: TaxRegime | None = Form(
+        default=None,
+        description="Código SAT del régimen fiscal elegido por el usuario (ej. '612')",
+    ),
 ):
     from api.http.controllers.upload_receipt_controller import UploadReceiptController
 
@@ -29,7 +38,7 @@ async def upload_files(
 
     receipt_controller = UploadReceiptController()
     return await receipt_controller.handle(
-        files, groups, background_tasks, auto_billing
+        files, groups, background_tasks, auto_billing, uso_cfdi, regimen
     )
 
 
@@ -124,6 +133,21 @@ async def create_fiscal_info_from_csf(
             use_cfdi_code_default=use_cfdi_code_default,
         ),
     )
+
+
+@router.get("/fiscal-info/regimens")
+async def get_fiscal_info_regimens():
+    """Returns the tax regimens associated with the user's RFC.
+
+    The client must show this list before submitting a receipt, because the
+    regimen is now sent in the request instead of being taken by default.
+    """
+    from api.http.controllers.get_user_regimens_controller import (
+        GetUserRegimensController,
+    )
+
+    regimens_controller = GetUserRegimensController()
+    return await regimens_controller.handle()
 
 
 @router.get("/fiscal-info")

@@ -3,6 +3,8 @@ import puremagic
 from fastapi import UploadFile, status, BackgroundTasks
 from fastapi.responses import JSONResponse
 
+from src.domain.enums.invoice_use import InvoiceUse
+from src.domain.enums.tax_regime import TaxRegime
 from src.shared.errors.base_exception import BadRequestError
 from src.bootstraps.use_cases_bootstrap import get_submit_receipt_use_case
 
@@ -17,6 +19,8 @@ class UploadReceiptController:
         groups_raw: str | None,
         background_tasks: BackgroundTasks,
         auto_billing: bool = False,
+        uso_cfdi: InvoiceUse | None = None,
+        regimen: TaxRegime | None = None,
     ) -> JSONResponse:
         try:
 
@@ -31,6 +35,8 @@ class UploadReceiptController:
                 user_id=temp_user_id,
                 grouped_images=grouped_images,
                 auto_billing=auto_billing,
+                uso_cfdi=uso_cfdi,
+                regimen=regimen,
             )
 
             return JSONResponse(
