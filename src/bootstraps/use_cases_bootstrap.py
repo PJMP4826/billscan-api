@@ -8,6 +8,7 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
         get_background_task_queue_adapter,
     )
     from .repositories.repositories_bootstrap import (
+        get_fiscal_info_repository,
         get_receipt_image_repository,
         get_receipt_job_details_repository,
     )
@@ -19,6 +20,7 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
         ),
         receipt_image_repository=get_receipt_image_repository(),
         receipt_job_details_repository=get_receipt_job_details_repository(),
+        fiscal_info_repository=get_fiscal_info_repository(),
     )
 
 
@@ -109,6 +111,17 @@ def get_user_fiscal_info_use_case():
     return GetUserFiscalInfoUseCase(
         fiscal_info_repository=get_fiscal_info_repository(),
         encryptor=get_fernet_encryptor(),
+    )
+
+
+def get_user_regimens_use_case():
+    from src.application.use_cases.get_user_regimens_use_case import (
+        GetUserRegimensUseCase,
+    )
+    from .repositories.repositories_bootstrap import get_fiscal_info_repository
+
+    return GetUserRegimensUseCase(
+        fiscal_info_repository=get_fiscal_info_repository(),
     )
 
 

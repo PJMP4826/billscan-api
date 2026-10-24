@@ -49,7 +49,14 @@ class ProcessReceiptExtractionUseCase:
         self._extractor = extractor
         self._queue_publisher = queue_publisher
 
-    async def execute(self, job_id: int, user_id: str, auto_billing: bool) -> None:
+    async def execute(
+        self,
+        job_id: int,
+        user_id: str,
+        auto_billing: bool,
+        uso_cfdi: str | None = None,
+        regimen: str | None = None,
+    ) -> None:
         try:
             await self._receipt_job_details_repository.mark_extracting(
                 job_id=int(job_id)
@@ -95,6 +102,15 @@ class ProcessReceiptExtractionUseCase:
             await self._receipt_image_repository.backfill_receipt_id(
                 receipt_id=receipt_id, receipt_job_id=job_id
             )
+
+            # Guardamos la elección fiscal del cliente (si la envió) para que el
+            # job de timbrado la use en lugar de los defaults de `fiscal_info`.
+            if uso_cfdi or regimen:
+                await self._billing_detail_repository.set_billing_preferences(
+                    receipt_id=receipt_id,
+                    uso_cfdi=uso_cfdi,
+                    regimen_code=regimen,
+                )
 
             if receipt.billing:
                 if not receipt.billing.is_billable:
