@@ -66,11 +66,37 @@ class InitiateBillingUseCase:
                 user_id=user_id
             )
 
+            # El uso de CFDI y el régimen los elige el cliente en la request del
+            # ticket y quedan persistidos en `receipt_billing_details`. Si no los
+            # envió, caemos a los valores por defecto de `fiscal_info` para
+            # mantener compatibilidad con clientes viejos.
+            billing_detail = await self._billing_detail_repository.find_by_receipt_id(
+                receipt_id=receipt_id
+            )
+
+            persisted_uso_cfdi = (
+                billing_detail.get("uso_cfdi") if billing_detail else None
+            )
+            persisted_regimen = (
+                billing_detail.get("regimen_code") if billing_detail else None
+            )
+
+            effective_uso_cfdi = (
+                persisted_uso_cfdi or fiscal_user_info["use_cfdi_default"]
+            )
+            effective_regimen = persisted_regimen or fiscal_user_info["regimen_code"]
+
+            await self._billing_detail_repository.set_billing_preferences(
+                receipt_id=receipt_id,
+                uso_cfdi=effective_uso_cfdi,
+                regimen_code=effective_regimen,
+            )
+
             user_info = BillingCustomerInfoDto(
                 razon_social=self._encryptor.decrypt(fiscal_user_info["razon_social"]),
                 rfc=self._encryptor.decrypt(fiscal_user_info["rfc"]),
                 email=self._encryptor.decrypt(fiscal_user_info["fiscal_email"]),
-                regimen=TaxRegime(fiscal_user_info["regimen_code"]),
+                regimen=TaxRegime(effective_regimen),
                 cp=self._encryptor.decrypt(fiscal_user_info["cp"]),
                 address=self._encryptor.decrypt(fiscal_user_info["address"]),
             )
@@ -87,7 +113,7 @@ class InitiateBillingUseCase:
                         else None
                     )
                 ),
-                invoice_use=InvoiceUse(fiscal_user_info["use_cfdi_default"]),
+                invoice_use=InvoiceUse(effective_uso_cfdi),
                 customer_info=user_info,
                 test_mode=settings.facturagpt_test_mode,
             )
