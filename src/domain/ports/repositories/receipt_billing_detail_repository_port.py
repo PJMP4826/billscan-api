@@ -13,6 +13,19 @@ class ReceiptBillingDetailRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    async def set_billing_preferences(
+        self,
+        receipt_id: int,
+        uso_cfdi: str | None = None,
+        regimen_code: str | None = None,
+    ) -> None:
+        """Guarda la elección fiscal (uso de CFDI y régimen) enviada por el cliente.
+
+        Los valores ``None`` no sobrescriben lo ya persistido.
+        """
+        pass
+
+    @abstractmethod
     async def update_billing_status(
         self,
         receipt_id: int,

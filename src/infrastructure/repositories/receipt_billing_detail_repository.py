@@ -101,6 +101,8 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
                 expiration_date,
                 billing_data,
                 extra_metadata,
+                uso_cfdi,
+                regimen_code,
                 facturagpt_session_id,
                 billing_status,
                 billing_error_code,
@@ -111,6 +113,34 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         """
         return await self._db_manager.execute_sql_query_fetch_first(
             sql, {"receipt_id": receipt_id}
+        )
+
+    async def set_billing_preferences(
+        self,
+        receipt_id: int,
+        uso_cfdi: str | None = None,
+        regimen_code: str | None = None,
+    ) -> None:
+        """Guarda el uso de CFDI y el régimen elegidos por el cliente.
+
+        Se usa ``COALESCE`` para que los valores ``None`` no pisen lo que ya
+        estuviera persistido (útil cuando solo se reintenta con un campo o
+        cuando el timbrado hace write-back de los valores efectivos).
+        """
+        sql = """
+            UPDATE receipt_billing_details
+            SET uso_cfdi = COALESCE(:uso_cfdi, uso_cfdi),
+                regimen_code = COALESCE(:regimen_code, regimen_code),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE receipt_id = :receipt_id;
+        """
+        await self._db_manager.execute_statement(
+            sql,
+            {
+                "receipt_id": receipt_id,
+                "uso_cfdi": uso_cfdi,
+                "regimen_code": regimen_code,
+            },
         )
 
     async def update_billing_status(
@@ -150,7 +180,7 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         completed_at_datetime = None
         if completed_at:
             completed_at_datetime = datetime.fromisoformat(completed_at)
-        
+
         await self._db_manager.execute_statement(
             sql,
             {

@@ -19,7 +19,7 @@ class FiscalInfoRepositoryPort(ABC):
         email: str,
         cp: str,
         address: str | None,
-        use_cfdi_code_default: str
+        use_cfdi_code_default: str,
     ) -> int:
         """Inserta la información fiscal base del usuario y devuelve su ID."""
         pass
@@ -41,6 +41,17 @@ class FiscalInfoRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    async def get_regimens_by_user_id(self, user_id: str) -> list[dict[str, Any]]:
+        """Obtiene todos los regímenes fiscales registrados del usuario.
+
+        Se toman los regímenes asociados a la información fiscal más reciente
+        del usuario, sin duplicados por ``regimen_code`` y ordenados por
+        ``fecha_alta`` descendente. Cada elemento tiene la forma
+        ``{"code": str, "description": str, "fecha_alta": date | None}``.
+        """
+        pass
+
+    @abstractmethod
     async def has_fiscal_info(self, user_id: str) -> bool:
         """Verifica si un usuario ya tiene información fiscal registrada."""
         pass
@@ -54,7 +65,7 @@ class FiscalInfoRepositoryPort(ABC):
         email: str,
         cp: str,
         address: str | None,
-        use_cfdi_code_default: str
+        use_cfdi_code_default: str,
     ) -> None:
         """Actualiza los datos estáticos de la información fiscal."""
         pass

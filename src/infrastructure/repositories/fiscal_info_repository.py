@@ -28,7 +28,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         email: str,
         cp: str,
         address: str | None,
-        use_cfdi_code_default: str
+        use_cfdi_code_default: str,
     ) -> int:
         """Inserta la información fiscal base del usuario y devuelve su `id` (BIGSERIAL)."""
         sql = """
@@ -62,7 +62,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 "email": email,
                 "cp": cp,
                 "address": address,
-                "use_cfdi_default": use_cfdi_code_default
+                "use_cfdi_default": use_cfdi_code_default,
             },
         )
 
@@ -144,8 +144,40 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
 
         if not result:
             raise ValueError("No hay informacion fiscal asociada a tu usuario")
-        
+
         return result
+
+    async def get_regimens_by_user_id(self, user_id: str) -> list[dict[str, Any]]:
+        """Obtiene TODOS los regímenes del usuario para que elija con cuál facturar.
+
+        Se limita al registro más reciente de ``fiscal_info`` del usuario (la
+        tabla mantiene historial) y se deduplica por ``regimen_code`` quedándose
+        con el ``fecha_alta`` más reciente de cada código.
+        """
+        sql = """
+            WITH latest_fiscal_info AS (
+                SELECT id
+                FROM fiscal_info
+                WHERE user_id = :user_id
+                ORDER BY id DESC
+                LIMIT 1
+            ),
+            distinct_regimens AS (
+                SELECT DISTINCT ON (r.regimen_code)
+                    r.regimen_code AS code,
+                    r.regimen_description AS description,
+                    r.fecha_alta
+                FROM regimenes r
+                JOIN latest_fiscal_info lfi ON lfi.id = r.fiscal_info
+                ORDER BY r.regimen_code, r.fecha_alta DESC
+            )
+            SELECT code, description, fecha_alta
+            FROM distinct_regimens
+            ORDER BY fecha_alta DESC NULLS LAST, code;
+        """
+        return await self._db_manager.execute_sql_query_fetch_all(
+            sql, {"user_id": user_id}
+        )
 
     async def has_fiscal_info(self, user_id: str) -> bool:
         """Verifica de forma optimizada si un usuario ya tiene información fiscal."""
@@ -168,7 +200,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         email: str,
         cp: str,
         address: str | None,
-        use_cfdi_code_default: str
+        use_cfdi_code_default: str,
     ) -> None:
         """(Opcional) Método para actualizar los datos estáticos de la información fiscal."""
         sql = """
@@ -190,6 +222,6 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
                 "email": email,
                 "cp": cp,
                 "address": address,
-                "use_cfdi_default": use_cfdi_code_default
+                "use_cfdi_default": use_cfdi_code_default,
             },
         )
