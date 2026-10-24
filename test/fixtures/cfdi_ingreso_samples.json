@@ -1,0 +1,377 @@
+[
+  {
+    "Emisor": {
+      "Rfc": "NFC090101AA1",
+      "Nombre": "NUBE FICTICIA MEXICO S.A. DE C.V.",
+      "RegimenFiscal": "601 - General de Ley Personas Morales"
+    },
+    "Receptor": {
+      "Rfc": "XAXX010101000",
+      "Nombre": "PUBLICO EN GENERAL",
+      "DomicilioFiscalReceptor": "00000",
+      "RegimenFiscalReceptor": "614 - Ingresos por intereses",
+      "UsoCFDI": "S01 - Sin efectos fiscales"
+    },
+    "Conceptos": [
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Tasa|0.160000": {
+              "Base": 1250.0,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Tasa",
+              "TasaOCuota": 0.16,
+              "Importe": 200.0
+            }
+          }
+        },
+        "ClaveProdServ": "81112006 - servicios de almacenamiento de datos",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "ACT - Actividad",
+        "Unidad": "Servicio",
+        "Descripcion": "Servicios de plataforma en la nube (muestra de prueba)",
+        "ValorUnitario": 1250.0,
+        "Importe": 1250.0,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      }
+    ],
+    "Impuestos": {
+      "Traslados": {
+        "002|Tasa|0.160000": {
+          "Base": 1250.0,
+          "Impuesto": "002 - IVA",
+          "TipoFactor": "Tasa",
+          "TasaOCuota": 0.16,
+          "Importe": 200.0
+        }
+      },
+      "TotalImpuestosTrasladados": 200.0
+    },
+    "Complemento": {
+      "TimbreFiscalDigital": {
+        "Version": "1.1",
+        "UUID": "11111111-aaaa-4bbb-8ccc-111111111111",
+        "FechaTimbrado": "2026-02-10T09:20:00",
+        "RfcProvCertif": "PACF010101M1A"
+      }
+    },
+    "Version": "4.0",
+    "Serie": "A",
+    "Folio": "1001",
+    "Fecha": "2026-02-10T09:15:00",
+    "FormaPago": "04 - Tarjeta de crédito",
+    "CondicionesDePago": "Inmediatamente",
+    "SubTotal": 1250.0,
+    "Moneda": "MXN - Peso Mexicano",
+    "TipoCambio": 1.0,
+    "Total": 1450.0,
+    "TipoDeComprobante": "I - Ingreso",
+    "Exportacion": "01 - No aplica",
+    "MetodoPago": "PUE - Pago en una sola exhibición",
+    "LugarExpedicion": "00000"
+  },
+  {
+    "Emisor": {
+      "Rfc": "TGF010101QA1",
+      "Nombre": "TESORERIA FICTICIA MUNICIPAL",
+      "RegimenFiscal": "603 - Personas Morales con Fines no Lucrativos"
+    },
+    "Receptor": {
+      "Rfc": "XAXX010101000",
+      "Nombre": "PUBLICO EN GENERAL",
+      "DomicilioFiscalReceptor": "00000",
+      "RegimenFiscalReceptor": "616 - Sin obligaciones fiscales",
+      "UsoCFDI": "S01 - Sin efectos fiscales"
+    },
+    "Conceptos": [
+      {
+        "ClaveProdServ": "93161700 - Administración tributaria",
+        "NoIdentificacion": "OP-000123456",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "C62 - Uno",
+        "Descripcion": "Derechos ficticios, número de operación: OP-000123456 Fecha: 2026-04-15 - Hora de presentación: 18:29 Clave concepto del Pago: 307103 Línea de Captura: 0000FAKE00000000000",
+        "ValorUnitario": 2500.0,
+        "Importe": 2500.0,
+        "ObjetoImp": "01 - No objeto de impuesto"
+      }
+    ],
+    "Complemento": {
+      "CFDIRegistroFiscal": {
+        "Version": "1.0",
+        "Folio": "0000000000000001"
+      },
+      "TimbreFiscalDigital": {
+        "Version": "1.1",
+        "UUID": "22222222-aaaa-4bbb-8ccc-222222222222",
+        "FechaTimbrado": "2026-04-15T18:30:00",
+        "RfcProvCertif": "PACF010101M1B"
+      }
+    },
+    "Version": "4.0",
+    "Fecha": "2026-04-15T18:29:00",
+    "FormaPago": "03 - Transferencia electrónica de fondos",
+    "SubTotal": 2500.0,
+    "Moneda": "MXN - Peso Mexicano",
+    "Total": 2500.0,
+    "TipoDeComprobante": "I - Ingreso",
+    "Exportacion": "01 - No aplica",
+    "MetodoPago": "PUE - Pago en una sola exhibición",
+    "LugarExpedicion": "10000"
+  },
+  {
+    "Emisor": {
+      "Rfc": "CFN030401KL9",
+      "Nombre": "COMERCIO FICTICIO DEL NORTE",
+      "RegimenFiscal": "601 - General de Ley Personas Morales"
+    },
+    "Receptor": {
+      "Rfc": "XAXX010101000",
+      "Nombre": "PUBLICO EN GENERAL",
+      "DomicilioFiscalReceptor": "00000",
+      "RegimenFiscalReceptor": "616 - Sin obligaciones fiscales",
+      "UsoCFDI": "S01 - Sin efectos fiscales"
+    },
+    "Conceptos": [
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Tasa|0.160000": {
+              "Base": 258.620693,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Tasa",
+              "TasaOCuota": 0.16,
+              "Importe": 41.379311
+            }
+          }
+        },
+        "ClaveProdServ": "83111603 - Servicios de telefonía celular",
+        "NoIdentificacion": "0001",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "E48 - Unidad de servicio",
+        "Unidad": "Unidad de servicio",
+        "Descripcion": "Servicio de telefonía ficticio 5500000000",
+        "ValorUnitario": 258.620693,
+        "Importe": 258.620693,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      }
+    ],
+    "Impuestos": {
+      "Traslados": {
+        "002|Tasa|0.160000": {
+          "Base": 258.62,
+          "Impuesto": "002 - IVA",
+          "TipoFactor": "Tasa",
+          "TasaOCuota": 0.16,
+          "Importe": 41.38
+        }
+      },
+      "TotalImpuestosTrasladados": 41.38
+    },
+    "Complemento": {
+      "TimbreFiscalDigital": {
+        "Version": "1.1",
+        "UUID": "33333333-aaaa-4bbb-8ccc-333333333333",
+        "FechaTimbrado": "2026-05-05T12:50:00",
+        "RfcProvCertif": "PACF010101M1C"
+      }
+    },
+    "Version": "4.0",
+    "Serie": "B",
+    "Folio": "1002",
+    "Fecha": "2026-05-05T12:45:00",
+    "FormaPago": "28 - Tarjeta de débito",
+    "CondicionesDePago": "Inmediato",
+    "SubTotal": 258.62,
+    "Moneda": "MXN - Peso Mexicano",
+    "TipoCambio": 1.0,
+    "Total": 300.0,
+    "TipoDeComprobante": "I - Ingreso",
+    "Exportacion": "01 - No aplica",
+    "MetodoPago": "PUE - Pago en una sola exhibición",
+    "LugarExpedicion": "20000"
+  },
+  {
+    "Emisor": {
+      "Rfc": "BFA090301MN8",
+      "Nombre": "BOTICAS FICTICIAS S.A. DE C.V.",
+      "RegimenFiscal": "601 - General de Ley Personas Morales"
+    },
+    "Receptor": {
+      "Rfc": "XAXX010101000",
+      "Nombre": "PUBLICO EN GENERAL",
+      "DomicilioFiscalReceptor": "00000",
+      "RegimenFiscalReceptor": "616 - Sin obligaciones fiscales",
+      "UsoCFDI": "S01 - Sin efectos fiscales"
+    },
+    "Conceptos": [
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Tasa|0.000000": {
+              "Base": 89.9,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Tasa",
+              "TasaOCuota": 0.0,
+              "Importe": 0.0
+            }
+          }
+        },
+        "ClaveProdServ": "50181905 - Galletas de dulce",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "H87 - Pieza",
+        "Descripcion": "PRODUCTO FICTICIO 001 250G",
+        "ValorUnitario": 89.9,
+        "Importe": 89.9,
+        "Descuento": 0.0,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      }
+    ],
+    "Impuestos": {
+      "Traslados": {
+        "002|Tasa|0.000000": {
+          "Base": 89.9,
+          "Impuesto": "002 - IVA",
+          "TipoFactor": "Tasa",
+          "TasaOCuota": 0.0,
+          "Importe": 0.0
+        }
+      },
+      "TotalImpuestosTrasladados": 0.0
+    },
+    "Complemento": {
+      "TimbreFiscalDigital": {
+        "Version": "1.1",
+        "UUID": "44444444-aaaa-4bbb-8ccc-444444444444",
+        "FechaTimbrado": "2026-06-18T17:05:30",
+        "RfcProvCertif": "PACF010101M1D"
+      }
+    },
+    "Version": "4.0",
+    "Serie": "C",
+    "Folio": "1003",
+    "Fecha": "2026-06-18T17:05:00",
+    "FormaPago": "01 - Efectivo",
+    "CondicionesDePago": "PLAZO 30 DIA(S)",
+    "SubTotal": 89.9,
+    "Descuento": 0.0,
+    "Moneda": "MXN - Peso Mexicano",
+    "Total": 89.9,
+    "TipoDeComprobante": "I - Ingreso",
+    "Exportacion": "01 - No aplica",
+    "MetodoPago": "PUE - Pago en una sola exhibición",
+    "LugarExpedicion": "30000"
+  },
+  {
+    "Emisor": {
+      "Rfc": "RAD130627IH2",
+      "Nombre": "RED AMIGO DAL",
+      "RegimenFiscal": "601 - General de Ley Personas Morales"
+    },
+    "Receptor": {
+      "Rfc": "SME2009297K7",
+      "Nombre": "SOFDEV MEXICO",
+      "DomicilioFiscalReceptor": "86190",
+      "RegimenFiscalReceptor": "626 - Régimen Simplificado de Confianza",
+      "UsoCFDI": "G03 - Gastos en general"
+    },
+    "Conceptos": [
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Tasa|0.160000": {
+              "Base": 1772.46,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Tasa",
+              "TasaOCuota": 0.16,
+              "Importe": 283.59
+            }
+          }
+        },
+        "ClaveProdServ": "84101700 - Manejo de deuda",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "C62 - Uno",
+        "Unidad": "Uno",
+        "Descripcion": "Intereses sujetos a IVA. Tarjeta de crédito empresarial 37175.",
+        "ValorUnitario": 1772.46,
+        "Importe": 1772.46,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      },
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Exento": {
+              "Base": 250.44,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Exento"
+            }
+          }
+        },
+        "ClaveProdServ": "84101700 - Manejo de deuda",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "C62 - Uno",
+        "Unidad": "Uno",
+        "Descripcion": "Intereses no sujetos a IVA. Tarjeta de crédito empresarial 37175.",
+        "ValorUnitario": 250.44,
+        "Importe": 250.44,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      },
+      {
+        "Impuestos": {
+          "Traslados": {
+            "002|Tasa|0.160000": {
+              "Base": 2200.0,
+              "Impuesto": "002 - IVA",
+              "TipoFactor": "Tasa",
+              "TasaOCuota": 0.16,
+              "Importe": 352.0
+            }
+          }
+        },
+        "ClaveProdServ": "84101700 - Manejo de deuda",
+        "Cantidad": 1.0,
+        "ClaveUnidad": "C62 - Uno",
+        "Unidad": "Uno",
+        "Descripcion": "Comisiones anuales. Tarjeta de crédito empresarial 37175.",
+        "ValorUnitario": 2200.0,
+        "Importe": 2200.0,
+        "ObjetoImp": "02 - Sí objeto de impuesto"
+      }
+    ],
+    "Impuestos": {
+      "Traslados": {
+        "002|Tasa|0.160000": {
+          "Base": 3972.46,
+          "Impuesto": "002 - IVA",
+          "TipoFactor": "Tasa",
+          "TasaOCuota": 0.16,
+          "Importe": 635.59
+        },
+        "002|Exento": {
+          "Base": 250.44,
+          "Impuesto": "002 - IVA",
+          "TipoFactor": "Exento"
+        }
+      },
+      "TotalImpuestosTrasladados": 635.59
+    },
+    "Complemento": {
+      "TimbreFiscalDigital": {
+        "Version": "1.1",
+        "UUID": "55555555-aaaa-4bbb-8ccc-555555555555",
+        "FechaTimbrado": "2025-12-19T14:28:07",
+        "RfcProvCertif": "LSO1306189R5"
+      }
+    },
+    "Version": "4.0",
+    "Folio": "6804068",
+    "Fecha": "2025-12-19T14:28:06",
+    "FormaPago": "03 - Transferencia electrónica de fondos",
+    "SubTotal": 4222.9,
+    "Moneda": "MXN - Peso Mexicano",
+    "Total": 4858.49,
+    "TipoDeComprobante": "I - Ingreso",
+    "Exportacion": "01 - No aplica",
+    "MetodoPago": "PUE - Pago en una sola exhibición",
+    "LugarExpedicion": "11560"
+  }
+]
