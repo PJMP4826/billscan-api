@@ -90,6 +90,8 @@ erDiagram
         text billing_code "NULLABLE"
         date expiration_date "NULLABLE"
         jsonb billing_metadata "NULLABLE"
+        varchar uso_cfdi "VARCHAR(10) NULLABLE"
+        varchar regimen_code "VARCHAR(10) NULLABLE"
         varchar facturagpt_session_id "VARCHAR(100)"
         varchar billing_status "VARCHAR(50) DEFAULT 'NOT_REQUESTED'"
         varchar billing_error_code "VARCHAR(100)"
@@ -198,25 +200,25 @@ erDiagram
 
 ## Relaciones
 
-| Tabla padre | Tabla hijo | FK | On Delete |
-|-------------|-----------|-----|-----------|
-| `users` | `fiscal_info` | `user_id` | RESTRICT |
-| `users` | `receipts` | `user_id` | CASCADE |
-| `users` | `receipt_jobs_details` | `user_id` | CASCADE |
-| `fiscal_info` | `regimenes` | `fiscal_info` | RESTRICT |
-| `merchants` | `receipts` | `merchant_id` | RESTRICT |
-| `payment_methods` | `receipts` | `payment_method_code` | SET NULL |
-| `payment_methods` | `receipt_payments` | `payment_method_code` | RESTRICT |
-| `receipts` | `receipt_payments` | `receipt_id` | CASCADE |
-| `receipts` | `receipt_billing_details` | `receipt_id` | CASCADE |
-| `receipts` | `billing_files` | `receipt_id` | CASCADE |
-| `receipts` | `receipt_items` | `receipt_id` | CASCADE |
-| `receipts` | `receipt_taxes` | `receipt_id` | CASCADE |
-| `receipts` | `receipt_images` | `receipt_id` | CASCADE |
-| `receipts` | `receipt_jobs_details` | `receipt_id` | SET NULL |
-| `receipts` | `billing_attempts` | `receipt_id` | CASCADE |
-| `receipts` | `facturagpt_webhooks` | `receipt_id` | SET NULL |
-| `receipt_jobs_details` | `receipt_images` | `receipt_job_id` | CASCADE |
+| Tabla padre            | Tabla hijo                | FK                    | On Delete |
+| ---------------------- | ------------------------- | --------------------- | --------- |
+| `users`                | `fiscal_info`             | `user_id`             | RESTRICT  |
+| `users`                | `receipts`                | `user_id`             | CASCADE   |
+| `users`                | `receipt_jobs_details`    | `user_id`             | CASCADE   |
+| `fiscal_info`          | `regimenes`               | `fiscal_info`         | RESTRICT  |
+| `merchants`            | `receipts`                | `merchant_id`         | RESTRICT  |
+| `payment_methods`      | `receipts`                | `payment_method_code` | SET NULL  |
+| `payment_methods`      | `receipt_payments`        | `payment_method_code` | RESTRICT  |
+| `receipts`             | `receipt_payments`        | `receipt_id`          | CASCADE   |
+| `receipts`             | `receipt_billing_details` | `receipt_id`          | CASCADE   |
+| `receipts`             | `billing_files`           | `receipt_id`          | CASCADE   |
+| `receipts`             | `receipt_items`           | `receipt_id`          | CASCADE   |
+| `receipts`             | `receipt_taxes`           | `receipt_id`          | CASCADE   |
+| `receipts`             | `receipt_images`          | `receipt_id`          | CASCADE   |
+| `receipts`             | `receipt_jobs_details`    | `receipt_id`          | SET NULL  |
+| `receipts`             | `billing_attempts`        | `receipt_id`          | CASCADE   |
+| `receipts`             | `facturagpt_webhooks`     | `receipt_id`          | SET NULL  |
+| `receipt_jobs_details` | `receipt_images`          | `receipt_job_id`      | CASCADE   |
 
 ## Notas de diseño
 
