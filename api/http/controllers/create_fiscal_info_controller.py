@@ -22,8 +22,7 @@ class CreateFiscalInfoController:
                 email=request_data.email,
                 cp=request_data.cp,
                 address=request_data.address,
-                regimen_code=request_data.regimen_code,
-                fecha_alta_sat=request_data.fecha_alta_sat,
+                regimens=request_data.regimens,
                 use_cfdi_code_default=request_data.use_cfdi_code_default
             )
 

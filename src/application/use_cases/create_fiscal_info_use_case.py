@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from src.application.dtos.billing_customer_regime_dto import BillingCustomerRegimeDto
 from src.application.use_cases.persist_fiscal_info_use_case import (
     PersistFiscalInfoUseCase,
@@ -22,12 +20,10 @@ class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
         email: str,
         cp: str,
         address: str | None,
-        regimen_code: str,
-        fecha_alta_sat: datetime,
+        regimens: list[BillingCustomerRegimeDto],
         use_cfdi_code_default: str,
     ) -> None:
         """Crea la información fiscal de un usuario y agrega un régimen."""
-        regimen = self._resolve_regimen(regimen_code)
 
         await self._persist_fiscal_info(
             user_id=user_id,
@@ -36,8 +32,6 @@ class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
             email=email,
             cp=cp,
             address=address,
-            regimens=[
-                BillingCustomerRegimeDto(code=regimen, fecha_alta_sat=fecha_alta_sat)
-            ],
+            regimens=regimens,
             use_cfdi_code_default=use_cfdi_code_default,
         )
