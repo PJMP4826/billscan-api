@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -9,6 +10,10 @@ import pytest
 
 from src.application.dtos.cfdi import CfdiDto
 from src.infrastructure.adapters.cfdi_parser import CfdiParser
+from src.infrastructure.adapters.cfdi_payload_mapper import (
+    SAT_TO_CANONICAL,
+    to_canonical_payload,
+)
 
 _FIXTURE = (
     Path(__file__).resolve().parents[2] / "fixtures" / "cfdi_ingreso_samples.json"
@@ -50,6 +55,22 @@ def _collect_keys(node) -> set[str]:
         for item in node:
             keys |= _collect_keys(item)
     return keys
+
+
+def _assert_snake_case_keys(
+    node, parent_key: str | None = None, path: str = "$"
+) -> None:
+    if isinstance(node, dict):
+        if parent_key != "traslados":
+            for key in node:
+                assert re.fullmatch(
+                    r"[a-z][a-z0-9_]*", key
+                ), f"key fuera de snake_case: {path}.{key}"
+        for key, value in node.items():
+            _assert_snake_case_keys(value, key, f"{path}.{key}")
+    elif isinstance(node, list):
+        for index, item in enumerate(node):
+            _assert_snake_case_keys(item, parent_key, f"{path}[{index}]")
 
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
@@ -125,3 +146,49 @@ def test_parse_bytes_wraps_missing_required_field() -> None:
     with patch(_PARSE_TARGET, side_effect=lambda *_a, **_k: copy.deepcopy(raw)):
         with pytest.raises(ValueError, match="Error al parsear el XML CFDI"):
             CfdiParser.parse_bytes(b"<xml/>")
+
+
+def _fixture_sat_keys(node, parent_key: str | None = None) -> set[str]:
+    """Claves de atributo del fixture, omitiendo los ids del mapa Traslados."""
+    keys: set[str] = set()
+    if isinstance(node, dict):
+        if parent_key == "Traslados":
+            for value in node.values():
+                keys |= _fixture_sat_keys(value)
+            return keys
+        for key, value in node.items():
+            keys.add(key)
+            keys |= _fixture_sat_keys(value, key)
+    elif isinstance(node, list):
+        for item in node:
+            keys |= _fixture_sat_keys(item, parent_key)
+    return keys
+
+
+@pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
+def test_mapper_covers_every_sat_key_in_the_fixture(sample: dict) -> None:
+    """Si el SAT añade un atributo, este test obliga a mapearlo explícitamente."""
+    unmapped = _fixture_sat_keys(sample) - set(SAT_TO_CANONICAL)
+
+    assert unmapped == set()
+
+
+@pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
+def test_parse_bytes_emits_only_canonical_keys(sample: dict) -> None:
+    raw = _raw_cfdi(sample)
+    with patch(_PARSE_TARGET, side_effect=lambda *_a, **_k: copy.deepcopy(raw)):
+        result = CfdiParser.parse_bytes(b"<xml/>").to_dict()
+
+    _assert_snake_case_keys(result)
+
+
+def test_mapper_preserves_traslado_keys_and_drops_sensitive_data() -> None:
+    canonical = to_canonical_payload(_raw_cfdi(SAMPLES[0]))
+
+    assert "002|Tasa|0.160000" in canonical["impuestos"]["traslados"]
+    assert canonical["impuestos"]["traslados"]["002|Tasa|0.160000"]["tasa_o_cuota"]
+
+    keys = _collect_keys(canonical)
+    assert not any("sello" in key for key in keys), keys
+    assert not any("certificado" in key for key in keys), keys
+    assert "certificado" not in keys

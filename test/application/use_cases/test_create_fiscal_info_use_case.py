@@ -3,7 +3,9 @@ from datetime import datetime
 from typing import Any
 
 import pytest
+from pydantic import TypeAdapter, ValidationError
 
+from src.application.dtos.billing_customer_regime_dto import BillingCustomerRegimeDto
 from src.application.use_cases.create_fiscal_info_use_case import (
     CreateFiscalInfoUseCase,
 )
@@ -52,8 +54,11 @@ def test_execute_persists_encrypted_info_and_regimen():
             email="facturas@acme.mx",
             cp="06600",
             address="CALLE REFORMA 222",
-            regimen_code="601",
-            fecha_alta_sat=_FECHA_ALTA_SAT,
+            regimens=[
+                BillingCustomerRegimeDto(
+                    code=TaxRegime.R601, fecha_alta_sat=_FECHA_ALTA_SAT
+                )
+            ],
             use_cfdi_code_default="G03",
         )
     )
@@ -77,24 +82,16 @@ def test_execute_persists_encrypted_info_and_regimen():
     ]
 
 
-def test_execute_raises_value_error_on_invalid_regimen():
-    use_case, repository = _build_use_case()
+def test_invalid_regimen_is_rejected_before_persisting():
+    """El régimen llega tipado: un código fuera del enum no se puede construir.
+
+    La validación ocurre en el borde (request/`BillingCustomerRegimeDto`), así
+    que el caso de uso nunca ve un código inválido ni toca la base de datos.
+    """
+    adapter = TypeAdapter(BillingCustomerRegimeDto)
+
+    with pytest.raises(ValidationError):
+        adapter.validate_python({"code": "999"})
 
     with pytest.raises(ValueError):
-        asyncio.run(
-            use_case.execute(
-                user_id=_USER_ID,
-                rfc="ACM010101AAA",
-                razon_social="ACME SA DE CV",
-                email="facturas@acme.mx",
-                cp="06600",
-                address=None,
-                regimen_code="999",
-                fecha_alta_sat=_FECHA_ALTA_SAT,
-                use_cfdi_code_default="G03",
-            )
-        )
-
-    # Se valida antes de tocar la base de datos
-    assert repository.inserted == []
-    assert repository.regimens == []
+        TaxRegime("999")

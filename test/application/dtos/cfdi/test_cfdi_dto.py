@@ -16,6 +16,7 @@ from src.application.dtos.cfdi import (
     TimbreFiscalDigitalDto,
     TrasladoDto,
 )
+from src.infrastructure.adapters.cfdi_payload_mapper import to_canonical_payload
 
 _FIXTURE = (
     Path(__file__).resolve().parents[3] / "fixtures" / "cfdi_ingreso_samples.json"
@@ -28,6 +29,11 @@ SAMPLE_IDS = [
     "muestra_farmacia",
     "muestra_traslado_exento",
 ]
+
+
+def _dto(sample: dict) -> CfdiDto:
+    """Los fixtures tienen forma SAT; el adaptador los lleva a snake_case."""
+    return CfdiDto.from_dict(to_canonical_payload(sample))
 
 
 def _assert_snake_case_keys(
@@ -48,7 +54,7 @@ def _assert_snake_case_keys(
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
 def test_to_dict_uses_snake_case_keys(sample: dict) -> None:
-    result = CfdiDto.from_dict(sample).to_dict()
+    result = _dto(sample).to_dict()
 
     _assert_snake_case_keys(result)
 
@@ -82,7 +88,7 @@ def test_to_dict_uses_snake_case_keys(sample: dict) -> None:
 
 def test_from_dict_builds_nested_dto_objects() -> None:
     for sample in SAMPLES:
-        dto = CfdiDto.from_dict(sample)
+        dto = _dto(sample)
         assert isinstance(dto, CfdiDto)
         assert isinstance(dto.emisor, EmisorDto)
         assert isinstance(dto.receptor, ReceptorDto)
@@ -106,7 +112,7 @@ def test_from_dict_builds_nested_dto_objects() -> None:
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
 def test_required_fields_are_mapped(sample: dict) -> None:
-    dto = CfdiDto.from_dict(sample)
+    dto = _dto(sample)
 
     assert dto.emisor.rfc == sample["Emisor"]["Rfc"]
     assert dto.emisor.nombre == sample["Emisor"]["Nombre"]
@@ -149,7 +155,7 @@ def test_required_fields_are_mapped(sample: dict) -> None:
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
 def test_optional_fields_are_none_when_absent_in_source(sample: dict) -> None:
-    dto = CfdiDto.from_dict(sample)
+    dto = _dto(sample)
 
     assert dto.serie == sample.get("Serie")
     assert dto.folio == sample.get("Folio")
@@ -169,7 +175,7 @@ def test_optional_fields_are_none_when_absent_in_source(sample: dict) -> None:
 
 
 def test_sample_without_taxes_maps_all_tax_nodes_to_none() -> None:
-    dto = CfdiDto.from_dict(SAMPLES[1])
+    dto = _dto(SAMPLES[1])
 
     assert dto.impuestos is None
     assert dto.conceptos[0].impuestos is None
@@ -184,7 +190,7 @@ def test_sample_without_taxes_maps_all_tax_nodes_to_none() -> None:
 
 
 def test_tax_traslado_is_mapped_with_its_key() -> None:
-    dto = CfdiDto.from_dict(SAMPLES[0])
+    dto = _dto(SAMPLES[0])
 
     impuestos = dto.impuestos
     assert impuestos is not None
@@ -206,7 +212,7 @@ def test_tax_traslado_is_mapped_with_its_key() -> None:
 def test_exento_traslado_omits_tasa_and_importe() -> None:
     """CFDI 4.0: TipoFactor=Exento no trae TasaOCuota ni Importe."""
     sample = SAMPLES[4]
-    dto = CfdiDto.from_dict(sample)
+    dto = _dto(sample)
 
     impuestos = dto.impuestos
     assert impuestos is not None
@@ -238,18 +244,25 @@ def test_exento_traslado_omits_tasa_and_importe() -> None:
 
 @pytest.mark.parametrize("sample", SAMPLES, ids=SAMPLE_IDS)
 def test_from_dict_round_trips_to_dict_output(sample: dict) -> None:
-    """`cfdi_summary` se guarda con to_dict() (snake_case) y luego se hidrata.
+    """`cfdi_summary` se guarda con to_dict() y luego se hidrata de vuelta.
 
-    Regresión: from_dict solo leía claves SAT en PascalCase, así que el
-    detalle de cualquier CFDI nuevo fallaba con KeyError al releerlo.
+    Regresión: el detalle de cualquier CFDI nuevo fallaba con KeyError porque
+    `from_dict` esperaba las claves SAT y la persistencia guarda snake_case.
     """
-    serialized = CfdiDto.from_dict(sample).to_dict()
+    dto = _dto(sample)
+    serialized = dto.to_dict()
 
     restored = CfdiDto.from_dict(serialized)
 
-    assert restored.emisor == CfdiDto.from_dict(sample).emisor
-    assert restored.total == CfdiDto.from_dict(sample).total
+    assert restored.emisor == dto.emisor
+    assert restored.total == dto.total
     assert restored.to_dict() == serialized
+
+
+def test_from_dict_rejects_pascal_case_payload() -> None:
+    """El DTO solo habla snake_case; la traducción es del adaptador."""
+    with pytest.raises(KeyError):
+        CfdiDto.from_dict(SAMPLES[0])
 
 
 def test_optional_and_required_type_annotations() -> None:
