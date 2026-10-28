@@ -2,6 +2,9 @@ import warnings
 from api.routes import webhooks_api_routes
 from api.routes import http_api_routes
 from api.middlewares.cors import add_cors_middleware
+from api.middlewares.exception_handlers.exception_handlers import (
+    register_http_exception_handler,
+)
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
@@ -23,6 +26,7 @@ app = FastAPI(
 # Nota: agregar Depends de JWT despues
 
 add_cors_middleware(app)
+register_http_exception_handler(app)
 
 
 @app.get("/")
