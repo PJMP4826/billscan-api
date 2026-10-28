@@ -193,56 +193,59 @@ class ProcessFacturaGPTWebhookUseCase:
         invoice_result: InvoiceResult,
     ) -> None:
         files = invoice_result.files
+        folio = (
+            invoice_result.cfdi_summary.folio_fiscal
+            if invoice_result.cfdi_summary is not None
+            else None
+        )
 
-        # 1) Descargar + almacenar XML/PDF bajo claves determinísticas.
-
-        xml_key = pdf_key = None
+        # 1) Descargar el XML y parsearlo (necesario para cfdi_summary).
+        xml_content: bytes | None = None
+        xml_mime_type = BillingFileType.XML.mime_type
         cfdi_content: CfdiDto | None = None
         if files and files.xml_url:
-            xml_content, mime_type = await self._download_invoce_content(
+            xml_content, xml_mime_type = await self._download_invoce_content(
                 url=files.xml_url
             )
             cfdi_content = CfdiParser.parse_bytes(xml_content=xml_content)
-            xml_key = await self._store_invoice_file(
-                content_data=xml_content,
-                mime_type=mime_type,
-                file_type=BillingFileType.XML,
-                folio=(
-                    invoice_result.cfdi_summary.folio_fiscal
-                    if invoice_result.cfdi_summary
-                    else None
-                ),
-            )
 
-        if files and files.pdf_url:
-            pdf_content, mime_type = await self._download_invoce_content(
-                url=files.pdf_url
-            )
-            pdf_key = await self._store_invoice_file(
-                content_data=pdf_content,
-                mime_type=mime_type,
-                file_type=BillingFileType.PDF,
-                folio=(
-                    invoice_result.cfdi_summary.folio_fiscal
-                    if invoice_result.cfdi_summary
-                    else None
-                ),
-            )
-
-        # 2) Referenciar en billing_files (solo tipos que falten → idempotente).
-        await self._insert_missing_files(
-            receipt_id=receipt_id,
-            xml_key=xml_key,
-            pdf_key=pdf_key,
-        )        
-
-        # 3) Persistir el resultado de facturación (cfdi_summary crudo).
+        # 2) Persistir PRIMERO el resultado de facturación: es lo que el
+        #    cliente ve en la UI. Si la subida de archivos falla después, el
+        #    estado ya quedó aplicado y el reintento solo completará archivos.
         await self._billing_detail_repository.update_billing_status(
             receipt_id=receipt_id,
             billing_status=BillingStatus.COMPLETED.value,
             facturagpt_session_id=invoice_result.session_id,
             cfdi_content=cfdi_content.to_dict() if cfdi_content is not None else None,
             completed_at=invoice_result.completed_at,
+        )
+
+        # 3) Subir XML/PDF con claves determinísticas (idempotente).
+        xml_key = pdf_key = None
+        if xml_content is not None:
+            xml_key = await self._store_invoice_file(
+                content_data=xml_content,
+                mime_type=xml_mime_type,
+                file_type=BillingFileType.XML,
+                folio=folio,
+            )
+
+        if files and files.pdf_url:
+            pdf_content, pdf_mime_type = await self._download_invoce_content(
+                url=files.pdf_url
+            )
+            pdf_key = await self._store_invoice_file(
+                content_data=pdf_content,
+                mime_type=pdf_mime_type,
+                file_type=BillingFileType.PDF,
+                folio=folio,
+            )
+
+        # 4) Referenciar en billing_files (solo tipos que falten → idempotente).
+        await self._insert_missing_files(
+            receipt_id=receipt_id,
+            xml_key=xml_key,
+            pdf_key=pdf_key,
         )
 
         logger.info(
