@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 from typing import Any
 
+from src.config.logger import logger
 from src.domain.value_objects.billing_data import BillingData
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
@@ -9,6 +10,24 @@ from src.infrastructure.database.sql.sql_database_connection_manager import (
 from src.domain.ports.repositories.receipt_billing_detail_repository_port import (
     ReceiptBillingDetailRepositoryPort,
 )
+
+
+def _parse_completed_at(value: str | datetime | None) -> datetime | None:
+    """Normaliza `completed_at` a datetime.
+
+    Acepta un datetime ya parseado o una cadena ISO-8601 (incluyendo el
+    sufijo ``Z`` que Pydantic puede dejar tal cual). Un valor no parseable
+    NO debe tumbar el UPDATE: se loguea y se ignora.
+    """
+    if value is None or value == "":
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).strip().replace("Z", "+00:00"))
+    except ValueError:
+        logger.warning("completed_at no parseable como ISO-8601: %r", value)
+        return None
 
 
 class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
@@ -107,6 +126,8 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
                 billing_status,
                 billing_error_code,
                 billing_error_message,
+                cfdi_summary,
+                completed_at,
                 updated_at
             FROM receipt_billing_details
             WHERE receipt_id = :receipt_id;
@@ -151,7 +172,7 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         billing_error_code: str | None = None,
         billing_error_message: str | None = None,
         cfdi_content: dict[str, Any] | None = None,
-        completed_at: str | None = None,
+        completed_at: str | datetime | None = None,
     ) -> None:
         """Actualiza el estado de facturación, típicamente desde un
         webhook de FacturaGPT (PENDING, PROCESSING, COMPLETED, FAILED,
@@ -161,10 +182,16 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
         en la columna JSONB `cfdi_summary`; `completed_at` en su columna
         timestamptz. Ambos se ignoran si llegan como None (no pisan lo
         existente) — esto hace al UPDATE idempotente ante reintentos.
+
+        Usa ``RETURNING`` para distinguir "actualizado" de "0 filas": si la
+        fila 1:1 no existe se lanza ``ValueError`` en vez de fallar en
+        silencio (el worker lo registra en `facturagpt_webhooks.last_error`).
         """
+        # default=str evita TypeError si el CFDI trae datetime/Decimal.
         cfdi_summary_json = (
-            json.dumps(cfdi_content) if cfdi_content is not None else None
+            json.dumps(cfdi_content, default=str) if cfdi_content is not None else None
         )
+        completed_at_datetime = _parse_completed_at(completed_at)
 
         sql = """
             UPDATE receipt_billing_details
@@ -175,13 +202,10 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
                 cfdi_summary = COALESCE(CAST(:cfdi_summary AS JSONB), cfdi_summary),
                 completed_at = COALESCE(CAST(:completed_at AS timestamptz), completed_at),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE receipt_id = :receipt_id;
+            WHERE receipt_id = :receipt_id
+            RETURNING receipt_id;
         """
-        completed_at_datetime = None
-        if completed_at:
-            completed_at_datetime = datetime.fromisoformat(completed_at)
-
-        await self._db_manager.execute_statement(
+        updated = await self._db_manager.execute_sql_query_fetch_one(
             sql,
             {
                 "receipt_id": receipt_id,
@@ -192,6 +216,18 @@ class ReceiptBillingDetailRepository(ReceiptBillingDetailRepositoryPort):
                 "cfdi_summary": cfdi_summary_json,
                 "completed_at": completed_at_datetime,
             },
+        )
+        if updated is None:
+            # 0 filas = la relación 1:1 no existe (o el receipt no existe).
+            raise ValueError(
+                "No existe receipt_billing_details para "
+                f"receipt_id={receipt_id} (status={billing_status}). "
+                "¿Se creó la fila en el flujo de alta del receipt?"
+            )
+        logger.info(
+            "receipt_billing_details actualizado: receipt_id=%s status=%s",
+            receipt_id,
+            billing_status,
         )
 
     async def delete_by_receipt_id(self, receipt_id: int) -> None:

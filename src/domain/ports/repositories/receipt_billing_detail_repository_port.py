@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any
 from src.domain.value_objects.billing_data import BillingData
 
@@ -34,7 +35,7 @@ class ReceiptBillingDetailRepositoryPort(ABC):
         billing_error_code: str | None = None,
         billing_error_message: str | None = None,
         cfdi_content: dict[str, Any] | None = None,
-        completed_at: str | None = None,
+        completed_at: str | datetime | None = None,
     ) -> None:
         pass
 
