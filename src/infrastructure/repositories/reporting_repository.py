@@ -238,11 +238,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             INNER JOIN receipts r
                 ON r.id = rbd.receipt_id
             WHERE r.user_id = :user_id
-              AND rbd.cfdi_summary IS NOT NULL
-              AND (
-                    rbd.cfdi_summary->'emisor' IS NOT NULL
-                 OR rbd.cfdi_summary->'Emisor' IS NOT NULL
-              )
+              AND rbd.cfdi_summary->'emisor' IS NOT NULL
         """
         count_sql = f"SELECT COUNT(*) AS total {where_clause};"
         count_row = await self._db_manager.execute_sql_query_fetch_first(
@@ -250,36 +246,17 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
         total = int(count_row["total"]) if count_row else 0
 
-        # COALESCE por forma: filas nuevas se guardan en snake_case (to_dict
-        # del CfdiDto); las legadas en PascalCase (claves SAT originales).
+        # `cfdi_summary` se escribe siempre vía CfdiDto.to_dict() (snake_case).
         sql = f"""
             SELECT
                 r.receipt_uuid,
-                COALESCE(
-                    rbd.cfdi_summary->'emisor'->>'nombre',
-                    rbd.cfdi_summary->'Emisor'->>'Nombre'
-                ) AS emisor_nombre,
-                COALESCE(
-                    rbd.cfdi_summary->>'total',
-                    rbd.cfdi_summary->>'Total'
-                )::numeric AS total,
-                COALESCE(
-                    rbd.cfdi_summary->>'serie',
-                    rbd.cfdi_summary->>'Serie'
-                ) AS serie,
-                COALESCE(
-                    rbd.cfdi_summary->>'folio',
-                    rbd.cfdi_summary->>'Folio'
-                ) AS folio,
-                COALESCE(
-                    rbd.cfdi_summary->'receptor'->>'uso_cfdi',
-                    rbd.cfdi_summary->'Receptor'->>'UsoCFDI'
-                ) AS uso_cfdi
+                rbd.cfdi_summary->'emisor'->>'nombre'   AS emisor_nombre,
+                (rbd.cfdi_summary->>'total')::numeric  AS total,
+                rbd.cfdi_summary->>'serie'             AS serie,
+                rbd.cfdi_summary->>'folio'             AS folio,
+                rbd.cfdi_summary->'receptor'->>'uso_cfdi' AS uso_cfdi
             {where_clause}
-            ORDER BY COALESCE(
-                rbd.cfdi_summary->>'fecha',
-                rbd.cfdi_summary->>'Fecha'
-            ) DESC
+            ORDER BY rbd.cfdi_summary->>'fecha' DESC
             LIMIT :limit OFFSET :offset;
         """
         rows = await self._db_manager.execute_sql_query_fetch_all(
@@ -331,11 +308,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 ON rbd.receipt_id = r.id
             WHERE r.receipt_uuid = :receipt_uuid
               AND r.user_id = :user_id
-              AND rbd.cfdi_summary IS NOT NULL
-              AND (
-                    rbd.cfdi_summary->'emisor' IS NOT NULL
-                 OR rbd.cfdi_summary->'Emisor' IS NOT NULL
-              );
+              AND rbd.cfdi_summary->'emisor' IS NOT NULL;
         """
         result = await self._db_manager.execute_sql_query_fetch_first(
             sql, {"receipt_uuid": receipt_uuid, "user_id": user_id}
