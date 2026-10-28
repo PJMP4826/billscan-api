@@ -6,6 +6,7 @@ from satcfdi.cfdi import CFDI  # type: ignore
 from satcfdi.models.code import Code  # type: ignore
 
 from src.application.dtos.cfdi import CfdiDto
+from src.infrastructure.adapters.cfdi_payload_mapper import to_canonical_payload
 
 
 class CfdiParser:
@@ -33,34 +34,21 @@ class CfdiParser:
             # 2. Parsear con satcfdi
             cfdi_obj = CFDI.from_string(xml_string)  # type: ignore
 
-            # 3. Convertir a diccionario
-            factura_dict = dict(cfdi_obj)  # type: ignore
+            # 3. Convertir a diccionario y traducir al formato canónico.
+            #    El mapper actúa como allowlist: descarta los campos sensibles
+            #    del XML (Sello, Certificado, NoCertificado, SelloCFD...).
+            factura_dict = to_canonical_payload(dict(cfdi_obj))  # type: ignore
 
-            # 4. Limpieza de campos sensibles
-            # Eliminar campos del nodo principal
-            factura_dict.pop("Certificado", None)  # type: ignore
-            factura_dict.pop("NoCertificado", None)  # type: ignore
-            factura_dict.pop("Sello", None)  # type: ignore
-
-            # Eliminar campos dentro del Complemento (TimbreFiscalDigital)
-            if (
-                "Complemento" in factura_dict
-                and "TimbreFiscalDigital" in factura_dict["Complemento"]
-            ):
-                tfd = factura_dict["Complemento"]["TimbreFiscalDigital"]  # type: ignore
-                tfd.pop("SelloCFD", None)  # type: ignore
-                tfd.pop("SelloSAT", None)  # type: ignore
-                tfd.pop("NoCertificadoSAT", None)  # type: ignore
-
-            # Nota: El dict ya tiene tipos manejables tras la limpieza,
-            # pero esto asegura consistencia si hay Decimal o fechas anidadas.
+            # 4. Convertir Decimal/date/Code a tipos serializables por JSON.
             factura_dict = CfdiParser._clean_dict_values(factura_dict)  # type: ignore
 
-            tipo_comprobante = str(factura_dict.get("TipoDeComprobante", ""))
+            tipo_comprobante = str(factura_dict.get("tipo_de_comprobante", ""))
+            if not tipo_comprobante:
+                raise ValueError("El CFDI no expone el atributo TipoDeComprobante.")
             if not tipo_comprobante.startswith("I"):
                 raise ValueError(
                     "Solo se admiten CFDI de tipo Ingreso (I); "
-                    f"se recibió '{tipo_comprobante or 'desconocido'}'."
+                    f"se recibió '{tipo_comprobante}'."
                 )
 
             return CfdiDto.from_dict(factura_dict)
