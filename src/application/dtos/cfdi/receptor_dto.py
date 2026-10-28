@@ -15,11 +15,11 @@ class ReceptorDto:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ReceptorDto":
         return cls(
-            rfc=data["Rfc"],
-            nombre=data["Nombre"],
-            domicilio_fiscal_receptor=data["DomicilioFiscalReceptor"],
-            regimen_fiscal_receptor=data["RegimenFiscalReceptor"],
-            uso_cfdi=data["UsoCFDI"],
+            rfc=data["rfc"],
+            nombre=data["nombre"],
+            domicilio_fiscal_receptor=data["domicilio_fiscal_receptor"],
+            regimen_fiscal_receptor=data["regimen_fiscal_receptor"],
+            uso_cfdi=data["uso_cfdi"],
         )
 
     def to_dict(self) -> dict[str, Any]:

@@ -19,11 +19,11 @@ class TrasladoDto:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TrasladoDto":
         return cls(
-            base=data["Base"],
-            impuesto=data["Impuesto"],
-            tipo_factor=data["TipoFactor"],
-            tasa_o_cuota=data.get("TasaOCuota"),
-            importe=data.get("Importe"),
+            base=data["base"],
+            impuesto=data["impuesto"],
+            tipo_factor=data["tipo_factor"],
+            tasa_o_cuota=data.get("tasa_o_cuota"),
+            importe=data.get("importe"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,20 +46,19 @@ class ImpuestosDto:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ImpuestosDto":
-        traslados_raw: dict[str, Any] = data.get("Traslados") or {}
+        traslados_raw: dict[str, Any] = data.get("traslados") or {}
         return cls(
             traslados={
                 key: TrasladoDto.from_dict(value)
                 for key, value in traslados_raw.items()
             },
-            total_impuestos_trasladados=data.get("TotalImpuestosTrasladados"),
+            total_impuestos_trasladados=data.get("total_impuestos_trasladados"),
         )
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
             "traslados": {
-                key: traslado.to_dict()
-                for key, traslado in self.traslados.items()
+                key: traslado.to_dict() for key, traslado in self.traslados.items()
             },
             "total_impuestos_trasladados": self.total_impuestos_trasladados,
         }

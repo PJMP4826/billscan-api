@@ -35,34 +35,38 @@ class CfdiDto:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CfdiDto":
-        impuestos_raw = data.get("Impuestos")
+        """Hidrata el DTO desde un payload canónico en ``snake_case``.
+
+        El payload lo produce ``CfdiPayloadMapper`` (adaptador de
+        infraestructura) a partir del XML del SAT, y es el mismo formato que
+        ``to_dict()`` persiste en la columna ``cfdi_summary``.
+        """
+        impuestos_raw = data.get("impuestos")
         return cls(
-            emisor=EmisorDto.from_dict(data["Emisor"]),
-            receptor=ReceptorDto.from_dict(data["Receptor"]),
-            conceptos=[
-                ConceptosDto.from_dict(item) for item in data["Conceptos"]
-            ],
-            complemento=ComplementoDto.from_dict(data["Complemento"]),
-            version=data["Version"],
-            fecha=data["Fecha"],
-            forma_pago=data["FormaPago"],
-            sub_total=data["SubTotal"],
-            moneda=data["Moneda"],
-            total=data["Total"],
-            tipo_de_comprobante=data["TipoDeComprobante"],
-            exportacion=data["Exportacion"],
-            metodo_pago=data["MetodoPago"],
-            lugar_expedicion=data["LugarExpedicion"],
+            emisor=EmisorDto.from_dict(data["emisor"]),
+            receptor=ReceptorDto.from_dict(data["receptor"]),
+            conceptos=[ConceptosDto.from_dict(item) for item in data["conceptos"]],
+            complemento=ComplementoDto.from_dict(data["complemento"]),
+            version=data["version"],
+            fecha=data["fecha"],
+            forma_pago=data["forma_pago"],
+            sub_total=data["sub_total"],
+            moneda=data["moneda"],
+            total=data["total"],
+            tipo_de_comprobante=data["tipo_de_comprobante"],
+            exportacion=data["exportacion"],
+            metodo_pago=data["metodo_pago"],
+            lugar_expedicion=data["lugar_expedicion"],
             impuestos=(
                 ImpuestosDto.from_dict(impuestos_raw)
                 if impuestos_raw is not None
                 else None
             ),
-            serie=data.get("Serie"),
-            folio=data.get("Folio"),
-            condiciones_de_pago=data.get("CondicionesDePago"),
-            tipo_cambio=data.get("TipoCambio"),
-            descuento=data.get("Descuento"),
+            serie=data.get("serie"),
+            folio=data.get("folio"),
+            condiciones_de_pago=data.get("condiciones_de_pago"),
+            tipo_cambio=data.get("tipo_cambio"),
+            descuento=data.get("descuento"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -81,7 +85,9 @@ class CfdiDto:
             "exportacion": self.exportacion,
             "metodo_pago": self.metodo_pago,
             "lugar_expedicion": self.lugar_expedicion,
-            "impuestos": self.impuestos.to_dict() if self.impuestos is not None else None,
+            "impuestos": (
+                self.impuestos.to_dict() if self.impuestos is not None else None
+            ),
             "serie": self.serie,
             "folio": self.folio,
             "condiciones_de_pago": self.condiciones_de_pago,

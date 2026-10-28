@@ -13,9 +13,9 @@ class EmisorDto:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "EmisorDto":
         return cls(
-            rfc=data["Rfc"],
-            nombre=data["Nombre"],
-            regimen_fiscal=data["RegimenFiscal"],
+            rfc=data["rfc"],
+            nombre=data["nombre"],
+            regimen_fiscal=data["regimen_fiscal"],
         )
 
     def to_dict(self) -> dict[str, Any]:

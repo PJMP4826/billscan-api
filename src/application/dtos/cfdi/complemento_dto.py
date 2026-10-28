@@ -14,10 +14,10 @@ class TimbreFiscalDigitalDto:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TimbreFiscalDigitalDto":
         return cls(
-            version=data["Version"],
-            uuid=data["UUID"],
-            fecha_timbrado=data["FechaTimbrado"],
-            rfc_prov_certif=data["RfcProvCertif"],
+            version=data["version"],
+            uuid=data["uuid"],
+            fecha_timbrado=data["fecha_timbrado"],
+            rfc_prov_certif=data["rfc_prov_certif"],
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,8 +39,8 @@ class CfdiRegistroFiscalDto:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CfdiRegistroFiscalDto":
         return cls(
-            version=data["Version"],
-            folio=data["Folio"],
+            version=data["version"],
+            folio=data["folio"],
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -59,10 +59,10 @@ class ComplementoDto:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ComplementoDto":
-        registro_raw = data.get("CFDIRegistroFiscal")
+        registro_raw = data.get("cfdi_registro_fiscal")
         return cls(
             timbre_fiscal_digital=TimbreFiscalDigitalDto.from_dict(
-                data["TimbreFiscalDigital"]
+                data["timbre_fiscal_digital"]
             ),
             cfdi_registro_fiscal=(
                 CfdiRegistroFiscalDto.from_dict(registro_raw)

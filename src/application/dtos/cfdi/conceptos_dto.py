@@ -22,23 +22,23 @@ class ConceptosDto:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ConceptosDto":
-        impuestos_raw = data.get("Impuestos")
+        impuestos_raw = data.get("impuestos")
         return cls(
-            clave_prod_serv=data["ClaveProdServ"],
-            cantidad=data["Cantidad"],
-            clave_unidad=data["ClaveUnidad"],
-            descripcion=data["Descripcion"],
-            valor_unitario=data["ValorUnitario"],
-            importe=data["Importe"],
-            objeto_imp=data["ObjetoImp"],
+            clave_prod_serv=data["clave_prod_serv"],
+            cantidad=data["cantidad"],
+            clave_unidad=data["clave_unidad"],
+            descripcion=data["descripcion"],
+            valor_unitario=data["valor_unitario"],
+            importe=data["importe"],
+            objeto_imp=data["objeto_imp"],
             impuestos=(
                 ImpuestosDto.from_dict(impuestos_raw)
                 if impuestos_raw is not None
                 else None
             ),
-            no_identificacion=data.get("NoIdentificacion"),
-            unidad=data.get("Unidad"),
-            descuento=data.get("Descuento"),
+            no_identificacion=data.get("no_identificacion"),
+            unidad=data.get("unidad"),
+            descuento=data.get("descuento"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,7 +50,9 @@ class ConceptosDto:
             "valor_unitario": self.valor_unitario,
             "importe": self.importe,
             "objeto_imp": self.objeto_imp,
-            "impuestos": self.impuestos.to_dict() if self.impuestos is not None else None,
+            "impuestos": (
+                self.impuestos.to_dict() if self.impuestos is not None else None
+            ),
             "no_identificacion": self.no_identificacion,
             "unidad": self.unidad,
             "descuento": self.descuento,
