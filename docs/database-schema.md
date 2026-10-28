@@ -228,4 +228,5 @@ erDiagram
 - **`facturagpt_webhooks.processed_at`** es nullable: NULL indica que el webhook fue recibido pero aún no procesado correctamente.
 - **`facturagpt_webhooks.receipt_id`** usa SET NULL para no bloquear borrados de receipts (la tabla de webhooks es solo auditoría).
 - **`billing_files`** tiene un índice único parcial `(receipt_id, file_type) WHERE file_type IS NOT NULL` para garantizar un solo XML y un solo PDF por receipt.
+- **`receipt_billing_details.cfdi_summary`** guarda **siempre** la salida de `CfdiDto.to_dict()` (claves `snake_case`). No se escriben otras convenciones: el XML del SAT se traduce a este formato en `CfdiPayloadMapper`, y las consultas SQL usan una sola ruta de clave (`cfdi_summary->'emisor'`, no `->'Emisor'`).
 - **`merchants`** no tiene constraints únicos compuestos; originalmente tenía `UNIQUE(tax_id, branch_id)` pero fue eliminado en la migración #8.
