@@ -4,7 +4,6 @@ from typing import Any
 
 from src.application.dtos.billing_customer_regime_dto import BillingCustomerRegimeDto
 from src.config.logger import logger
-from src.domain.enums.tax_regime import TaxRegime
 from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
@@ -89,12 +88,3 @@ class PersistFiscalInfoUseCase(ABC):
         except PostgresDBException as e:
             logger.debug(f"Error al registrar información fiscal: {e}")
             raise
-
-    @staticmethod
-    def _resolve_regimen(regimen_code: str) -> TaxRegime:
-        """Valida un código de régimen del SAT (ej. ``"601"``) contra el enum."""
-        try:
-            return TaxRegime(regimen_code)
-        except ValueError as e:
-            logger.debug(f"Régimen fiscal {regimen_code} no válido: {e}")
-            raise ValueError(f"Régimen fiscal {regimen_code} no válido") from e
