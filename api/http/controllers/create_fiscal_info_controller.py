@@ -50,7 +50,7 @@ class CreateFiscalInfoController:
                 content={
                     "title": "BAD REQUEST",
                     "status": 400,
-                    "message": str(e),
+                    "message": e.get_message(),
                 },
             )
         except Exception as e:

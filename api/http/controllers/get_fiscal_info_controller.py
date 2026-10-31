@@ -18,7 +18,7 @@ class GetUserFiscalInfoController:
         except NotFoundError as e:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={"title": "NOT FOUND", "status": 404, "message": str(e.get_message())},
+                content={"title": "NOT FOUND", "status": 404, "message": e.get_message()},
             )
         except Exception as e:
             return JSONResponse(

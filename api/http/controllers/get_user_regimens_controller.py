@@ -28,7 +28,7 @@ class GetUserRegimensController:
                 content={
                     "title": "NOT FOUND",
                     "status": 404,
-                    "message": str(e.get_message()),
+                    "message": e.get_message(),
                 },
             )
         except Exception as e:
