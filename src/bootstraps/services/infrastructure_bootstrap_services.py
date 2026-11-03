@@ -3,6 +3,7 @@ from fastapi import BackgroundTasks
 
 _facturagpt_billing_adapter_instance = None
 _facturagpt_webhook_handler_instance = None
+_token_verifier_adapter_instance = None
 
 
 def get_http_client_adapter():
@@ -119,3 +120,29 @@ def get_facturagpt_webhook_handler():
             webhook_secret=settings.facturagpt_webhook_secret
         )
     return _facturagpt_webhook_handler_instance
+
+
+def get_token_verifier_adapter():
+    """Verificador de tokens de Clerk (singleton).
+
+    Se instancia una sola vez para reutilizar los clientes HTTP y la caché de
+    JWKS del SDK. El secret key se exige aquí (no al arrancar) para no romper
+    el boot en entornos que aún no lo configuran.
+    """
+    global _token_verifier_adapter_instance
+    if _token_verifier_adapter_instance is None:
+        if not settings.clerk_secret_key:
+            raise RuntimeError(
+                "Falta configurar clerk_secret_key (sk_test_.../sk_live_...) "
+                "en el entorno para autenticar peticiones."
+            )
+        from src.infrastructure.adapters.auth_adapters.clerk_token_verifier_adapter import (
+            ClerkTokenVerifier,
+        )
+
+        _token_verifier_adapter_instance = ClerkTokenVerifier(
+            secret_key=settings.clerk_secret_key,
+            authorized_parties=settings.clerk_authorized_parties_list,
+            audience=settings.clerk_audience,
+        )
+    return _token_verifier_adapter_instance

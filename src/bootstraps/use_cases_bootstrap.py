@@ -299,3 +299,12 @@ def get_receive_facturagpt_webhook_use_case(background_tasks: BackgroundTasks):
             background_tasks=background_tasks
         ),
     )
+
+
+def get_ensure_user_use_case():
+    from src.application.use_cases.ensure_user_exists_use_case import (
+        EnsureUserExistsUseCase,
+    )
+    from src.bootstraps.repositories.repositories_bootstrap import get_user_repository
+
+    return EnsureUserExistsUseCase(users_repository=get_user_repository())

@@ -69,3 +69,8 @@ def get_billing_file_repository():
     )
 
     return BillingFileRepository(manager=database_connection_manager)
+
+def get_user_repository():
+    from src.infrastructure.repositories.user_repository import UserRepository
+
+    return UserRepository(manager=database_connection_manager)
