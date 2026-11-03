@@ -4,6 +4,7 @@ from src.domain.ports.repositories.fiscal_info_repository_port import (
 )
 from src.shared.errors.base_exception import NotFoundError
 from src.domain.ports.data_encryptor import DataEncryptor
+from src.domain.value_objects.user_id import UserId
 
 
 class GetUserFiscalInfoUseCase:
@@ -13,13 +14,13 @@ class GetUserFiscalInfoUseCase:
         self._repository = fiscal_info_repository
         self._encryptor = encryptor
 
-    async def execute(self, user_id: str) -> dict[str, Any]:
+    async def execute(self, user_id: UserId) -> dict[str, Any]:
         """
         Obtiene la información fiscal vigente del usuario.
         Mapea la respuesta cruda del repositorio a una estructura limpia.
         """
         try:
-            raw_data = await self._repository.get_latest_by_user_id(user_id)
+            raw_data = await self._repository.get_latest_by_user_id(user_id.value)
         except ValueError as e:
             # El repositorio lanza ValueError si no encuentra registros
             raise NotFoundError(str(e)) from e
@@ -29,7 +30,9 @@ class GetUserFiscalInfoUseCase:
 
         # Lista completa de regímenes del RFC para que el cliente pueda elegir
         # con cuál facturar (el régimen se envía en la request del ticket).
-        raw_regimens = await self._repository.get_regimens_by_user_id(user_id=user_id)
+        raw_regimens = await self._repository.get_regimens_by_user_id(
+            user_id=user_id.value
+        )
 
         return {
             "rfc": self._encryptor.decrypt(raw_data["rfc"]),

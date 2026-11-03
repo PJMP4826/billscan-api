@@ -4,6 +4,7 @@ from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
+from src.domain.value_objects.user_id import UserId
 
 
 class GetCfdiDetailUseCase:
@@ -15,9 +16,9 @@ class GetCfdiDetailUseCase:
         self._file_storage = file_storage
         self._reporting_repository = reporting_repository
 
-    async def execute(self, user_id: str, receipt_uuid: str) -> dict[str, Any | None]:
+    async def execute(self, user_id: UserId, receipt_uuid: str) -> dict[str, Any | None]:
         row = await self._reporting_repository.get_cfdi_detail(
-            user_id=user_id, receipt_uuid=receipt_uuid
+            user_id=user_id.value, receipt_uuid=receipt_uuid
         )
 
         xml_key = row.invoice.xml_url

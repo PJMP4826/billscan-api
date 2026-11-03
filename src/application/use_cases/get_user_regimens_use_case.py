@@ -3,6 +3,7 @@ from typing import Any
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
 )
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import NotFoundError
 
 
@@ -18,15 +19,15 @@ class GetUserRegimensUseCase:
     def __init__(self, fiscal_info_repository: FiscalInfoRepositoryPort) -> None:
         self._fiscal_info_repository = fiscal_info_repository
 
-    async def execute(self, user_id: str) -> list[dict[str, Any]]:
+    async def execute(self, user_id: UserId) -> list[dict[str, Any]]:
         """Devuelve los regímenes registrados del usuario."""
         regimens = await self._fiscal_info_repository.get_regimens_by_user_id(
-            user_id=user_id
+            user_id=user_id.value
         )
 
         if not regimens:
             has_fiscal_info = await self._fiscal_info_repository.has_fiscal_info(
-                user_id=user_id
+                user_id=user_id.value
             )
             if not has_fiscal_info:
                 raise NotFoundError("No hay informacion fiscal asociada a tu usuario")

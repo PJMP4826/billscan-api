@@ -8,6 +8,7 @@ from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
 )
+from src.domain.value_objects.user_id import UserId
 
 
 class CreateFiscalInfoFromCsfUseCase(PersistFiscalInfoUseCase):
@@ -34,7 +35,7 @@ class CreateFiscalInfoFromCsfUseCase(PersistFiscalInfoUseCase):
 
     async def execute(
         self,
-        user_id: str,
+        user_id: UserId,
         file_bytes: bytes,
         mime_type: str,
         email: str,
@@ -46,7 +47,7 @@ class CreateFiscalInfoFromCsfUseCase(PersistFiscalInfoUseCase):
         )
 
         await self._persist_fiscal_info(
-            user_id=user_id,
+            user_id=user_id.value,
             rfc=fiscal_identity.rfc,
             razon_social=fiscal_identity.razon_social,
             email=email,

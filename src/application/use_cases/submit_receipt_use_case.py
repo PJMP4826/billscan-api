@@ -15,6 +15,7 @@ from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
 from src.domain.enums.job_names import JobName
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 
 
@@ -36,7 +37,7 @@ class SubmitReceiptUseCase:
 
     async def execute(
         self,
-        user_id: str,
+        user_id: UserId,
         grouped_images: dict[str, list[dict[str, bytes | str]]],
         auto_billing: bool,
         uso_cfdi: InvoiceUse | None = None,
@@ -58,7 +59,7 @@ class SubmitReceiptUseCase:
             job_name = JobName.PROCESS_RECEIPT_EXTRACTION
 
             job_id = await self._receipt_job_details_repository.create(
-                user_id=user_id, job_name=job_name
+                user_id=user_id.value, job_name=job_name
             )
 
             for page_idx, item in enumerate(file_details_list, start=1):
@@ -88,17 +89,17 @@ class SubmitReceiptUseCase:
                 job_name=job_name,
                 payload={
                     "job_id": job_id,
-                    "user_id": user_id,
+                    "user_id": user_id.value,
                     "auto_billing": auto_billing,
                     "uso_cfdi": uso_cfdi_code,
                     "regimen": regimen_code,
                 },
             )
 
-    async def _ensure_regimen_belongs(self, user_id: str, regimen_code: str) -> None:
+    async def _ensure_regimen_belongs(self, user_id: UserId, regimen_code: str) -> None:
         """Valida que el régimen elegido pertenezca a los registrados del RFC."""
         regimens = await self._fiscal_info_repository.get_regimens_by_user_id(
-            user_id=user_id
+            user_id=user_id.value
         )
         registered_codes = {item["code"] for item in regimens}
 
