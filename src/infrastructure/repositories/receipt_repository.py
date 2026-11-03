@@ -62,9 +62,10 @@ class ReceiptRepository(ReceiptRepositoryPort):
             where_clause="r.id = :id", params={"id": receipt_id}
         )
 
-    async def find_by_uuid(self, receipt_uuid: str) -> Receipt:
+    async def find_by_uuid(self, user_id: str, receipt_uuid: str) -> Receipt:
         return await self._find_single(
-            where_clause="r.receipt_uuid = :uuid", params={"uuid": receipt_uuid}
+            where_clause="r.receipt_uuid = :uuid AND r.user_id = :user_id",
+            params={"uuid": receipt_uuid, "user_id": user_id},
         )
 
     async def find_id_by_uuid(self, receipt_uuid: str) -> int | None:

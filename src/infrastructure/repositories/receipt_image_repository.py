@@ -117,17 +117,18 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
             sql, {"receipt_id": receipt_id}
         )
 
-    async def find_key_by_receipt_uuid(self, receipt_uuid: str) -> str:
+    async def find_key_by_receipt_uuid(self, user_id: str, receipt_uuid: str) -> str:
         sql = """
             SELECT
                 file_key
             FROM receipt_images ri
             INNER JOIN receipts r ON ri.receipt_id = r.id
             WHERE r.receipt_uuid = :receipt_uuid
+              AND r.user_id = :user_id
             ORDER BY ri.page_number, r.id;
         """
         result = await self._db_manager.execute_sql_query_fetch_first(
-            sql, {"receipt_uuid": receipt_uuid}
+            sql, {"receipt_uuid": receipt_uuid, "user_id": user_id}
         )
 
         if not result:

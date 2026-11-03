@@ -13,7 +13,7 @@ class ReportingRepositoryPort(ABC):
 
     @abstractmethod
     async def get_completed_billing_summary(
-        self, period: str = "month"
+        self, user_id: str, period: str = "month"
     ) -> CompletedBillingSummary:
         """
         Returns the total amount and count of receipts that have
@@ -25,6 +25,7 @@ class ReportingRepositoryPort(ABC):
     @abstractmethod
     async def get_recent_activity(
         self,
+        user_id: str,
         receipt_uuid: str | None = None,
         status_filter: str | None = None,
         limit: int = 10,
@@ -36,14 +37,16 @@ class ReportingRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def get_receipt_count_summary(self) -> ReceiptCountSummary:
+    async def get_receipt_count_summary(self, user_id: str) -> ReceiptCountSummary:
         """
         Returns the total count of receipts, split by billable and non-billable.
         """
         pass
 
     @abstractmethod
-    async def get_receipt_list(self, page: int = 1, page_size: int = 20) -> ReceiptListData:
+    async def get_receipt_list(
+        self, user_id: str, page: int = 1, page_size: int = 20
+    ) -> ReceiptListData:
         """
         Returns a paginated list of receipts with merchant name,
         registration date, total, and billing status.

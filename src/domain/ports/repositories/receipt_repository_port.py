@@ -30,8 +30,8 @@ class ReceiptRepositoryPort(ABC):
         pass
 
     @abstractmethod
-    async def find_by_uuid(self, receipt_uuid: str) -> Receipt:
-        """Busca la cabecera de un recibo por su UUID público."""
+    async def find_by_uuid(self, user_id: str, receipt_uuid: str) -> Receipt:
+        """Busca la cabecera de un recibo por su UUID público, restringido al usuario."""
         pass
 
     @abstractmethod

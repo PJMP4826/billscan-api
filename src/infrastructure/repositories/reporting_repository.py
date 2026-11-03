@@ -39,7 +39,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
     }
 
     async def get_completed_billing_summary(
-        self, period: str = "month"
+        self, user_id: str, period: str = "month"
     ) -> CompletedBillingSummary:
         period_filter = self._PERIOD_FILTERS.get(period)
         if period_filter is None:
@@ -57,12 +57,15 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 ON re_bi_d.receipt_id = r.id
             INNER JOIN receipt_jobs_details re_job_d
                 ON re_job_d.receipt_id = r.id
-            WHERE re_bi_d.is_billable = TRUE
+            WHERE r.user_id = :user_id
+              AND re_bi_d.is_billable = TRUE
               AND re_bi_d.billing_status = 'COMPLETED'
               AND re_job_d.status = 'COMPLETED'
               AND {period_filter};
         """
-        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
+        row = await self._db_manager.execute_sql_query_fetch_first(
+            sql, {"user_id": user_id}
+        )
 
         if not row:
             raise ValueError("Error obteniendo resumen de facturación")
@@ -73,7 +76,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             period=period,
         )
 
-    async def get_receipt_count_summary(self) -> ReceiptCountSummary:
+    async def get_receipt_count_summary(self, user_id: str) -> ReceiptCountSummary:
         sql = """
             SELECT
                 COUNT(*) AS total,
@@ -85,9 +88,12 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                 COALESCE(SUM(r.total), 0) AS total_spent
             FROM receipts r
             LEFT JOIN receipt_billing_details rbd
-                   ON rbd.receipt_id = r.id;
+                   ON rbd.receipt_id = r.id
+            WHERE r.user_id = :user_id;
         """
-        row = await self._db_manager.execute_sql_query_fetch_first(sql, {})
+        row = await self._db_manager.execute_sql_query_fetch_first(
+            sql, {"user_id": user_id}
+        )
 
         if not row:
             raise ValueError("Error obteniendo resumen de receipts")
@@ -100,15 +106,18 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
 
     async def get_receipt_list(
-        self, page: int = 1, page_size: int = 20
+        self, user_id: str, page: int = 1, page_size: int = 20
     ) -> ReceiptListData:
         offset = (page - 1) * page_size
 
         count_sql = """
             SELECT COUNT(*) AS total
-            FROM receipts r;
+            FROM receipts r
+            WHERE r.user_id = :user_id;
         """
-        count_row = await self._db_manager.execute_sql_query_fetch_first(count_sql, {})
+        count_row = await self._db_manager.execute_sql_query_fetch_first(
+            count_sql, {"user_id": user_id}
+        )
         total = int(count_row["total"]) if count_row else 0
 
         sql = """
@@ -138,11 +147,12 @@ class PostgresReportingRepository(ReportingRepositoryPort):
                     ON rbd.receipt_id = r.id
             INNER JOIN receipt_images rimg
                     ON rimg.receipt_id = r.id
+            WHERE r.user_id = :user_id
             ORDER BY r.created_at DESC
             LIMIT :limit OFFSET :offset;
         """
         rows = await self._db_manager.execute_sql_query_fetch_all(
-            sql, {"limit": page_size, "offset": offset}
+            sql, {"user_id": user_id, "limit": page_size, "offset": offset}
         )
 
         items = [
@@ -166,12 +176,13 @@ class PostgresReportingRepository(ReportingRepositoryPort):
 
     async def get_recent_activity(
         self,
+        user_id: str,
         receipt_uuid: str | None = None,
         status_filter: str | None = None,
         limit: int = 10,
     ) -> list[dict[str, Any]]:
-        conditions = ["1 = 1"]
-        params: dict[str, Any] = {"limit": limit}
+        conditions = ["r.user_id = :user_id"]
+        params: dict[str, Any] = {"user_id": user_id, "limit": limit}
 
         if receipt_uuid is not None:
             conditions.append("r.receipt_uuid = :receipt_uuid")
