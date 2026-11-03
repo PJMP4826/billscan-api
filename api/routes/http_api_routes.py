@@ -1,5 +1,6 @@
 from fastapi import (
     APIRouter,
+    Depends,
     UploadFile,
     File,
     HTTPException,
@@ -9,9 +10,11 @@ from fastapi import (
 )
 from pydantic import EmailStr
 
+from api.http.dependencies import get_current_user_id
 from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.value_objects.user_id import UserId
 
 router = APIRouter(prefix="/api")
 
@@ -99,14 +102,14 @@ async def get_receipt_detail(receipt_uuid: str):
 
 
 @router.post("/fiscal-info")
-async def create_fiscal_info(payload: CreateFiscalInfoRequest):
+async def create_fiscal_info(payload: CreateFiscalInfoRequest, user_id: UserId = Depends(get_current_user_id)):
     """Registers the fiscal info and tax regime of the user."""
     from api.http.controllers.create_fiscal_info_controller import (
         CreateFiscalInfoController,
     )
 
     fiscal_info_controller = CreateFiscalInfoController()
-    return await fiscal_info_controller.handle(request_data=payload)
+    return await fiscal_info_controller.handle(user_id=user_id, request_data=payload)
 
 
 @router.post("/fiscal-info/csf")

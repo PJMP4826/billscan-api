@@ -2,6 +2,7 @@ from src.application.dtos.billing_customer_regime_dto import BillingCustomerRegi
 from src.application.use_cases.persist_fiscal_info_use_case import (
     PersistFiscalInfoUseCase,
 )
+from src.domain.value_objects.user_id import UserId
 
 
 class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
@@ -14,7 +15,7 @@ class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
 
     async def execute(
         self,
-        user_id: str,
+        user_id: UserId,
         rfc: str,
         razon_social: str,
         email: str,
@@ -26,7 +27,7 @@ class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
         """Crea la información fiscal de un usuario y agrega un régimen."""
 
         await self._persist_fiscal_info(
-            user_id=user_id,
+            user_id=user_id.value,
             rfc=rfc,
             razon_social=razon_social,
             email=email,
