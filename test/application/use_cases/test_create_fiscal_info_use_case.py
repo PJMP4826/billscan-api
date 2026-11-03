@@ -10,6 +10,7 @@ from src.application.use_cases.create_fiscal_info_use_case import (
     CreateFiscalInfoUseCase,
 )
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.value_objects.user_id import UserId
 
 _USER_ID = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
 _FECHA_ALTA_SAT = datetime(2024, 1, 15, 10, 30)
@@ -48,7 +49,7 @@ def test_execute_persists_encrypted_info_and_regimen():
 
     asyncio.run(
         use_case.execute(
-            user_id=_USER_ID,
+            user_id=UserId(_USER_ID),
             rfc="ACM010101AAA",
             razon_social="ACME SA DE CV",
             email="facturas@acme.mx",
