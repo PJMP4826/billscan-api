@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api")
 @router.post("/receipts")
 async def upload_files(
     background_tasks: BackgroundTasks,
+    user_id: UserId = Depends(get_current_user_id),
     files: list[UploadFile] | None = File(default=None, alias="files[]"),
     groups: str | None = Form(default=None, alias="groups[]"),
     auto_billing: bool = Form(default=False),
@@ -41,7 +42,7 @@ async def upload_files(
 
     receipt_controller = UploadReceiptController()
     return await receipt_controller.handle(
-        files, groups, background_tasks, auto_billing, uso_cfdi, regimen
+        user_id, files, groups, background_tasks, auto_billing, uso_cfdi, regimen
     )
 
 
@@ -61,6 +62,7 @@ async def get_receipt_list(
 
 @router.get("/cfdis")
 async def get_cfdi_list(
+    user_id: UserId = Depends(get_current_user_id),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=50),
 ):
@@ -70,11 +72,13 @@ async def get_cfdi_list(
     )
 
     cfdi_list_controller = GetCfdiListController()
-    return await cfdi_list_controller.handle(page, page_size)
+    return await cfdi_list_controller.handle(user_id, page, page_size)
 
 
 @router.get("/cfdis/{receipt_uuid}")
-async def get_cfdi_detail(receipt_uuid: str):
+async def get_cfdi_detail(
+    receipt_uuid: str, user_id: UserId = Depends(get_current_user_id)
+):
     """Returns the full CFDI content (snake_case) plus presigned XML/PDF urls."""
     from api.http.controllers.get_cfdi_detail_controller import (
         GetCfdiDetailController,
@@ -83,7 +87,8 @@ async def get_cfdi_detail(receipt_uuid: str):
 
     cfdi_detail_controller = GetCfdiDetailController()
     return await cfdi_detail_controller.handle(
-        request=GetCfdiDetailRequest(receipt_uuid=receipt_uuid)
+        user_id=user_id,
+        request=GetCfdiDetailRequest(receipt_uuid=receipt_uuid),
     )
 
 
@@ -114,6 +119,7 @@ async def create_fiscal_info(payload: CreateFiscalInfoRequest, user_id: UserId =
 
 @router.post("/fiscal-info/csf")
 async def create_fiscal_info_from_csf(
+    user_id: UserId = Depends(get_current_user_id),
     file: UploadFile = File(..., alias="file"),
     email: EmailStr = Form(..., description="Email de contacto fiscal"),
     use_cfdi_code_default: InvoiceUse = Form(
@@ -130,6 +136,7 @@ async def create_fiscal_info_from_csf(
 
     fiscal_info_controller = CreateFiscalInfoFromCsfController()
     return await fiscal_info_controller.handle(
+        user_id=user_id,
         file=file,
         request_data=CreateFiscalInfoFromCsfRequest(
             email=email,
@@ -139,7 +146,7 @@ async def create_fiscal_info_from_csf(
 
 
 @router.get("/fiscal-info/regimens")
-async def get_fiscal_info_regimens():
+async def get_fiscal_info_regimens(user_id: UserId = Depends(get_current_user_id)):
     """Returns the tax regimens associated with the user's RFC.
 
     The client must show this list before submitting a receipt, because the
@@ -150,17 +157,17 @@ async def get_fiscal_info_regimens():
     )
 
     regimens_controller = GetUserRegimensController()
-    return await regimens_controller.handle()
+    return await regimens_controller.handle(user_id=user_id)
 
 
 @router.get("/fiscal-info")
-async def get_fiscal_info():
+async def get_fiscal_info(user_id: UserId = Depends(get_current_user_id)):
     from api.http.controllers.get_fiscal_info_controller import (
         GetUserFiscalInfoController,
     )
 
     get_fiscal_info_controller = GetUserFiscalInfoController()
-    return await get_fiscal_info_controller.handle()
+    return await get_fiscal_info_controller.handle(user_id=user_id)
 
 
 @router.get("/reporting/receipts/count")
