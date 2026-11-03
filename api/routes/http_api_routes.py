@@ -48,6 +48,7 @@ async def upload_files(
 
 @router.get("/receipts")
 async def get_receipt_list(
+    user_id: UserId = Depends(get_current_user_id),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=50),
 ):
@@ -57,7 +58,7 @@ async def get_receipt_list(
     )
 
     receipt_list_controller = GetReceiptListController()
-    return await receipt_list_controller.handle(page, page_size)
+    return await receipt_list_controller.handle(user_id, page, page_size)
 
 
 @router.get("/cfdis")
@@ -93,7 +94,9 @@ async def get_cfdi_detail(
 
 
 @router.get("/receipts/{receipt_uuid}")
-async def get_receipt_detail(receipt_uuid: str):
+async def get_receipt_detail(
+    receipt_uuid: str, user_id: UserId = Depends(get_current_user_id)
+):
     """Returns the full Receipt aggregate as JSON, including a presigned image url."""
     from api.http.controllers.get_receipt_detail_controller import (
         GetReceiptDetailController,
@@ -102,7 +105,8 @@ async def get_receipt_detail(receipt_uuid: str):
 
     receipt_detail_controller = GetReceiptDetailController()
     return await receipt_detail_controller.handle(
-        request=GetReceiptDetailRequest(receipt_uuid=receipt_uuid)
+        user_id=user_id,
+        request=GetReceiptDetailRequest(receipt_uuid=receipt_uuid),
     )
 
 
@@ -171,18 +175,21 @@ async def get_fiscal_info(user_id: UserId = Depends(get_current_user_id)):
 
 
 @router.get("/reporting/receipts/count")
-async def get_receipt_count_summary():
+async def get_receipt_count_summary(
+    user_id: UserId = Depends(get_current_user_id),
+):
     """Returns total, billable, and non-billable receipt counts."""
     from api.http.controllers.get_receipt_count_summary_controller import (
         GetReceiptCountSummaryController,
     )
 
     receipt_count_controller = GetReceiptCountSummaryController()
-    return await receipt_count_controller.handle()
+    return await receipt_count_controller.handle(user_id)
 
 
 @router.get("/reporting/completed-billing")
 async def get_completed_billing_summary(
+    user_id: UserId = Depends(get_current_user_id),
     period: str = Query(default="month", description="month, year, 3years, 5years"),
 ):
     """Returns total amount and count of completed billings for the given period."""
@@ -191,11 +198,12 @@ async def get_completed_billing_summary(
     )
 
     completed_billing_controller = GetCompletedBillingSummaryController()
-    return await completed_billing_controller.handle(period)
+    return await completed_billing_controller.handle(user_id, period)
 
 
 @router.get("/reporting/recent-activity")
 async def get_recent_activity(
+    user_id: UserId = Depends(get_current_user_id),
     receipt_uuid: str | None = Query(default=None),
     status_filter: str | None = Query(default=None),
     limit: int = Query(default=10, ge=1, le=100),
@@ -210,9 +218,10 @@ async def get_recent_activity(
 
     recent_activity_controller = GetRecentActivityController()
     return await recent_activity_controller.handle(
+        user_id=user_id,
         request_data=GetRecentActivityRequest(
             receipt_uuid=receipt_uuid,
             status_filter=status_filter,
             limit=limit,
-        )
+        ),
     )
