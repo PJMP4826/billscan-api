@@ -2,6 +2,7 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 
 from src.bootstraps.use_cases_bootstrap import get_recent_activity_use_case
+from src.domain.value_objects.user_id import UserId
 from api.http.requests.get_recent_activity_request import (
     GetRecentActivityRequest,
 )
@@ -11,9 +12,12 @@ class GetRecentActivityController:
     def __init__(self) -> None:
         self._use_case = get_recent_activity_use_case()
 
-    async def handle(self, request_data: GetRecentActivityRequest) -> JSONResponse:
+    async def handle(
+        self, user_id: UserId, request_data: GetRecentActivityRequest
+    ) -> JSONResponse:
         try:
             results = await self._use_case.execute(
+                user_id=user_id,
                 receipt_uuid=request_data.receipt_uuid,
                 status_filter=request_data.status_filter,
                 limit=request_data.limit,
