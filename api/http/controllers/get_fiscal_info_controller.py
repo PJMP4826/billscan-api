@@ -1,6 +1,7 @@
 from fastapi import status
 from fastapi.responses import JSONResponse
 from src.bootstraps.use_cases_bootstrap import get_user_fiscal_info_use_case
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import NotFoundError
 
 
@@ -8,10 +9,9 @@ class GetUserFiscalInfoController:
     def __init__(self) -> None:
         self._use_case = get_user_fiscal_info_use_case()
 
-    async def handle(self) -> JSONResponse:
+    async def handle(self, user_id: UserId) -> JSONResponse:
         try:
-            temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
-            data = await self._use_case.execute(user_id=temp_user_id)
+            data = await self._use_case.execute(user_id=user_id)
             return JSONResponse(
                 status_code=status.HTTP_200_OK, content={"status": 200, "data": data}
             )

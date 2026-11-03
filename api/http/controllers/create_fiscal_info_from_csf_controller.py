@@ -8,6 +8,7 @@ from api.http.requests.fiscal_info_from_csf_request import (
 from src.bootstraps.use_cases_bootstrap import (
     get_create_fiscal_info_from_csf_use_case,
 )
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 
 
@@ -21,6 +22,7 @@ class CreateFiscalInfoFromCsfController:
 
     async def handle(
         self,
+        user_id: UserId,
         file: UploadFile,
         request_data: CreateFiscalInfoFromCsfRequest,
     ) -> JSONResponse:
@@ -28,10 +30,8 @@ class CreateFiscalInfoFromCsfController:
             mime_type = await self._validate(file)
             content = await file.read()
 
-            temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
-
             await self._use_case.execute(
-                user_id=temp_user_id,
+                user_id=user_id,
                 file_bytes=content,
                 mime_type=mime_type,
                 email=request_data.email,

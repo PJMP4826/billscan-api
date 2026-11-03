@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 from src.bootstraps.use_cases_bootstrap import get_submit_receipt_use_case
 
@@ -15,6 +16,7 @@ class UploadReceiptController:
 
     async def handle(
         self,
+        user_id: UserId,
         files: list[UploadFile],
         groups_raw: str | None,
         background_tasks: BackgroundTasks,
@@ -29,10 +31,8 @@ class UploadReceiptController:
 
             use_case = get_submit_receipt_use_case(background_tasks=background_tasks)
 
-            temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
-
             await use_case.execute(
-                user_id=temp_user_id,
+                user_id=user_id,
                 grouped_images=grouped_images,
                 auto_billing=auto_billing,
                 uso_cfdi=uso_cfdi,

@@ -2,16 +2,18 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 
 from src.bootstraps.use_cases_bootstrap import get_cfdi_list_use_case
+from src.domain.value_objects.user_id import UserId
 
 
 class GetCfdiListController:
     def __init__(self) -> None:
         self._use_case = get_cfdi_list_use_case()
 
-    async def handle(self, page: int = 1, page_size: int = 20) -> JSONResponse:
+    async def handle(
+        self, user_id: UserId, page: int = 1, page_size: int = 20
+    ) -> JSONResponse:
         try:
-            temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
-            result = await self._use_case.execute(temp_user_id, page, page_size)
+            result = await self._use_case.execute(user_id, page, page_size)
 
             return JSONResponse(
                 status_code=status.HTTP_200_OK,

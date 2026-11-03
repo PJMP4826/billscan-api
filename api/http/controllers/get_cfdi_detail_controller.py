@@ -3,17 +3,19 @@ from fastapi.responses import JSONResponse
 
 from api.http.requests.get_cfdi_detail_request import GetCfdiDetailRequest
 from src.bootstraps.use_cases_bootstrap import get_cfdi_detail_use_case
+from src.domain.value_objects.user_id import UserId
 
 
 class GetCfdiDetailController:
     def __init__(self) -> None:
         self._use_case = get_cfdi_detail_use_case()
 
-    async def handle(self, request: GetCfdiDetailRequest) -> JSONResponse:
+    async def handle(
+        self, user_id: UserId, request: GetCfdiDetailRequest
+    ) -> JSONResponse:
         try:
-            temp_user_id = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
             result = await self._use_case.execute(
-                user_id=temp_user_id, receipt_uuid=request.receipt_uuid
+                user_id=user_id, receipt_uuid=request.receipt_uuid
             )
 
             return JSONResponse(
