@@ -6,6 +6,7 @@ import pytest
 from src.application.use_cases.get_user_regimens_use_case import (
     GetUserRegimensUseCase,
 )
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import NotFoundError
 
 _USER_ID = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
@@ -46,7 +47,7 @@ def test_execute_returns_serialized_regimens():
     )
     use_case = _build_use_case(repository)
 
-    result = asyncio.run(use_case.execute(user_id=_USER_ID))
+    result = asyncio.run(use_case.execute(user_id=UserId(_USER_ID)))
 
     assert result == [
         {"code": "612", "description": "Personas Físicas", "fecha_alta": None},
@@ -59,11 +60,11 @@ def test_execute_raises_not_found_when_user_has_no_fiscal_info():
     use_case = _build_use_case(repository)
 
     with pytest.raises(NotFoundError):
-        asyncio.run(use_case.execute(user_id=_USER_ID))
+        asyncio.run(use_case.execute(user_id=UserId(_USER_ID)))
 
 
 def test_execute_returns_empty_list_when_fiscal_info_has_no_regimens():
     repository = _FakeFiscalInfoRepository(regimens=[], has_fiscal_info=True)
     use_case = _build_use_case(repository)
 
-    assert asyncio.run(use_case.execute(user_id=_USER_ID)) == []
+    assert asyncio.run(use_case.execute(user_id=UserId(_USER_ID))) == []

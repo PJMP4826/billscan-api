@@ -10,6 +10,7 @@ from src.application.use_cases.create_fiscal_info_from_csf_use_case import (
     CreateFiscalInfoFromCsfUseCase,
 )
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 
 _USER_ID = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
@@ -85,7 +86,7 @@ def test_execute_persists_all_regimens_from_csf():
 
     asyncio.run(
         use_case.execute(
-            user_id=_USER_ID,
+            user_id=UserId(_USER_ID),
             file_bytes=_PDF_BYTES,
             mime_type="application/pdf",
             email="facturas@acme.mx",
@@ -132,7 +133,7 @@ def test_execute_does_not_encrypt_empty_address():
 
     asyncio.run(
         use_case.execute(
-            user_id=_USER_ID,
+            user_id=UserId(_USER_ID),
             file_bytes=_PDF_BYTES,
             mime_type="application/pdf",
             email="facturas@acme.mx",
@@ -149,7 +150,7 @@ def test_execute_propagates_bad_request_from_extractor():
     with pytest.raises(BadRequestError):
         asyncio.run(
             use_case.execute(
-                user_id=_USER_ID,
+                user_id=UserId(_USER_ID),
                 file_bytes=b"no-es-un-pdf",
                 mime_type="application/pdf",
                 email="facturas@acme.mx",

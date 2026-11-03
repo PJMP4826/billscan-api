@@ -6,6 +6,7 @@ import pytest
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 
 _USER_ID = "ac9890c6-194b-4b7e-9aa0-2caae7db6c17"
@@ -78,7 +79,7 @@ def test_payload_includes_client_fiscal_preferences_as_sat_codes():
 
     asyncio.run(
         use_case.execute(
-            user_id=_USER_ID,
+            user_id=UserId(_USER_ID),
             grouped_images=_images(),
             auto_billing=True,
             uso_cfdi=InvoiceUse.D01,
@@ -97,7 +98,7 @@ def test_payload_defaults_preferences_to_none():
 
     asyncio.run(
         use_case.execute(
-            user_id=_USER_ID,
+            user_id=UserId(_USER_ID),
             grouped_images=_images(),
             auto_billing=False,
         )
@@ -118,7 +119,7 @@ def test_execute_rejects_regimen_not_registered_for_the_user():
     with pytest.raises(BadRequestError):
         asyncio.run(
             use_case.execute(
-                user_id=_USER_ID,
+                user_id=UserId(_USER_ID),
                 grouped_images=_images(),
                 auto_billing=False,
                 regimen=TaxRegime.R601,
@@ -134,7 +135,7 @@ def test_execute_rejects_regimen_when_user_has_none_registered():
     with pytest.raises(BadRequestError):
         asyncio.run(
             use_case.execute(
-                user_id=_USER_ID,
+                user_id=UserId(_USER_ID),
                 grouped_images=_images(),
                 auto_billing=False,
                 regimen=TaxRegime.R601,
