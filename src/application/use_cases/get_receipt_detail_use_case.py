@@ -6,6 +6,7 @@ from src.domain.ports.repositories.receipt_image_repository_port import (
 from src.domain.ports.repositories.receipt_repository_port import (
     ReceiptRepositoryPort,
 )
+from src.domain.value_objects.user_id import UserId
 
 
 class GetReceiptDetailUseCase:
@@ -19,10 +20,13 @@ class GetReceiptDetailUseCase:
         self._receipt_repository = receipt_repository
         self._receipt_image_repository = receipt_image_repository
 
-    async def execute(self, receipt_uuid: str) -> ReceiptDetailDto:
-        receipt = await self._receipt_repository.find_by_uuid(receipt_uuid)
+    async def execute(self, user_id: UserId, receipt_uuid: str) -> ReceiptDetailDto:
+        receipt = await self._receipt_repository.find_by_uuid(
+            user_id.value, receipt_uuid
+        )
         file_key = await self._receipt_image_repository.find_key_by_receipt_uuid(
-            receipt_uuid=receipt.receipt_uuid
+            user_id=user_id.value,
+            receipt_uuid=receipt.receipt_uuid,
         )
         file_url = await self._file_storage.get_url(str(file_key))
 

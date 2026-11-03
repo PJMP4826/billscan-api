@@ -4,6 +4,7 @@ from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
+from src.domain.value_objects.user_id import UserId
 
 
 class GetReceiptListUseCase:
@@ -15,8 +16,12 @@ class GetReceiptListUseCase:
         self._reporting_repository = reporting_repository
         self._file_storage = file_storage
 
-    async def execute(self, page: int = 1, page_size: int = 20) -> ReceiptListResponse:
-        data = await self._reporting_repository.get_receipt_list(page, page_size)
+    async def execute(
+        self, user_id: UserId, page: int = 1, page_size: int = 20
+    ) -> ReceiptListResponse:
+        data = await self._reporting_repository.get_receipt_list(
+            user_id.value, page, page_size
+        )
 
         items = [
             ReceiptListItemResponse(

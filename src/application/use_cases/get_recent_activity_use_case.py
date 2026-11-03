@@ -5,6 +5,7 @@ from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
 from src.application.dtos.recent_activity_item_dto import RecentActivityItem
+from src.domain.value_objects.user_id import UserId
 
 
 class GetRecentActivityUseCase:
@@ -18,12 +19,14 @@ class GetRecentActivityUseCase:
 
     async def execute(
         self,
+        user_id: UserId,
         receipt_uuid: str | None = None,
         status_filter: str | None = None,
         limit: int = 10,
     ) -> list[RecentActivityItem]:
 
         rows = await self._reporting_repository.get_recent_activity(
+            user_id.value,
             receipt_uuid=receipt_uuid,
             status_filter=status_filter,
             limit=limit,
