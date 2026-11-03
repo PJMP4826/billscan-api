@@ -52,6 +52,27 @@ class Settings(BaseSettings):
 
     encryption_key: str = Field(..., description="Data Encryption Key")
 
+    # Clerk Auth. El secret key se valida al construir el verificador (primer
+    # request autenticado), no al arrancar, para no romper el boot en entornos
+    # que todavía no lo configuran.
+    clerk_secret_key: str = Field(default="", description="Clerk Secret Key")
+    clerk_authorized_parties: str = Field(
+        default="",
+        description="Orígenes permitidos para el token, separados por coma",
+    )
+    clerk_audience: str | None = Field(
+        default=None, description="Audience opcional del JWT de Clerk"
+    )
+
+    @property
+    def clerk_authorized_parties_list(self) -> list[str] | None:
+        parties = [
+            party.strip()
+            for party in self.clerk_authorized_parties.split(",")
+            if party.strip()
+        ]
+        return parties or None
+
     @property
     def database_url(self) -> str:
         user = urllib.parse.quote_plus(self.db_user)
