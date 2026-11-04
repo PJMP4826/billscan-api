@@ -42,6 +42,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # pero copiamos para que la imagen sea funcional por si sola
 COPY --chown=appuser:appuser . .
 
+RUN chmod +x entrypoint.sh
+
 EXPOSE 8000
 
-CMD ["python", "run.py"]
+CMD ["./entrypoint.sh"]
