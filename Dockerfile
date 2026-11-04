@@ -24,6 +24,9 @@ RUN adduser --disabled-password --gecos '' appuser \
     && usermod -aG sudo appuser \
     && echo 'appuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
+# el codigo queda de solo lectura para appuser; solo logs/ es escribible
+RUN mkdir -p /code/logs && chown appuser:appuser /code/logs
+
 USER appuser
 
 # Crear virtual environment
