@@ -77,10 +77,17 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         user = urllib.parse.quote_plus(self.db_user)
         password = urllib.parse.quote_plus(self.db_password)
-        return (
+
+        url = (
             f"postgresql+asyncpg://{user}:{password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
+
+        # Si se conecta a una base de datos remota (como Supabase), exige SSL
+        if self.db_host != "postgres" and "localhost" not in self.db_host:
+            url += "?ssl=require"
+
+        return url
 
 
 settings = Settings()  # type: ignore

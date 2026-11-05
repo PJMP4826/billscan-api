@@ -1,9 +1,6 @@
 services:
   app:
     build: .
-    depends_on:
-      postgres:
-        condition: service_healthy
     env_file:
       - .env
     ports:
@@ -11,9 +8,6 @@ services:
       - "5678:5678"
     volumes:
       - .:/code
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=${DB_PORT:-5432}
     restart: unless-stopped
 
   postgres:
