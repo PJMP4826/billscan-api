@@ -147,6 +147,24 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
 
         return result
 
+    async def get_rfc_by_user_id(self, user_id: str) -> str:
+        """Obtiene el RFC cifrado de la información fiscal más reciente."""
+        sql = """
+            SELECT rfc
+            FROM fiscal_info
+            WHERE user_id = :user_id
+            ORDER BY id DESC
+            LIMIT 1;
+        """
+        result = await self._db_manager.execute_sql_query_fetch_one(
+            sql, {"user_id": user_id}
+        )
+
+        if not result:
+            raise ValueError("No hay informacion fiscal asociada a tu usuario")
+
+        return str(result)
+
     async def get_regimens_by_user_id(self, user_id: str) -> list[dict[str, Any]]:
         """Obtiene TODOS los regímenes del usuario para que elija con cuál facturar.
 

@@ -41,6 +41,15 @@ class FiscalInfoRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    async def get_rfc_by_user_id(self, user_id: str) -> str:
+        """Obtiene el RFC cifrado de la información fiscal más reciente.
+
+        Raises:
+            ValueError: si el usuario no tiene información fiscal registrada.
+        """
+        pass
+
+    @abstractmethod
     async def get_regimens_by_user_id(self, user_id: str) -> list[dict[str, Any]]:
         """Obtiene todos los regímenes fiscales registrados del usuario.
 
