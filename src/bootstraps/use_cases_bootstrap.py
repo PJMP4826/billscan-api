@@ -6,6 +6,7 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
     from src.bootstraps.services.infrastructure_bootstrap_services import (
         get_cloudflare_r2_file_storage_adapter,
         get_background_task_queue_adapter,
+        get_fernet_encryptor,
     )
     from .repositories.repositories_bootstrap import (
         get_fiscal_info_repository,
@@ -21,6 +22,7 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
         receipt_image_repository=get_receipt_image_repository(),
         receipt_job_details_repository=get_receipt_job_details_repository(),
         fiscal_info_repository=get_fiscal_info_repository(),
+        data_encryptor=get_fernet_encryptor(),
     )
 
 

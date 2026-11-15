@@ -1,8 +1,14 @@
 import uuid
+from typing import Any
 
 from src.config.logger import logger
 from src.domain.enums.invoice_use import InvoiceUse
+from src.domain.enums.person_type import PersonType
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.invoice_use_tax_regime_error import (
+    NoRegisteredRegimenAllowsInvoiceUseError,
+)
+from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
 from src.domain.ports.repositories.fiscal_info_repository_port import (
@@ -15,6 +21,9 @@ from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
 from src.domain.enums.job_names import JobName
+from src.domain.services.invoice_use_tax_regime_validator import (
+    InvoiceUseTaxRegimeValidator,
+)
 from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
 
@@ -28,12 +37,15 @@ class SubmitReceiptUseCase:
         receipt_image_repository: ReceiptImageRepositoryPort,
         queue_publisher: QueuePublisherPort,
         fiscal_info_repository: FiscalInfoRepositoryPort,
+        data_encryptor: DataEncryptor,
     ) -> None:
         self._file_storage = file_storage
         self._receipt_job_details_repository = receipt_job_details_repository
         self._receipt_image_repository = receipt_image_repository
         self._queue_publisher = queue_publisher
         self._fiscal_info_repository = fiscal_info_repository
+        self._data_encryptor = data_encryptor
+        self._invoice_use_validator = InvoiceUseTaxRegimeValidator()
 
     async def execute(
         self,
@@ -47,9 +59,15 @@ class SubmitReceiptUseCase:
         uso_cfdi_code = uso_cfdi.value if uso_cfdi is not None else None
         regimen_code = regimen.value if regimen is not None else None
 
-        if regimen_code is not None:
+        if uso_cfdi is not None:
+            await self._validate_invoice_use(
+                user_id=user_id,
+                uso_cfdi=uso_cfdi,
+                regimen=regimen,
+            )
+        elif regimen is not None:
             await self._ensure_regimen_belongs(
-                user_id=user_id, regimen_code=regimen_code
+                user_id=user_id, regimen_code=regimen.value
             )
 
         # Iteramos sobre cada ticket (grupo)
@@ -96,20 +114,72 @@ class SubmitReceiptUseCase:
                 },
             )
 
+    async def _validate_invoice_use(
+        self,
+        user_id: UserId,
+        uso_cfdi: InvoiceUse,
+        regimen: TaxRegime | None,
+    ) -> None:
+        """Valida el uso de CFDI contra el tipo de persona y el régimen elegido."""
+        try:
+            encrypted_rfc = await self._fiscal_info_repository.get_rfc_by_user_id(
+                user_id=user_id.value
+            )
+            rfc = self._data_encryptor.decrypt(encrypted_rfc)
+            tipo_persona = PersonType.from_rfc(rfc=rfc)
+        except ValueError as exc:
+            raise BadRequestError(str(exc)) from exc
+
+        if regimen is not None:
+            await self._ensure_regimen_belongs(
+                user_id=user_id,
+                regimen_code=regimen.value,
+            )
+            self._invoice_use_validator.validate(
+                uso_cfdi,
+                regimen,
+                tipo_persona,
+            )
+            return
+
+        self._invoice_use_validator.validate_invoice_use_for_person_type(
+            uso_cfdi,
+            tipo_persona,
+        )
+
+        regimens = await self._get_registered_regimens(user_id)
+        registered_codes = {item["code"] for item in regimens}
+        allowed_codes = {
+            item.value
+            for item in self._invoice_use_validator.allowed_regimes_for_use(uso_cfdi)
+        }
+
+        if not (registered_codes & allowed_codes):
+            raise NoRegisteredRegimenAllowsInvoiceUseError(
+                uso_cfdi.value,
+                sorted(registered_codes),
+                sorted(allowed_codes),
+            )
+
     async def _ensure_regimen_belongs(self, user_id: UserId, regimen_code: str) -> None:
         """Valida que el régimen elegido pertenezca a los registrados del RFC."""
-        regimens = await self._fiscal_info_repository.get_regimens_by_user_id(
-            user_id=user_id.value
-        )
+        regimens = await self._get_registered_regimens(user_id)
         registered_codes = {item["code"] for item in regimens}
-
-        if not registered_codes:
-            raise BadRequestError(
-                "No hay regímenes fiscales registrados para el usuario; "
-                "registra tu informacion fiscal antes de facturar"
-            )
 
         if regimen_code not in registered_codes:
             raise BadRequestError(
                 f"El régimen fiscal {regimen_code} no está asociado al RFC del usuario"
             )
+
+    async def _get_registered_regimens(self, user_id: UserId) -> list[dict[str, Any]]:
+        regimens = await self._fiscal_info_repository.get_regimens_by_user_id(
+            user_id=user_id.value
+        )
+
+        if not regimens:
+            raise BadRequestError(
+                "No hay regímenes fiscales registrados para el usuario; "
+                "registra tu informacion fiscal antes de facturar"
+            )
+
+        return regimens

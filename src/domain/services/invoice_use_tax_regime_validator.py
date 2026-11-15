@@ -178,13 +178,7 @@ class InvoiceUseTaxRegimeValidator:
         if tipo_persona is None:
             return
 
-        tipos_permitidos = _USO_CFDI_TIPO_PERSONA[uso]
-        if tipo_persona not in tipos_permitidos:
-            raise InvoiceUseNotAllowedForPersonTypeError(
-                uso.value,
-                tipo_persona.value,
-                sorted(item.value for item in tipos_permitidos),
-            )
+        self._ensure_person_type_allowed(uso, tipo_persona)
 
         regimenes_persona = (
             _REGIMENES_PERSONA_FISICA
@@ -195,6 +189,32 @@ class InvoiceUseTaxRegimeValidator:
             raise TaxRegimeNotAllowedForPersonTypeError(
                 regimen.value,
                 tipo_persona.value,
+            )
+
+    def validate_invoice_use_for_person_type(
+        self,
+        uso_cfdi: InvoiceUse | str,
+        tipo_persona: PersonType,
+    ) -> None:
+        """Valida únicamente que el uso aplique al tipo de persona."""
+        uso = self._coerce_invoice_use(uso_cfdi)
+
+        if uso not in _USO_CFDI_REGIMENES:
+            raise UnknownInvoiceUseError(uso.value)
+
+        self._ensure_person_type_allowed(uso, tipo_persona)
+
+    def _ensure_person_type_allowed(
+        self,
+        uso: InvoiceUse,
+        tipo_persona: PersonType,
+    ) -> None:
+        tipos_permitidos = _USO_CFDI_TIPO_PERSONA[uso]
+        if tipo_persona not in tipos_permitidos:
+            raise InvoiceUseNotAllowedForPersonTypeError(
+                uso.value,
+                tipo_persona.value,
+                sorted(item.value for item in tipos_permitidos),
             )
 
     def is_valid(
