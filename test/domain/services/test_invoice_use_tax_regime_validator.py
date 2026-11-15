@@ -187,6 +187,38 @@ def test_allowed_person_types_for_use(
     )
 
 
+def test_validate_invoice_use_for_person_type_accepts_valid_combination(
+    validator: InvoiceUseTaxRegimeValidator,
+) -> None:
+    assert (
+        validator.validate_invoice_use_for_person_type(
+            InvoiceUse.G01,
+            PersonType.MORAL,
+        )
+        is None
+    )
+
+
+def test_validate_invoice_use_for_person_type_rejects_moral_for_deduction(
+    validator: InvoiceUseTaxRegimeValidator,
+) -> None:
+    with pytest.raises(InvoiceUseNotAllowedForPersonTypeError):
+        validator.validate_invoice_use_for_person_type(
+            InvoiceUse.D01,
+            PersonType.MORAL,
+        )
+
+
+def test_validate_invoice_use_for_person_type_rejects_unsupported_use(
+    validator: InvoiceUseTaxRegimeValidator,
+) -> None:
+    with pytest.raises(UnknownInvoiceUseError):
+        validator.validate_invoice_use_for_person_type(
+            InvoiceUse.P01,
+            PersonType.FISICA,
+        )
+
+
 @pytest.mark.parametrize(
     ("rfc", "expected"),
     [
