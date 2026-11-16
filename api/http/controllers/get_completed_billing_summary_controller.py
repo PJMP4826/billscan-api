@@ -10,32 +10,12 @@ class GetCompletedBillingSummaryController:
         self._use_case = get_completed_billing_summary_use_case()
 
     async def handle(self, user_id: UserId, period: str = "month") -> JSONResponse:
-        try:
-            result = await self._use_case.execute(user_id, period)
+        result = await self._use_case.execute(user_id, period)
 
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content={
-                    "status": 200,
-                    "data": result.to_dict()
-                },
-            )
-
-        except ValueError as e:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    "title": "NOT FOUND",
-                    "status": 404,
-                    "message": str(e),
-                },
-            )
-        except Exception as e:
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "title": "Internal Server Error",
-                    "status": 500,
-                    "message": str(e),
-                },
-            )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "status": 200,
+                "data": result.to_dict()
+            },
+        )

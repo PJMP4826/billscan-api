@@ -15,10 +15,13 @@ from src.application.dtos.completed_billing_summary_dto import (
 from src.application.dtos.receipt_count_summary_dto import ReceiptCountSummary
 from src.application.dtos.receipt_list_item_dto import ReceiptListItemData
 from src.application.dtos.receipt_list_response_dto import ReceiptListData
+from src.domain.errors.cfdi_error import CfdiNotFoundError
+from src.domain.errors.reporting_error import InvalidReportingPeriodError
 from src.domain.ports.repositories.reporting_repository_port import (
     ReportingRepositoryPort,
 )
 from src.infrastructure.database.utils.row_parsers import parse_row_to_str
+from src.shared.errors.infrastructure_exceptions import InfrastructureException
 
 
 class PostgresReportingRepository(ReportingRepositoryPort):
@@ -43,9 +46,13 @@ class PostgresReportingRepository(ReportingRepositoryPort):
     ) -> CompletedBillingSummary:
         period_filter = self._PERIOD_FILTERS.get(period)
         if period_filter is None:
-            raise ValueError(
+            raise InvalidReportingPeriodError(
                 f"Periodo inválido: '{period}'. "
-                f"Opciones válidas: {', '.join(self._PERIOD_FILTERS)}"
+                f"Opciones válidas: {', '.join(self._PERIOD_FILTERS)}",
+                details={
+                    "period": period,
+                    "allowed_periods": list(self._PERIOD_FILTERS),
+                },
             )
 
         sql = f"""
@@ -68,7 +75,10 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
 
         if not row:
-            raise ValueError("Error obteniendo resumen de facturación")
+            raise InfrastructureException(
+                "Error obteniendo resumen de facturación",
+                error_code="REPORTING_QUERY_ERROR",
+            )
 
         return CompletedBillingSummary(
             total_billed=Decimal(str(row["total_facturado"])),
@@ -96,7 +106,10 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
 
         if not row:
-            raise ValueError("Error obteniendo resumen de receipts")
+            raise InfrastructureException(
+                "Error obteniendo resumen de receipts",
+                error_code="REPORTING_QUERY_ERROR",
+            )
 
         return ReceiptCountSummary(
             total=int(row["total"]),
@@ -155,17 +168,28 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             sql, {"user_id": user_id, "limit": page_size, "offset": offset}
         )
 
-        items = [
-            ReceiptListItemData(
-                receipt_uuid=row["receipt_uuid"],
-                merchant_name=row["merchant_name"],
-                registered_at=row["registered_at"],
-                total=Decimal(str(row["total"])),
-                status=BillingStatus(row["status"] or "UNKNOWN"),
-                file_key=row["file_key"],
+        items = []
+        for row in rows:
+            raw_status = row["status"] or "UNKNOWN"
+            try:
+                billing_status = BillingStatus(raw_status)
+            except ValueError as exc:
+                raise InfrastructureException(
+                    "Estado de facturación inválido en la base de datos",
+                    error_code="INVALID_BILLING_STATUS",
+                    details={"status": raw_status},
+                ) from exc
+
+            items.append(
+                ReceiptListItemData(
+                    receipt_uuid=row["receipt_uuid"],
+                    merchant_name=row["merchant_name"],
+                    registered_at=row["registered_at"],
+                    total=Decimal(str(row["total"])),
+                    status=billing_status,
+                    file_key=row["file_key"],
+                )
             )
-            for row in rows
-        ]
 
         return ReceiptListData(
             items=items,
@@ -326,7 +350,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
         )
 
         if not result:
-            raise ValueError("CFDI no encontrado")
+            raise CfdiNotFoundError()
 
         result_parsed = parse_row_to_str(row=result, json_fields={"cfdi_summary"})
 

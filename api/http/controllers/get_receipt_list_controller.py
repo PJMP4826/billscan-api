@@ -12,32 +12,12 @@ class GetReceiptListController:
     async def handle(
         self, user_id: UserId, page: int = 1, page_size: int = 20
     ) -> JSONResponse:
-        try:
-            result = await self._use_case.execute(user_id, page, page_size)
+        result = await self._use_case.execute(user_id, page, page_size)
 
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content={
-                    "status": 200,
-                    "data": result.to_dict(),
-                },
-            )
-
-        except ValueError as e:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "title": "BAD REQUEST",
-                    "status": 400,
-                    "message": str(e),
-                },
-            )
-        except Exception as e:
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "title": "Internal Server Error",
-                    "status": 500,
-                    "message": str(e),
-                },
-            )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "status": 200,
+                "data": result.to_dict(),
+            },
+        )
