@@ -19,7 +19,7 @@ from src.domain.value_objects.transaction_metadata import TransactionMetadata
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
-from src.shared.errors.base_exception import NotFoundError
+from src.domain.errors.receipt_error import ReceiptNotFoundError
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
 
@@ -273,7 +273,7 @@ class ReceiptRepository(ReceiptRepositoryPort):
             result = await conn.execute(text(sql), params)
             row = result.mappings().first()
             if not row:
-                raise NotFoundError("Ticket no encontrado")
+                raise ReceiptNotFoundError()
 
             return self._map_row_to_entity(row)
 

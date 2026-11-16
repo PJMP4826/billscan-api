@@ -3,7 +3,7 @@ from typing import Any
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
-from src.shared.errors.base_exception import NotFoundError
+from src.domain.errors.receipt_error import ReceiptImageNotFoundError
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
 from src.domain.ports.repositories.receipt_image_repository_port import ReceiptImageRepositoryPort
 
@@ -132,7 +132,7 @@ class ReceiptImageRepository(ReceiptImageRepositoryPort):
         )
 
         if not result:
-            raise NotFoundError("Imagen no encontrada")
+            raise ReceiptImageNotFoundError()
 
         return result["file_key"]
 

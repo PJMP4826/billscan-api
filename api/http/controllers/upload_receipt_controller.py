@@ -5,8 +5,11 @@ from fastapi.responses import JSONResponse
 
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.file_upload_error import (
+    InvalidFileTypeError,
+    UnrecognizedFileError,
+)
 from src.domain.value_objects.user_id import UserId
-from src.shared.errors.base_exception import BadRequestError
 from src.bootstraps.use_cases_bootstrap import get_submit_receipt_use_case
 
 
@@ -24,46 +27,27 @@ class UploadReceiptController:
         uso_cfdi: InvoiceUse | None = None,
         regimen: TaxRegime | None = None,
     ) -> JSONResponse:
-        try:
 
-            groups = self._deserialize_group(groups_raw=groups_raw)
-            grouped_images = await self._group_and_validate(files, groups)
+        groups = self._deserialize_group(groups_raw=groups_raw)
+        grouped_images = await self._group_and_validate(files, groups)
 
-            use_case = get_submit_receipt_use_case(background_tasks=background_tasks)
+        use_case = get_submit_receipt_use_case(background_tasks=background_tasks)
 
-            await use_case.execute(
-                user_id=user_id,
-                grouped_images=grouped_images,
-                auto_billing=auto_billing,
-                uso_cfdi=uso_cfdi,
-                regimen=regimen,
-            )
+        await use_case.execute(
+            user_id=user_id,
+            grouped_images=grouped_images,
+            auto_billing=auto_billing,
+            uso_cfdi=uso_cfdi,
+            regimen=regimen,
+        )
 
-            return JSONResponse(
-                status_code=status.HTTP_202_ACCEPTED,
-                content={
-                    "status": 202,
-                    "message": "Los tickets se están procesando",
-                },
-            )
-        except BadRequestError as e:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "title": "BAD REQUEST",
-                    "status": 400,
-                    "message": e.get_message(),
-                },
-            )
-        except Exception as e:
-            return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={
-                    "title": "Internal Server Error",
-                    "status": 500,
-                    "message": str(e),
-                },
-            )
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={
+                "status": 202,
+                "message": "Los tickets se están procesando",
+            },
+        )
 
     def _deserialize_group(self, groups_raw: str | None) -> list[str] | None:
         groups: list[str] | None = None
@@ -115,8 +99,8 @@ class UploadReceiptController:
             real_mime = str(puremagic.from_string(head, mime=True))  # type: ignore
 
             if real_mime not in ["image/jpeg", "image/png", "image/jpg"]:
-                raise BadRequestError("Solo se permiten imágenes JPG o PNG")
+                raise InvalidFileTypeError("Solo se permiten imágenes JPG o PNG")
 
             return real_mime
-        except puremagic.PureError:
-            raise BadRequestError("Archivo no reconocido")
+        except puremagic.PureError as exc:
+            raise UnrecognizedFileError("Archivo no reconocido") from exc
