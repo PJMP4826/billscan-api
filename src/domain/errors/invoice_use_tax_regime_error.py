@@ -67,9 +67,7 @@ class NoRegisteredRegimenAllowsInvoiceUseError(InvoiceUseTaxRegimeError):
     ) -> None:
         super().__init__(
             f"Ninguno de los regímenes registrados del usuario permite el "
-            f"UsoCFDI '{uso_cfdi}'. Regímenes registrados: "
-            f"{', '.join(registered_regimes)}. Regímenes permitidos: "
-            f"{', '.join(allowed_regimes)}.",
+            f"UsoCFDI '{uso_cfdi}'.",
             error_code="INVOICE_USE_NO_COMPATIBLE_REGIMEN",
             details={
                 "uso_cfdi": uso_cfdi,

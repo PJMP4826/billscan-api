@@ -6,12 +6,21 @@ import pytest
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.fiscal_info_error import (
+    FiscalInfoNotFoundError,
+    FiscalInfoRequiredError,
+    InvalidFiscalDataError,
+)
 from src.domain.errors.invoice_use_tax_regime_error import (
     InvalidInvoiceUseTaxRegimeCombinationError,
     InvoiceUseNotAllowedForPersonTypeError,
     NoRegisteredRegimenAllowsInvoiceUseError,
     TaxRegimeNotAllowedForPersonTypeError,
     UnknownInvoiceUseError,
+)
+from src.domain.errors.regimen_error import (
+    NoRegisteredRegimensError,
+    RegimenNotRegisteredError,
 )
 from src.domain.value_objects.user_id import UserId
 from src.shared.errors.base_exception import BadRequestError
@@ -77,7 +86,7 @@ class _FakeFiscalInfoRepository:
     async def get_rfc_by_user_id(self, user_id: str) -> str:
         self.rfc_calls.append(user_id)
         if self._rfc is None:
-            raise ValueError("No hay informacion fiscal asociada a tu usuario")
+            raise FiscalInfoNotFoundError()
         return f"enc({self._rfc})"
 
 
@@ -169,7 +178,7 @@ def test_execute_rejects_regimen_not_registered_for_the_user():
         regimens=[{"code": "612", "description": "PF", "fecha_alta": None}]
     )
 
-    with pytest.raises(BadRequestError):
+    with pytest.raises(RegimenNotRegisteredError) as exc_info:
         asyncio.run(
             use_case.execute(
                 user_id=UserId(_USER_ID),
@@ -179,13 +188,15 @@ def test_execute_rejects_regimen_not_registered_for_the_user():
             )
         )
 
+    assert exc_info.value.error_code == "REGIMEN_NOT_REGISTERED"
+    assert exc_info.value.details["regimen"] == "601"
     assert queue_publisher.enqueued == []
 
 
 def test_execute_rejects_regimen_when_user_has_none_registered():
     use_case, queue_publisher, _ = _build_use_case(regimens=[])
 
-    with pytest.raises(BadRequestError):
+    with pytest.raises(NoRegisteredRegimensError):
         asyncio.run(
             use_case.execute(
                 user_id=UserId(_USER_ID),
@@ -241,7 +252,7 @@ def test_execute_rejects_uso_without_compatible_registered_regimen():
 def test_execute_rejects_uso_when_user_has_no_registered_regimens():
     use_case, queue_publisher, _ = _build_use_case(regimens=[])
 
-    with pytest.raises(BadRequestError):
+    with pytest.raises(NoRegisteredRegimensError):
         asyncio.run(
             use_case.execute(
                 user_id=UserId(_USER_ID),
@@ -316,7 +327,7 @@ def test_execute_rejects_invalid_rfc():
         rfc="TOO-SHORT",
     )
 
-    with pytest.raises(BadRequestError):
+    with pytest.raises(InvalidFiscalDataError) as exc_info:
         asyncio.run(
             use_case.execute(
                 user_id=UserId(_USER_ID),
@@ -326,13 +337,15 @@ def test_execute_rejects_invalid_rfc():
             )
         )
 
+    assert exc_info.value.error_code == "INVALID_FISCAL_DATA"
+    assert "TOO-SHORT" not in str(exc_info.value)
     assert queue_publisher.enqueued == []
 
 
 def test_execute_rejects_uso_when_user_has_no_fiscal_info():
     use_case, queue_publisher, _ = _build_use_case(rfc=None)
 
-    with pytest.raises(BadRequestError):
+    with pytest.raises(FiscalInfoRequiredError) as exc_info:
         asyncio.run(
             use_case.execute(
                 user_id=UserId(_USER_ID),
@@ -342,4 +355,5 @@ def test_execute_rejects_uso_when_user_has_no_fiscal_info():
             )
         )
 
+    assert exc_info.value.error_code == "FISCAL_INFO_REQUIRED"
     assert queue_publisher.enqueued == []

@@ -5,10 +5,18 @@ from src.config.logger import logger
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.person_type import PersonType
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.fiscal_info_error import (
+    FiscalInfoNotFoundError,
+    FiscalInfoRequiredError,
+    InvalidFiscalDataError,
+)
 from src.domain.errors.invoice_use_tax_regime_error import (
     NoRegisteredRegimenAllowsInvoiceUseError,
 )
-from src.domain.errors.fiscal_info_error import FiscalInfoNotFoundError
+from src.domain.errors.regimen_error import (
+    NoRegisteredRegimensError,
+    RegimenNotRegisteredError,
+)
 from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
@@ -26,7 +34,6 @@ from src.domain.services.invoice_use_tax_regime_validator import (
     InvoiceUseTaxRegimeValidator,
 )
 from src.domain.value_objects.user_id import UserId
-from src.shared.errors.base_exception import BadRequestError
 
 
 class SubmitReceiptUseCase:
@@ -126,16 +133,15 @@ class SubmitReceiptUseCase:
             encrypted_rfc = await self._fiscal_info_repository.get_rfc_by_user_id(
                 user_id=user_id.value
             )
-            rfc = self._data_encryptor.decrypt(encrypted_rfc)
-            tipo_persona = PersonType.from_rfc(rfc=rfc)
         except FiscalInfoNotFoundError as exc:
-            raise BadRequestError(
-                "No hay informacion fiscal asociada a tu usuario. "
-                "Registra tu informacion fiscal antes de facturar.",
-                error_code="FISCAL_INFO_REQUIRED",
-            ) from exc
+            raise FiscalInfoRequiredError() from exc
+
+        rfc = self._data_encryptor.decrypt(encrypted_rfc)
+
+        try:
+            tipo_persona = PersonType.from_rfc(rfc=rfc)
         except ValueError as exc:
-            raise BadRequestError(str(exc)) from exc
+            raise InvalidFiscalDataError() from exc
 
         if regimen is not None:
             await self._ensure_regimen_belongs(
@@ -174,9 +180,7 @@ class SubmitReceiptUseCase:
         registered_codes = {item["code"] for item in regimens}
 
         if regimen_code not in registered_codes:
-            raise BadRequestError(
-                f"El régimen fiscal {regimen_code} no está asociado al RFC del usuario"
-            )
+            raise RegimenNotRegisteredError(regimen_code)
 
     async def _get_registered_regimens(self, user_id: UserId) -> list[dict[str, Any]]:
         regimens = await self._fiscal_info_repository.get_regimens_by_user_id(
@@ -184,9 +188,6 @@ class SubmitReceiptUseCase:
         )
 
         if not regimens:
-            raise BadRequestError(
-                "No hay regímenes fiscales registrados para el usuario; "
-                "registra tu informacion fiscal antes de facturar"
-            )
+            raise NoRegisteredRegimensError()
 
         return regimens
