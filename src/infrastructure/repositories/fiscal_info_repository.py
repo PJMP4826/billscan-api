@@ -4,6 +4,7 @@ from typing import Any
 from src.infrastructure.database.sql.sql_database_connection_manager import (
     SQLDatabaseConnectionManager,
 )
+from src.domain.errors.fiscal_info_error import FiscalInfoNotFoundError
 from src.shared.errors.infrastructure_exceptions import PostgresDBException
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
@@ -143,7 +144,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         )
 
         if not result:
-            raise ValueError("No hay informacion fiscal asociada a tu usuario")
+            raise FiscalInfoNotFoundError()
 
         return result
 
@@ -161,7 +162,7 @@ class FiscalInfoRepository(FiscalInfoRepositoryPort):
         )
 
         if not result:
-            raise ValueError("No hay informacion fiscal asociada a tu usuario")
+            raise FiscalInfoNotFoundError()
 
         return str(result)
 

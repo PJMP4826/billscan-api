@@ -8,6 +8,7 @@ from src.domain.enums.tax_regime import TaxRegime
 from src.domain.errors.invoice_use_tax_regime_error import (
     NoRegisteredRegimenAllowsInvoiceUseError,
 )
+from src.domain.errors.fiscal_info_error import FiscalInfoNotFoundError
 from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.ports.file_storage_port import FileStoragePort
 from src.domain.ports.queue_publisher_port import QueuePublisherPort
@@ -127,6 +128,12 @@ class SubmitReceiptUseCase:
             )
             rfc = self._data_encryptor.decrypt(encrypted_rfc)
             tipo_persona = PersonType.from_rfc(rfc=rfc)
+        except FiscalInfoNotFoundError as exc:
+            raise BadRequestError(
+                "No hay informacion fiscal asociada a tu usuario. "
+                "Registra tu informacion fiscal antes de facturar.",
+                error_code="FISCAL_INFO_REQUIRED",
+            ) from exc
         except ValueError as exc:
             raise BadRequestError(str(exc)) from exc
 

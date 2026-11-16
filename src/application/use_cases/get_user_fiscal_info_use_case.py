@@ -2,7 +2,6 @@ from typing import Any
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
 )
-from src.shared.errors.base_exception import NotFoundError
 from src.domain.ports.data_encryptor import DataEncryptor
 from src.domain.value_objects.user_id import UserId
 
@@ -19,11 +18,7 @@ class GetUserFiscalInfoUseCase:
         Obtiene la información fiscal vigente del usuario.
         Mapea la respuesta cruda del repositorio a una estructura limpia.
         """
-        try:
-            raw_data = await self._repository.get_latest_by_user_id(user_id.value)
-        except ValueError as e:
-            # El repositorio lanza ValueError si no encuentra registros
-            raise NotFoundError(str(e)) from e
+        raw_data = await self._repository.get_latest_by_user_id(user_id.value)
 
         # Mapeo seguro (maneja NULLs del LEFT JOIN)
         regimen_data = raw_data.get("regimen_id")

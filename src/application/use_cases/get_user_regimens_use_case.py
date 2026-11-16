@@ -1,10 +1,10 @@
 from typing import Any
 
+from src.domain.errors.fiscal_info_error import FiscalInfoNotFoundError
 from src.domain.ports.repositories.fiscal_info_repository_port import (
     FiscalInfoRepositoryPort,
 )
 from src.domain.value_objects.user_id import UserId
-from src.shared.errors.base_exception import NotFoundError
 
 
 class GetUserRegimensUseCase:
@@ -30,7 +30,7 @@ class GetUserRegimensUseCase:
                 user_id=user_id.value
             )
             if not has_fiscal_info:
-                raise NotFoundError("No hay informacion fiscal asociada a tu usuario")
+                raise FiscalInfoNotFoundError()
 
         return [
             {
