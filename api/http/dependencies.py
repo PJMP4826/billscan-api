@@ -1,6 +1,5 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from starlette import status
 
 from src.application.use_cases.ensure_user_exists_use_case import (
     EnsureUserExistsUseCase,
@@ -24,10 +23,9 @@ async def get_authenticated_user(
 ) -> AuthenticatedUser:
     """Valida el bearer token de Clerk y devuelve la identidad autenticada."""
     if creds is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Falta el encabezado Authorization",
-            headers={"WWW-Authenticate": "Bearer"},
+        raise AuthenticationError(
+            "Falta el encabezado Authorization",
+            error_code="MISSING_AUTHORIZATION_HEADER",
         )
 
     try:
@@ -35,10 +33,9 @@ async def get_authenticated_user(
     except AuthenticationError as e:
         # El motivo técnico solo se loguea; al cliente no se le expone.
         logger.warning(f"Autenticación fallida: {e.get_message()}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-            headers={"WWW-Authenticate": "Bearer"},
+        raise AuthenticationError(
+            "Token inválido o expirado",
+            error_code="INVALID_TOKEN",
         ) from e
 
 

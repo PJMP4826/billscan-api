@@ -3,7 +3,6 @@ from fastapi import (
     Depends,
     UploadFile,
     File,
-    HTTPException,
     BackgroundTasks,
     Form,
     Query,
@@ -15,6 +14,7 @@ from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
 from src.domain.value_objects.user_id import UserId
+from src.shared.errors.base_exception import BadRequestError
 
 router = APIRouter(prefix="/api")
 
@@ -38,7 +38,10 @@ async def upload_files(
     from api.http.controllers.upload_receipt_controller import UploadReceiptController
 
     if not files:
-        raise HTTPException(status_code=400, detail="Debes enviar al menos un archivo")
+        raise BadRequestError(
+            "Debes enviar al menos un archivo",
+            error_code="NO_FILES_PROVIDED",
+        )
 
     receipt_controller = UploadReceiptController()
     return await receipt_controller.handle(
