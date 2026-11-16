@@ -6,14 +6,19 @@ from src.shared.errors.base_exception import BadRequestError
 class InvoiceUseTaxRegimeError(BadRequestError):
     """Combinación inválida de UsoCFDI, régimen fiscal y tipo de persona."""
 
+    default_error_code = "INVALID_INVOICE_USE_TAX_REGIME"
+
     def __init__(
         self,
         message: str,
         *,
-        error_code: str = "INVALID_INVOICE_USE_TAX_REGIME",
+        error_code: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(message, error_code=error_code, details=details or {})
+        super().__init__(
+            message, error_code=error_code, details=details, **kwargs
+        )
 
 
 class UnknownInvoiceUseError(InvoiceUseTaxRegimeError):
@@ -43,9 +48,7 @@ class InvalidInvoiceUseTaxRegimeCombinationError(InvoiceUseTaxRegimeError):
         allowed_regimes: list[str],
     ) -> None:
         super().__init__(
-            f"El UsoCFDI '{uso_cfdi}' no es válido para el régimen "
-            f"'{regimen_fiscal}'. Regímenes permitidos: "
-            f"{', '.join(allowed_regimes)}.",
+            f"El UsoCFDI '{uso_cfdi}' no es válido para el régimen {regimen_fiscal}",
             error_code="INVOICE_USE_TAX_REGIME_MISMATCH",
             details={
                 "uso_cfdi": uso_cfdi,

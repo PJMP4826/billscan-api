@@ -83,7 +83,7 @@ class HttpClientAdapter:
                 f"HTTP error en GET {url}: status={status_code if status_code is not None else 'unknown'}",
                 url=url,
                 method="GET",
-                status_code=status_code,
+                upstream_status_code=status_code,
                 response_body=body,
             )
 
