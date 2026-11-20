@@ -84,6 +84,15 @@ def get_fernet_encryptor():
     return FernetEncryptor(encryption_key=settings.encryption_key)
 
 
+def get_rfc_fingerprint():
+    from src.infrastructure.adapters.security.hmac_rfc_fingerprint import (
+        HmacRfcFingerprint,
+    )
+
+    secret = settings.rfc_hash_secret or settings.encryption_key
+    return HmacRfcFingerprint(secret=secret)
+
+
 def get_facturagpt_billing_adapter():
     global _facturagpt_billing_adapter_instance
     if _facturagpt_billing_adapter_instance is None:

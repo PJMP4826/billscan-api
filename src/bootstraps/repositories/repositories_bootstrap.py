@@ -74,3 +74,11 @@ def get_user_repository():
     from src.infrastructure.repositories.user_repository import UserRepository
 
     return UserRepository(manager=database_connection_manager)
+
+
+def get_invoice_quota_repository():
+    from src.infrastructure.repositories.invoice_quota_repository import (
+        InvoiceQuotaRepository,
+    )
+
+    return InvoiceQuotaRepository(manager=database_connection_manager)
