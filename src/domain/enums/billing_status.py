@@ -9,3 +9,4 @@ class BillingStatus(str, Enum):
     PROCESSING = "PROCESSING"  # Ya se envió a FacturaGPT y esperamos el Webhook
     COMPLETED = "COMPLETED"  # Facturado o Webhook recibido con éxito (XML y PDF listos)
     FAILED = "FAILED"  # FacturaGPT rechazó la factura (RFC inválido, ticket vencido)
+    QUOTA_EXCEEDED = "QUOTA_EXCEEDED"  # El RFC alcanzó el límite de facturas permitidas
