@@ -45,6 +45,9 @@ from src.domain.ports.repositories.receipt_billing_detail_repository_port import
     ReceiptBillingDetailRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
+from src.domain.ports.repositories.invoice_quota_repository_port import (
+    InvoiceQuotaRepositoryPort,
+)
 from src.infrastructure.adapters.cfdi_parser import CfdiParser
 from src.shared.errors.billing_exceptions import BillingProviderError
 
@@ -69,6 +72,7 @@ class ProcessFacturaGPTWebhookUseCase:
         webhook_handler: BillingWebhookHandlerPort,
         billing_provider: BillingProviderPort,
         file_storage: FileStoragePort,
+        invoice_quota_repository: InvoiceQuotaRepositoryPort,
     ) -> None:
         self._webhook_repository = webhook_repository
         self._receipt_repository = receipt_repository
@@ -77,6 +81,7 @@ class ProcessFacturaGPTWebhookUseCase:
         self._webhook_handler = webhook_handler
         self._billing_provider = billing_provider
         self._file_storage = file_storage
+        self._invoice_quota_repository = invoice_quota_repository
 
     async def execute(self, payload: dict[str, Any]) -> None:
         idempotency_key = str(payload["idempotency_key"])
@@ -220,6 +225,9 @@ class ProcessFacturaGPTWebhookUseCase:
             completed_at=invoice_result.completed_at,
         )
 
+        # La factura quedó timbrada: el cupo reservado pasa a consumido.
+        await self._invoice_quota_repository.mark_consumed(receipt_id)
+
         # 3) Subir XML/PDF con claves determinísticas (idempotente).
         xml_key = pdf_key = None
         if xml_content is not None:
@@ -326,6 +334,10 @@ class ProcessFacturaGPTWebhookUseCase:
             billing_error_code=invoice_result.error_code,
             billing_error_message=invoice_result.error_message,
         )
+
+        # Un fallo no debe consumir cupo: se devuelve para poder reintentar.
+        await self._invoice_quota_repository.release(receipt_id)
+
         logger.info(
             "Webhook fallido aplicado: receipt %s -> FAILED (%s: %s)",
             receipt_id,
