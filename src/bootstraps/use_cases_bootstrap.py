@@ -1,5 +1,7 @@
 from fastapi import BackgroundTasks
 
+from src.config.settings import settings
+
 
 def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
     from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
@@ -7,9 +9,11 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
         get_cloudflare_r2_file_storage_adapter,
         get_background_task_queue_adapter,
         get_fernet_encryptor,
+        get_rfc_fingerprint,
     )
     from .repositories.repositories_bootstrap import (
         get_fiscal_info_repository,
+        get_invoice_quota_repository,
         get_receipt_image_repository,
         get_receipt_job_details_repository,
     )
@@ -23,6 +27,9 @@ def get_submit_receipt_use_case(background_tasks: BackgroundTasks):
         receipt_job_details_repository=get_receipt_job_details_repository(),
         fiscal_info_repository=get_fiscal_info_repository(),
         data_encryptor=get_fernet_encryptor(),
+        invoice_quota_repository=get_invoice_quota_repository(),
+        rfc_fingerprint=get_rfc_fingerprint(),
+        max_invoices_per_rfc=settings.billing_max_invoices_per_rfc,
     )
 
 
@@ -135,12 +142,14 @@ def get_initiate_billing_use_case():
         get_facturagpt_billing_adapter,
         get_fernet_encryptor,
         get_cloudflare_r2_file_storage_adapter,
+        get_rfc_fingerprint,
     )
     from .repositories.repositories_bootstrap import (
         get_receipt_billing_detail_repository,
         get_receipt_image_repository,
         get_fiscal_info_repository,
         get_receipt_repository,
+        get_invoice_quota_repository,
     )
 
     return InitiateBillingUseCase(
@@ -151,6 +160,9 @@ def get_initiate_billing_use_case():
         receipt_repository=get_receipt_repository(),
         encryptor=get_fernet_encryptor(),
         file_storage=get_cloudflare_r2_file_storage_adapter(),
+        invoice_quota_repository=get_invoice_quota_repository(),
+        rfc_fingerprint=get_rfc_fingerprint(),
+        max_invoices_per_rfc=settings.billing_max_invoices_per_rfc,
     )
 
 
@@ -266,6 +278,7 @@ def get_process_facturagpt_webhook_use_case():
         get_receipt_repository,
         get_receipt_billing_detail_repository,
         get_billing_file_repository,
+        get_invoice_quota_repository,
     )
 
     return ProcessFacturaGPTWebhookUseCase(
@@ -276,6 +289,7 @@ def get_process_facturagpt_webhook_use_case():
         webhook_handler=get_facturagpt_webhook_handler(),
         billing_provider=get_facturagpt_billing_adapter(),
         file_storage=get_cloudflare_r2_file_storage_adapter(),
+        invoice_quota_repository=get_invoice_quota_repository(),
     )
 
 
