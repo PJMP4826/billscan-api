@@ -47,6 +47,19 @@ class Settings(BaseSettings):
         description="FacturaGPT Webhook signing secret (whsec_...)",
     )
 
+    # Billing quota
+    billing_max_invoices_per_rfc: int = Field(
+        default=3,
+        description="Máximo de facturas permitidas por RFC",
+    )
+    rfc_hash_secret: str = Field(
+        default="",
+        description=(
+            "Secreto para el fingerprint HMAC-SHA256 del RFC. "
+            "Si está vacío se usa encryption_key."
+        ),
+    )
+
     # Security Configuration
     # Data Encryptors
 
