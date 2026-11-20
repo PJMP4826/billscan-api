@@ -6,6 +6,7 @@ import pytest
 from src.application.use_cases.submit_receipt_use_case import SubmitReceiptUseCase
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.billing_error import InvoiceQuotaExceededError
 from src.domain.errors.fiscal_info_error import (
     FiscalInfoNotFoundError,
     FiscalInfoRequiredError,
@@ -68,6 +69,32 @@ class _FakeQueuePublisher:
         self.enqueued.append({"job_name": job_name, "payload": payload})
 
 
+class _FakeRfcFingerprint:
+    def fingerprint(self, rfc: str) -> str:
+        return f"hash:{rfc.strip().upper()}"
+
+
+class _FakeInvoiceQuotaRepository:
+    def __init__(self, used: int = 0) -> None:
+        self.used = used
+        self.count_calls: list[str] = []
+
+    async def count_in_use(self, rfc_hash: str) -> int:
+        self.count_calls.append(rfc_hash)
+        return self.used
+
+    async def try_reserve(
+        self, receipt_id: int, rfc_hash: str, max_invoices: int
+    ) -> bool:
+        return True
+
+    async def release(self, receipt_id: int) -> None:
+        pass
+
+    async def mark_consumed(self, receipt_id: int) -> None:
+        pass
+
+
 class _FakeFiscalInfoRepository:
     def __init__(
         self,
@@ -93,6 +120,7 @@ class _FakeFiscalInfoRepository:
 def _build_use_case(
     regimens: list[dict[str, Any]] | None = None,
     rfc: str | None = _RFC_FISICA,
+    quota_repository: _FakeInvoiceQuotaRepository | None = None,
 ) -> tuple[SubmitReceiptUseCase, _FakeQueuePublisher, _FakeFiscalInfoRepository]:
     queue_publisher = _FakeQueuePublisher()
     fiscal_info_repository = _FakeFiscalInfoRepository(regimens=regimens, rfc=rfc)
@@ -103,12 +131,24 @@ def _build_use_case(
         queue_publisher=queue_publisher,  # type: ignore[arg-type]
         fiscal_info_repository=fiscal_info_repository,  # type: ignore[arg-type]
         data_encryptor=_FakeEncryptor(),  # type: ignore[arg-type]
+        invoice_quota_repository=(
+            quota_repository or _FakeInvoiceQuotaRepository()
+        ),  # type: ignore[arg-type]
+        rfc_fingerprint=_FakeRfcFingerprint(),  # type: ignore[arg-type]
+        max_invoices_per_rfc=3,
     )
     return use_case, queue_publisher, fiscal_info_repository
 
 
 def _images() -> dict[str, list[dict[str, bytes | str]]]:
     return {"1": [{"file": b"bytes", "mime": "image/jpeg"}]}
+
+
+def _images_groups(count: int) -> dict[str, list[dict[str, bytes | str]]]:
+    return {
+        str(index): [{"file": b"bytes", "mime": "image/jpeg"}]
+        for index in range(count)
+    }
 
 
 def test_payload_includes_client_fiscal_preferences_as_sat_codes():
@@ -130,7 +170,8 @@ def test_payload_includes_client_fiscal_preferences_as_sat_codes():
     assert payload["uso_cfdi"] == "D01"
     assert payload["regimen"] == "612"
     assert payload["auto_billing"] is True
-    assert fiscal_info_repository.rfc_calls == [_USER_ID]
+    # Una llamada para validar el uso de CFDI y otra para el pre-chequeo de cuota.
+    assert fiscal_info_repository.rfc_calls == [_USER_ID, _USER_ID]
     assert fiscal_info_repository.regimen_calls == [_USER_ID]
 
 
@@ -169,7 +210,7 @@ def test_payload_with_uso_without_regimen_uses_compatible_regimen():
     payload = queue_publisher.enqueued[0]["payload"]
     assert payload["uso_cfdi"] == "G01"
     assert payload["regimen"] is None
-    assert fiscal_info_repository.rfc_calls == [_USER_ID]
+    assert fiscal_info_repository.rfc_calls == [_USER_ID, _USER_ID]
     assert fiscal_info_repository.regimen_calls == [_USER_ID]
 
 
@@ -357,3 +398,118 @@ def test_execute_rejects_uso_when_user_has_no_fiscal_info():
 
     assert exc_info.value.error_code == "FISCAL_INFO_REQUIRED"
     assert queue_publisher.enqueued == []
+
+
+def test_execute_rejects_batch_when_invoice_quota_is_exhausted():
+    quota_repository = _FakeInvoiceQuotaRepository(used=3)
+    use_case, queue_publisher, _ = _build_use_case(
+        quota_repository=quota_repository
+    )
+
+    with pytest.raises(InvoiceQuotaExceededError) as exc_info:
+        asyncio.run(
+            use_case.execute(
+                user_id=UserId(_USER_ID),
+                grouped_images=_images(),
+                auto_billing=True,
+            )
+        )
+
+    assert (
+        exc_info.value.error_code == InvoiceQuotaExceededError.default_error_code
+    )
+    assert exc_info.value.details == {
+        "limit": 3,
+        "used": 3,
+        "requested": 1,
+        "remaining": 0,
+        "quota_label": "gratis",
+    }
+    assert (
+        "Ya usaste 3 de 3 facturas gratis de este RFC"
+        in exc_info.value.get_message()
+    )
+    assert (
+        "tu solicitud de 1 factura gratis no se procesó"
+        in exc_info.value.get_message()
+    )
+    assert queue_publisher.enqueued == []
+
+
+def test_execute_reports_requested_and_remaining_when_batch_does_not_fit():
+    quota_repository = _FakeInvoiceQuotaRepository(used=2)
+    use_case, queue_publisher, _ = _build_use_case(
+        quota_repository=quota_repository
+    )
+
+    with pytest.raises(InvoiceQuotaExceededError) as exc_info:
+        asyncio.run(
+            use_case.execute(
+                user_id=UserId(_USER_ID),
+                grouped_images=_images_groups(2),
+                auto_billing=True,
+            )
+        )
+
+    error = exc_info.value
+    assert error.details == {
+        "limit": 3,
+        "used": 2,
+        "requested": 2,
+        "remaining": 1,
+        "quota_label": "gratis",
+    }
+    assert "Tu solicitud de 2 facturas gratis excede el límite" in error.get_message()
+    assert "solo te queda 1 factura gratis en este RFC" in error.get_message()
+    assert "(2 de 3 usadas)" in error.get_message()
+    assert "Reduce el lote a 1" in error.get_message()
+    assert queue_publisher.enqueued == []
+
+
+def test_execute_reports_batch_larger_than_limit_without_used_invoices():
+    quota_repository = _FakeInvoiceQuotaRepository(used=0)
+    use_case, queue_publisher, _ = _build_use_case(
+        quota_repository=quota_repository
+    )
+
+    with pytest.raises(InvoiceQuotaExceededError) as exc_info:
+        asyncio.run(
+            use_case.execute(
+                user_id=UserId(_USER_ID),
+                grouped_images=_images_groups(5),
+                auto_billing=True,
+            )
+        )
+
+    error = exc_info.value
+    assert error.details == {
+        "limit": 3,
+        "used": 0,
+        "requested": 5,
+        "remaining": 3,
+        "quota_label": "gratis",
+    }
+    assert (
+        "El máximo es 3 facturas gratis por RFC y solicitaste 5"
+        in error.get_message()
+    )
+    assert "Reduce el lote a 3" in error.get_message()
+    assert queue_publisher.enqueued == []
+
+
+def test_execute_ignores_quota_when_auto_billing_is_disabled():
+    quota_repository = _FakeInvoiceQuotaRepository(used=3)
+    use_case, queue_publisher, _ = _build_use_case(
+        quota_repository=quota_repository
+    )
+
+    asyncio.run(
+        use_case.execute(
+            user_id=UserId(_USER_ID),
+            grouped_images=_images(),
+            auto_billing=False,
+        )
+    )
+
+    assert quota_repository.count_calls == []
+    assert queue_publisher.enqueued != []

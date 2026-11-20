@@ -5,6 +5,7 @@ from src.config.logger import logger
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.person_type import PersonType
 from src.domain.enums.tax_regime import TaxRegime
+from src.domain.errors.billing_error import InvoiceQuotaExceededError
 from src.domain.errors.fiscal_info_error import (
     FiscalInfoNotFoundError,
     FiscalInfoRequiredError,
@@ -29,6 +30,10 @@ from src.domain.ports.repositories.receipt_job_details_repository_port import (
 from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
+from src.domain.ports.repositories.invoice_quota_repository_port import (
+    InvoiceQuotaRepositoryPort,
+)
+from src.domain.ports.rfc_fingerprint_port import RfcFingerprintPort
 from src.domain.enums.job_names import JobName
 from src.domain.services.invoice_use_tax_regime_validator import (
     InvoiceUseTaxRegimeValidator,
@@ -46,6 +51,9 @@ class SubmitReceiptUseCase:
         queue_publisher: QueuePublisherPort,
         fiscal_info_repository: FiscalInfoRepositoryPort,
         data_encryptor: DataEncryptor,
+        invoice_quota_repository: InvoiceQuotaRepositoryPort,
+        rfc_fingerprint: RfcFingerprintPort,
+        max_invoices_per_rfc: int,
     ) -> None:
         self._file_storage = file_storage
         self._receipt_job_details_repository = receipt_job_details_repository
@@ -53,6 +61,9 @@ class SubmitReceiptUseCase:
         self._queue_publisher = queue_publisher
         self._fiscal_info_repository = fiscal_info_repository
         self._data_encryptor = data_encryptor
+        self._invoice_quota_repository = invoice_quota_repository
+        self._rfc_fingerprint = rfc_fingerprint
+        self._max_invoices_per_rfc = max_invoices_per_rfc
         self._invoice_use_validator = InvoiceUseTaxRegimeValidator()
 
     async def execute(
@@ -77,6 +88,9 @@ class SubmitReceiptUseCase:
             await self._ensure_regimen_belongs(
                 user_id=user_id, regimen_code=regimen.value
             )
+
+        if auto_billing:
+            await self._ensure_invoice_quota(user_id, requested=len(grouped_images))
 
         # Iteramos sobre cada ticket (grupo)
         for group_key, file_details_list in grouped_images.items():
@@ -120,6 +134,31 @@ class SubmitReceiptUseCase:
                     "uso_cfdi": uso_cfdi_code,
                     "regimen": regimen_code,
                 },
+            )
+
+    async def _ensure_invoice_quota(self, user_id: UserId, requested: int) -> None:
+        """Rechaza el lote completo si el RFC no tiene cupo suficiente.
+
+        El chequeo definitivo (atómico) vive en ``InitiateBillingUseCase``;
+        aquí solo damos feedback temprano al cliente para no encolar trabajo
+        que de todos modos será bloqueado.
+        """
+        try:
+            encrypted_rfc = await self._fiscal_info_repository.get_rfc_by_user_id(
+                user_id=user_id.value
+            )
+        except FiscalInfoNotFoundError as exc:
+            raise FiscalInfoRequiredError() from exc
+
+        rfc = self._data_encryptor.decrypt(encrypted_rfc)
+        rfc_hash = self._rfc_fingerprint.fingerprint(rfc)
+        used = await self._invoice_quota_repository.count_in_use(rfc_hash=rfc_hash)
+
+        if used + requested > self._max_invoices_per_rfc:
+            raise InvoiceQuotaExceededError(
+                limit=self._max_invoices_per_rfc,
+                used=used,
+                requested=requested,
             )
 
     async def _validate_invoice_use(
