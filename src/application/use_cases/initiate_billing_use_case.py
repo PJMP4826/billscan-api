@@ -3,6 +3,10 @@ import base64
 from src.config.logger import logger
 from src.config.settings import settings
 from src.domain.enums.billing_status import BillingStatus
+from src.domain.errors.billing_error import (
+    InvoiceQuotaExceededError,
+    build_quota_message,
+)
 from src.domain.ports.billing_provider import BillingProviderPort
 from src.domain.enums.tax_regime import TaxRegime
 from src.domain.enums.invoice_use import InvoiceUse
@@ -20,6 +24,10 @@ from src.domain.ports.repositories.receipt_image_repository_port import (
     ReceiptImageRepositoryPort,
 )
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
+from src.domain.ports.repositories.invoice_quota_repository_port import (
+    InvoiceQuotaRepositoryPort,
+)
+from src.domain.ports.rfc_fingerprint_port import RfcFingerprintPort
 from src.domain.ports.data_encryptor import DataEncryptor
 
 
@@ -33,6 +41,9 @@ class InitiateBillingUseCase:
         receipt_repository: ReceiptRepositoryPort,
         encryptor: DataEncryptor,
         file_storage: FileStoragePort,
+        invoice_quota_repository: InvoiceQuotaRepositoryPort,
+        rfc_fingerprint: RfcFingerprintPort,
+        max_invoices_per_rfc: int,
     ) -> None:
         self._billing_provider = billing_provider
         self._billing_detail_repository = billing_detail_repository
@@ -41,6 +52,9 @@ class InitiateBillingUseCase:
         self._receipt_repository = receipt_repository
         self._encryptor = encryptor
         self._file_storage = file_storage
+        self._invoice_quota_repository = invoice_quota_repository
+        self._rfc_fingerprint = rfc_fingerprint
+        self._max_invoices_per_rfc = max_invoices_per_rfc
 
     async def execute(self, payload: dict[str, str | int]) -> None:
         receipt_id = int(payload["receipt_id"])
@@ -92,9 +106,39 @@ class InitiateBillingUseCase:
                 regimen_code=effective_regimen,
             )
 
+            rfc = self._encryptor.decrypt(fiscal_user_info["rfc"])
+            rfc_hash = self._rfc_fingerprint.fingerprint(rfc)
+
+            if not await self._invoice_quota_repository.try_reserve(
+                receipt_id=receipt_id,
+                rfc_hash=rfc_hash,
+                max_invoices=self._max_invoices_per_rfc,
+            ):
+                logger.info(
+                    "Receipt %s bloqueado: RFC alcanzó el límite de %s facturas",
+                    receipt_id,
+                    self._max_invoices_per_rfc,
+                )
+                used = await self._invoice_quota_repository.count_in_use(
+                    rfc_hash=rfc_hash
+                )
+                remaining = max(self._max_invoices_per_rfc - used, 0)
+                await self._billing_detail_repository.update_billing_status(
+                    receipt_id=receipt_id,
+                    billing_status=BillingStatus.QUOTA_EXCEEDED,
+                    billing_error_code=InvoiceQuotaExceededError.default_error_code,
+                    billing_error_message=build_quota_message(
+                        limit=self._max_invoices_per_rfc,
+                        used=used,
+                        requested=1,
+                        remaining=remaining,
+                    ),
+                )
+                return
+
             user_info = BillingCustomerInfoDto(
                 razon_social=self._encryptor.decrypt(fiscal_user_info["razon_social"]),
-                rfc=self._encryptor.decrypt(fiscal_user_info["rfc"]),
+                rfc=rfc,
                 email=self._encryptor.decrypt(fiscal_user_info["fiscal_email"]),
                 regimen=TaxRegime(effective_regimen),
                 cp=self._encryptor.decrypt(fiscal_user_info["cp"]),
@@ -139,6 +183,19 @@ class InitiateBillingUseCase:
 
             error_code = response.error_code if response else "INTERNAL_ERROR"
             error_message = str(response.error_message) if response else str(exc)
+
+            # Solo devolvemos el cupo si el proveedor NO aceptó la factura.
+            # Si ya devolvió un session_id, la factura sigue en curso y debe
+            # conservar su lugar en la cuota.
+            if response is None:
+                try:
+                    await self._invoice_quota_repository.release(receipt_id)
+                except Exception as release_exc:
+                    logger.error(
+                        "No se pudo liberar la cuota del receipt %s: %s",
+                        receipt_id,
+                        release_exc,
+                    )
 
             await self._billing_detail_repository.update_billing_status(
                 receipt_id=receipt_id,

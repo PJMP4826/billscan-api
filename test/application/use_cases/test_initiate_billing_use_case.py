@@ -12,6 +12,7 @@ from src.application.dtos.invoice_result_dto import InvoiceResult
 from src.domain.entities.receipt import Receipt
 from src.domain.enums.billing_status import BillingStatus
 from src.domain.enums.invoice_use import InvoiceUse
+from src.domain.errors.billing_error import InvoiceQuotaExceededError
 from src.domain.enums.sat_payment_methods import (
     SatPaymentMethodCode,
     SatPaymentMethodDescription,
@@ -61,6 +62,40 @@ class _FakeFiscalInfoRepository:
             "regimen_description": "General de Ley Personas Morales",
             "fecha_alta": date(2026, 1, 1),
         }
+
+
+class _FakeRfcFingerprint:
+    def fingerprint(self, rfc: str) -> str:
+        return f"hash:{rfc.strip().upper()}"
+
+
+class _FakeInvoiceQuotaRepository:
+    def __init__(self, allow: bool = True) -> None:
+        self.allow = allow
+        self.reserved: list[dict[str, Any]] = []
+        self.released: list[int] = []
+        self.consumed: list[int] = []
+
+    async def try_reserve(
+        self, receipt_id: int, rfc_hash: str, max_invoices: int
+    ) -> bool:
+        self.reserved.append(
+            {
+                "receipt_id": receipt_id,
+                "rfc_hash": rfc_hash,
+                "max_invoices": max_invoices,
+            }
+        )
+        return self.allow
+
+    async def release(self, receipt_id: int) -> None:
+        self.released.append(receipt_id)
+
+    async def mark_consumed(self, receipt_id: int) -> None:
+        self.consumed.append(receipt_id)
+
+    async def count_in_use(self, rfc_hash: str) -> int:
+        return len(self.reserved) if self.allow else 3
 
 
 class _FakeBillingDetailRepository:
@@ -138,6 +173,7 @@ class _FakeBillingProvider:
 def _build_use_case(
     billing_detail_repository: _FakeBillingDetailRepository,
     billing_provider: _FakeBillingProvider | None = None,
+    quota_repository: _FakeInvoiceQuotaRepository | None = None,
 ) -> tuple[InitiateBillingUseCase, _FakeBillingProvider]:
     provider = billing_provider or _FakeBillingProvider()
     use_case = InitiateBillingUseCase(
@@ -148,6 +184,11 @@ def _build_use_case(
         receipt_repository=_FakeReceiptRepository(),  # type: ignore[arg-type]
         encryptor=_FakeEncryptor(),  # type: ignore[arg-type]
         file_storage=_FakeFileStorage(),  # type: ignore[arg-type]
+        invoice_quota_repository=(
+            quota_repository or _FakeInvoiceQuotaRepository()
+        ),  # type: ignore[arg-type]
+        rfc_fingerprint=_FakeRfcFingerprint(),  # type: ignore[arg-type]
+        max_invoices_per_rfc=3,
     )
     return use_case, provider
 
@@ -206,3 +247,47 @@ def test_marks_billing_as_failed_when_provider_raises():
         BillingStatus.FAILED
     )
     assert detail_repository.status_updates[0]["billing_error_message"] == "boom"
+
+
+def test_marks_quota_exceeded_and_skips_provider_when_limit_reached():
+    detail_repository = _FakeBillingDetailRepository()
+    quota_repository = _FakeInvoiceQuotaRepository(allow=False)
+    use_case, provider = _build_use_case(
+        detail_repository, quota_repository=quota_repository
+    )
+
+    asyncio.run(
+        use_case.execute(payload={"receipt_id": _RECEIPT_ID, "user_id": _USER_ID})
+    )
+
+    assert provider.submitted == []
+    assert quota_repository.reserved[0]["receipt_id"] == _RECEIPT_ID
+    assert quota_repository.reserved[0]["max_invoices"] == 3
+    assert detail_repository.status_updates[0]["billing_status"] == (
+        BillingStatus.QUOTA_EXCEEDED
+    )
+    assert (
+        detail_repository.status_updates[0]["billing_error_code"]
+        == InvoiceQuotaExceededError.default_error_code
+    )
+    assert detail_repository.status_updates[0]["billing_error_message"] == (
+        "Ya usaste 3 de 3 facturas gratis de este RFC; "
+        "tu solicitud de 1 factura gratis no se procesó."
+    )
+
+
+def test_releases_reserved_quota_when_provider_fails():
+    detail_repository = _FakeBillingDetailRepository()
+    quota_repository = _FakeInvoiceQuotaRepository(allow=True)
+    provider = _FakeBillingProvider(error=RuntimeError("boom"))
+    use_case, _ = _build_use_case(
+        detail_repository,
+        provider,
+        quota_repository=quota_repository,
+    )
+
+    asyncio.run(
+        use_case.execute(payload={"receipt_id": _RECEIPT_ID, "user_id": _USER_ID})
+    )
+
+    assert quota_repository.released == [_RECEIPT_ID]
