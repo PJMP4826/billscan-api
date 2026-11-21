@@ -190,7 +190,10 @@ Las excepciones tienen un atributo `is_public`:
   "details": {
     "errors": [
       {
-        "loc": ["query", "page"],
+        "loc": [
+          "query",
+          "page"
+        ],
         "msg": "Input should be a valid integer, unable to parse string as an integer",
         "type": "int_parsing"
       }
@@ -218,11 +221,15 @@ Las excepciones tienen un atributo `is_public`:
 No existe un handler personalizado para los `404`/`405` que genera el router de Starlette; por eso estas respuestas **no usan el envelope propio**:
 
 ```json
-{"detail": "Not Found"}
+{
+  "detail": "Not Found"
+}
 ```
 
 ```json
-{"detail": "Method Not Allowed"}
+{
+  "detail": "Method Not Allowed"
+}
 ```
 
 El `405` incluye la cabecera `Allow` con los métodos permitidos. Un `401` emitido mediante `BaseAppException` incluye `WWW-Authenticate: Bearer`; un `401` emitido mediante `fastapi.HTTPException` no lo incluye.
@@ -350,7 +357,9 @@ Ejemplo `REGIMEN_NOT_REGISTERED`:
   "status": 400,
   "error_code": "REGIMEN_NOT_REGISTERED",
   "message": "El régimen fiscal 601 no está asociado al RFC del usuario",
-  "details": {"regimen": "601"}
+  "details": {
+    "regimen": "601"
+  }
 }
 ```
 
@@ -379,6 +388,233 @@ Ejemplo de error de infraestructura (mensaje oculto por `is_public=false`):
   "title": "Internal Server Error",
   "status": 500,
   "error_code": "R2_UPLOAD_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`VALIDATION_ERROR` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "VALIDATION_ERROR",
+  "message": "Input should be 'G01', 'G02', ... or 'CN01'",
+  "details": {
+    "errors": [
+      {
+        "loc": [
+          "body",
+          "uso_cfdi"
+        ],
+        "msg": "Input should be 'G01', 'G02', ... or 'CN01'",
+        "type": "enum"
+      }
+    ]
+  }
+}
+```
+
+`UNRECOGNIZED_FILE` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "UNRECOGNIZED_FILE",
+  "message": "Archivo no reconocido",
+  "details": {}
+}
+```
+
+`FISCAL_INFO_REQUIRED` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "FISCAL_INFO_REQUIRED",
+  "message": "No hay informacion fiscal asociada a tu usuario. Registra tu informacion fiscal antes de facturar.",
+  "details": {}
+}
+```
+
+`INVALID_FISCAL_DATA` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "INVALID_FISCAL_DATA",
+  "message": "La informacion fiscal registrada no es valida",
+  "details": {}
+}
+```
+
+`UNKNOWN_INVOICE_USE` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "UNKNOWN_INVOICE_USE",
+  "message": "UsoCFDI 'P01' no existe en c_UsoCFDI o no está soportado.",
+  "details": {
+    "uso_cfdi": "P01"
+  }
+}
+```
+
+`UNKNOWN_TAX_REGIME` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "UNKNOWN_TAX_REGIME",
+  "message": "RegimenFiscal '629' no existe en c_RegimenFiscal o no está soportado.",
+  "details": {
+    "regimen_fiscal": "629"
+  }
+}
+```
+
+`INVOICE_USE_TAX_REGIME_MISMATCH` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "INVOICE_USE_TAX_REGIME_MISMATCH",
+  "message": "El UsoCFDI 'D01' no es válido para el régimen 601",
+  "details": {
+    "uso_cfdi": "D01",
+    "regimen_fiscal": "601",
+    "allowed_regimes": [
+      "605",
+      "606",
+      "607",
+      "608",
+      "611",
+      "612",
+      "614",
+      "615",
+      "625"
+    ]
+  }
+}
+```
+
+`INVOICE_USE_NO_COMPATIBLE_REGIMEN` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "INVOICE_USE_NO_COMPATIBLE_REGIMEN",
+  "message": "Ninguno de los regímenes registrados del usuario permite el UsoCFDI 'G01'.",
+  "details": {
+    "uso_cfdi": "G01",
+    "registered_regimes": [
+      "605"
+    ],
+    "allowed_regimes": [
+      "601",
+      "603",
+      "606",
+      "612"
+    ]
+  }
+}
+```
+
+`INVOICE_USE_PERSON_TYPE_MISMATCH` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "INVOICE_USE_PERSON_TYPE_MISMATCH",
+  "message": "El UsoCFDI 'D01' no aplica para persona moral. Tipos de persona permitidos: FISICA.",
+  "details": {
+    "uso_cfdi": "D01",
+    "tipo_persona": "MORAL",
+    "allowed_person_types": [
+      "FISICA"
+    ]
+  }
+}
+```
+
+`TAX_REGIME_PERSON_TYPE_MISMATCH` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "TAX_REGIME_PERSON_TYPE_MISMATCH",
+  "message": "El régimen '601' no aplica para persona fisica.",
+  "details": {
+    "regimen_fiscal": "601",
+    "tipo_persona": "FISICA"
+  }
+}
+```
+
+`NO_REGISTERED_REGIMENS` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "NO_REGISTERED_REGIMENS",
+  "message": "No hay regímenes fiscales registrados para el usuario; registra tu informacion fiscal antes de facturar",
+  "details": {}
+}
+```
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
   "message": "Ocurrió un error interno.",
   "details": {}
 }
@@ -461,7 +697,16 @@ curl -X GET \
 Lista vacía:
 
 ```json
-{"status":200,"data":{"receipts":[],"total":0,"page":1,"page_size":20,"total_pages":0}}
+{
+  "status": 200,
+  "data": {
+    "receipts": [],
+    "total": 0,
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 0
+  }
+}
 ```
 
 #### Excepciones y respuestas de error
@@ -487,9 +732,95 @@ Ejemplo de validación:
   "message": "Input should be less than or equal to 50",
   "details": {
     "errors": [
-      {"loc": ["query", "page_size"], "msg": "Input should be less than or equal to 50", "type": "less_than_equal"}
+      {
+        "loc": [
+          "query",
+          "page_size"
+        ],
+        "msg": "Input should be less than or equal to 50",
+        "type": "less_than_equal"
+      }
     ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INVALID_BILLING_STATUS` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INVALID_BILLING_STATUS",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`R2_PRESIGNED_URL_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "R2_PRESIGNED_URL_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
@@ -578,9 +909,73 @@ Ejemplo de validación:
   "message": "Input should be greater than or equal to 1",
   "details": {
     "errors": [
-      {"loc": ["query", "page"], "msg": "Input should be greater than or equal to 1", "type": "greater_than_equal"}
+      {
+        "loc": [
+          "query",
+          "page"
+        ],
+        "msg": "Input should be greater than or equal to 1",
+        "type": "greater_than_equal"
+      }
     ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
@@ -647,7 +1042,13 @@ curl -X GET \
     "totals": {
       "subtotal": "40.00",
       "total_discount": "0.00",
-      "taxes": [{"name": "IVA", "rate": "16.00", "amount": "6.40"}],
+      "taxes": [
+        {
+          "name": "IVA",
+          "rate": "16.00",
+          "amount": "6.40"
+        }
+      ],
       "total": "46.40",
       "amount_paid": "50.00",
       "change": "3.60"
@@ -668,7 +1069,9 @@ curl -X GET \
       "billing_metadata": null
     },
     "context_notes": null,
-    "extra_metadata": {"source": "ocr"},
+    "extra_metadata": {
+      "source": "ocr"
+    },
     "file_url": "https://<bucket>.r2.cloudflarestorage.com/<objeto>?X-Amz-Signature=..."
   }
 }
@@ -721,6 +1124,74 @@ Ejemplo `RECEIPT_IMAGE_NOT_FOUND`:
   "status": 404,
   "error_code": "RECEIPT_IMAGE_NOT_FOUND",
   "message": "Imagen no encontrada",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`R2_PRESIGNED_URL_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "R2_PRESIGNED_URL_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
   "details": {}
 }
 ```
@@ -875,6 +1346,74 @@ Ejemplo `CFDI_NOT_FOUND`:
 }
 ```
 
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`R2_PRESIGNED_URL_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "R2_PRESIGNED_URL_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
 **Nota:** la ausencia de XML o PDF **no** es un error; se devuelve `200` con `null` en la URL correspondiente.
 
 ---
@@ -897,7 +1436,10 @@ Ejemplo `CFDI_NOT_FOUND`:
   "cp": "06600",
   "address": "CALLE REFORMA 222",
   "regimens": [
-    {"code": "601", "fecha_alta_sat": "2024-01-15T10:30:00"}
+    {
+      "code": "601",
+      "fecha_alta_sat": "2024-01-15T10:30:00"
+    }
   ],
   "use_cfdi_code_default": "G03"
 }
@@ -969,10 +1511,81 @@ Ejemplo de validación:
   "message": "Value error, Invalid RFC format: 'bad'; Field required",
   "details": {
     "errors": [
-      {"loc": ["body", "rfc"], "msg": "Value error, Invalid RFC format: 'bad'", "type": "value_error"},
-      {"loc": ["body", "email"], "msg": "Field required", "type": "missing"}
+      {
+        "loc": [
+          "body",
+          "rfc"
+        ],
+        "msg": "Value error, Invalid RFC format: 'bad'",
+        "type": "value_error"
+      },
+      {
+        "loc": [
+          "body",
+          "email"
+        ],
+        "msg": "Field required",
+        "type": "missing"
+      }
     ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
@@ -1055,7 +1668,9 @@ Ejemplo `INVALID_CSF_FILE`:
   "status": 400,
   "error_code": "INVALID_CSF_FILE",
   "message": "No se pudieron leer los datos fiscales del archivo. Verifica que sea una Constancia de Situación Fiscal vigente.",
-  "details": {"reason": "<mensaje de la excepción original>"}
+  "details": {
+    "reason": "<mensaje de la excepción original>"
+  }
 }
 ```
 
@@ -1067,7 +1682,11 @@ Ejemplo `CSF_UNSUPPORTED_REGIMEN`:
   "status": 400,
   "error_code": "CSF_UNSUPPORTED_REGIMEN",
   "message": "Ninguno de los regímenes de la constancia está soportado.",
-  "details": {"regimenes": ["<texto SAT>"]}
+  "details": {
+    "regimenes": [
+      "<texto SAT>"
+    ]
+  }
 }
 ```
 
@@ -1078,6 +1697,161 @@ Ejemplo de error de infraestructura (mensaje oculto):
   "title": "Internal Server Error",
   "status": 500,
   "error_code": "CSF_LOOKUP_FAILED",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`VALIDATION_ERROR` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "VALIDATION_ERROR",
+  "message": "Field required",
+  "details": {
+    "errors": [
+      {
+        "loc": [
+          "body",
+          "email"
+        ],
+        "msg": "Field required",
+        "type": "missing"
+      }
+    ]
+  }
+}
+```
+
+Multipart nativo — `400` (sin envelope ni `error_code`):
+```json
+{
+  "detail": "Missing boundary in multipart."
+}
+```
+
+`INVALID_FILE_TYPE` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "INVALID_FILE_TYPE",
+  "message": "Solo se permiten archivos PDF, JPG o PNG",
+  "details": {}
+}
+```
+
+`UNRECOGNIZED_FILE` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "UNRECOGNIZED_FILE",
+  "message": "Archivo no reconocido",
+  "details": {}
+}
+```
+
+`UNSUPPORTED_CSF_FORMAT` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "UNSUPPORTED_CSF_FORMAT",
+  "message": "Formato no soportado: se espera un PDF, JPG o PNG de la Constancia de Situación Fiscal.",
+  "details": {
+    "mime_type": "application/octet-stream",
+    "detected": null
+  }
+}
+```
+
+`CSF_RFC_MISSING` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "CSF_RFC_MISSING",
+  "message": "La constancia no contiene un RFC válido.",
+  "details": {}
+}
+```
+
+`CSF_NO_REGIMEN` — `400`:
+```json
+{
+  "title": "Bad Request",
+  "status": 400,
+  "error_code": "CSF_NO_REGIMEN",
+  "message": "La constancia no reporta regímenes fiscales.",
+  "details": {}
+}
+```
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`CSF_PDF_TOOL_MISSING` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "CSF_PDF_TOOL_MISSING",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
   "message": "Ocurrió un error interno.",
   "details": {}
 }
@@ -1127,8 +1901,16 @@ curl -X GET \
       "fecha_alta": "2024-01-15"
     },
     "regimenes": [
-      {"code": "601", "description": "General de Ley Personas Morales", "fecha_alta": "2024-01-15"},
-      {"code": "612", "description": "Personas Físicas con Actividades Empresariales", "fecha_alta": null}
+      {
+        "code": "601",
+        "description": "General de Ley Personas Morales",
+        "fecha_alta": "2024-01-15"
+      },
+      {
+        "code": "612",
+        "description": "Personas Físicas con Actividades Empresariales",
+        "fecha_alta": null
+      }
     ]
   }
 }
@@ -1166,6 +1948,63 @@ Ejemplo `FISCAL_INFO_NOT_FOUND`:
   "status": 404,
   "error_code": "FISCAL_INFO_NOT_FOUND",
   "message": "No hay informacion fiscal asociada a tu usuario",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
   "details": {}
 }
 ```
@@ -1215,7 +2054,10 @@ curl -X GET \
 Si el usuario tiene información fiscal pero ningún régimen:
 
 ```json
-{"status": 200, "data": []}
+{
+  "status": 200,
+  "data": []
+}
 ```
 
 El orden es `fecha_alta DESC NULLS LAST, code`. Este endpoint **no** valida el catálogo SAT ni consulta `csf-scraper`; solo lee las filas persistidas en `regimenes`.
@@ -1239,6 +2081,63 @@ Ejemplo `FISCAL_INFO_NOT_FOUND`:
   "status": 404,
   "error_code": "FISCAL_INFO_NOT_FOUND",
   "message": "No hay informacion fiscal asociada a tu usuario",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
   "details": {}
 }
 ```
@@ -1306,6 +2205,63 @@ Ejemplo de error de base de datos:
   "title": "Internal Server Error",
   "status": 500,
   "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`REPORTING_QUERY_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "REPORTING_QUERY_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
   "message": "Ocurrió un error interno.",
   "details": {}
 }
@@ -1382,8 +2338,81 @@ Ejemplo `INVALID_REPORTING_PERIOD`:
   "message": "Periodo inválido: 'week'. Opciones válidas: month, year, 3years, 5years",
   "details": {
     "period": "week",
-    "allowed_periods": ["month", "year", "3years", "5years"]
+    "allowed_periods": [
+      "month",
+      "year",
+      "3years",
+      "5years"
+    ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`REPORTING_QUERY_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "REPORTING_QUERY_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
@@ -1464,9 +2493,84 @@ Ejemplo de validación:
   "message": "Input should be less than or equal to 100",
   "details": {
     "errors": [
-      {"loc": ["query", "limit"], "msg": "Input should be less than or equal to 100", "type": "less_than_equal"}
+      {
+        "loc": [
+          "query",
+          "limit"
+        ],
+        "msg": "Input should be less than or equal to 100",
+        "type": "less_than_equal"
+      }
     ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`MISSING_AUTHORIZATION_HEADER` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "MISSING_AUTHORIZATION_HEADER",
+  "message": "Falta el encabezado Authorization",
+  "details": {}
+}
+```
+
+`INVALID_TOKEN` — `401` (incluye `WWW-Authenticate: Bearer`):
+```json
+{
+  "title": "Unauthorized",
+  "status": 401,
+  "error_code": "INVALID_TOKEN",
+  "message": "Token inválido o expirado",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`R2_PRESIGNED_URL_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "R2_PRESIGNED_URL_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
@@ -1500,6 +2604,21 @@ curl -X GET "https://api.example.com/"
 ```
 
 No depende de base de datos, storage ni autenticación.
+
+#### Excepciones y respuestas de error
+
+Este endpoint no lanza excepciones de negocio. Ante un fallo no controlado aplica el handler global.
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
 
 ---
 
@@ -1595,7 +2714,9 @@ curl -X POST \
 **HTTP Status:** `200 OK`
 
 ```json
-{"status": "received"}
+{
+  "status": "received"
+}
 ```
 
 Un webhook duplicado (misma `idempotency_key`) también devuelve `200` y **no** re-encola. No se devuelve el id del evento ni del job.
@@ -1646,12 +2767,50 @@ Ejemplo `VALIDATION_ERROR`:
   "details": {
     "errors": [
       {
-        "loc": ["body", "event"],
+        "loc": [
+          "body",
+          "event"
+        ],
         "msg": "Input should be 'factura.completed', 'factura.failed' or 'batch.completed'",
         "type": "enum"
       }
     ]
   }
+}
+```
+
+Resto de ejemplos JSON de las excepciones listadas:
+
+`INFRASTRUCTURE_EXCEPTION` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INFRASTRUCTURE_EXCEPTION",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`POSTGRES_DB_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "POSTGRES_DB_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
+}
+```
+
+`INTERNAL_SERVER_ERROR` — `500`:
+```json
+{
+  "title": "Internal Server Error",
+  "status": 500,
+  "error_code": "INTERNAL_SERVER_ERROR",
+  "message": "Ocurrió un error interno.",
+  "details": {}
 }
 ```
 
