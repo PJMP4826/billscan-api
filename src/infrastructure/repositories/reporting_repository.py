@@ -168,7 +168,7 @@ class PostgresReportingRepository(ReportingRepositoryPort):
             sql, {"user_id": user_id, "limit": page_size, "offset": offset}
         )
 
-        items = []
+        items: list[ReceiptListItemData] = []
         for row in rows:
             raw_status = row["status"] or "UNKNOWN"
             try:
