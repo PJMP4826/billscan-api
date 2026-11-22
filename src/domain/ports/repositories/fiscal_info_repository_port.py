@@ -2,16 +2,21 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import Any
 
+RegimenRecord = tuple[str, str, date]
+
 
 class FiscalInfoRepositoryPort(ABC):
     """Puerto (interfaz) para el manejo de información fiscal y regímenes.
 
     Define el contrato que cualquier adaptador de infraestructura
     (ej. SQL, NoSQL, Mock para testing) debe implementar.
+
+    La tabla ``fiscal_info`` tiene un registro único por usuario
+    (``UNIQUE(user_id)``), por lo que guardar información fiscal es un upsert.
     """
 
     @abstractmethod
-    async def insert_fiscal_info(
+    async def upsert_fiscal_info(
         self,
         user_id: str,
         rfc: str,
@@ -20,19 +25,25 @@ class FiscalInfoRepositoryPort(ABC):
         cp: str,
         address: str | None,
         use_cfdi_code_default: str,
-    ) -> int:
-        """Inserta la información fiscal base del usuario y devuelve su ID."""
+    ) -> tuple[int, bool]:
+        """Crea o actualiza la información fiscal base del usuario.
+
+        Returns:
+            Una tupla ``(id, created)``: el ``id`` del registro y si la fila
+            fue insertada (``True``) o actualizada (``False``).
+        """
         pass
 
     @abstractmethod
-    async def add_regimen(
+    async def replace_regimens(
         self,
         fiscal_info_id: int,
-        regimen_code: str,
-        regimen_description: str,
-        fecha_alta: date,
-    ) -> int:
-        """Agrega un nuevo régimen fiscal al historial del usuario."""
+        regimens: list[RegimenRecord],
+    ) -> None:
+        """Reemplaza los regímenes del usuario por los recibidos.
+
+        Cada elemento es ``(regimen_code, regimen_description, fecha_alta)``.
+        """
         pass
 
     @abstractmethod
@@ -42,10 +53,11 @@ class FiscalInfoRepositoryPort(ABC):
 
     @abstractmethod
     async def get_rfc_by_user_id(self, user_id: str) -> str:
-        """Obtiene el RFC cifrado de la información fiscal más reciente.
+        """Obtiene el RFC cifrado de la información fiscal del usuario.
 
         Raises:
-            ValueError: si el usuario no tiene información fiscal registrada.
+            FiscalInfoNotFoundError: si el usuario no tiene información fiscal
+                registrada.
         """
         pass
 
@@ -53,8 +65,7 @@ class FiscalInfoRepositoryPort(ABC):
     async def get_regimens_by_user_id(self, user_id: str) -> list[dict[str, Any]]:
         """Obtiene todos los regímenes fiscales registrados del usuario.
 
-        Se toman los regímenes asociados a la información fiscal más reciente
-        del usuario, sin duplicados por ``regimen_code`` y ordenados por
+        Se devuelven sin duplicados por ``regimen_code`` y ordenados por
         ``fecha_alta`` descendente. Cada elemento tiene la forma
         ``{"code": str, "description": str, "fecha_alta": date | None}``.
         """
@@ -63,18 +74,4 @@ class FiscalInfoRepositoryPort(ABC):
     @abstractmethod
     async def has_fiscal_info(self, user_id: str) -> bool:
         """Verifica si un usuario ya tiene información fiscal registrada."""
-        pass
-
-    @abstractmethod
-    async def update_fiscal_info_details(
-        self,
-        fiscal_info_id: int,
-        rfc: str,
-        razon_social: str,
-        email: str,
-        cp: str,
-        address: str | None,
-        use_cfdi_code_default: str,
-    ) -> None:
-        """Actualiza los datos estáticos de la información fiscal."""
         pass
