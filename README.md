@@ -119,8 +119,8 @@ Las respuestas `401` de autenticación incluyen la cabecera `WWW-Authenticate: B
 | `GET` | `/api/receipts/{receipt_uuid}` | Detalle completo de un ticket. | `200` |
 | `GET` | `/api/cfdis` | Lista paginada de CFDI emitidos. | `200` |
 | `GET` | `/api/cfdis/{receipt_uuid}` | Detalle del CFDI de un ticket y URLs de XML/PDF. | `200` |
-| `POST` | `/api/fiscal-info` | Registra la información fiscal y regímenes del usuario. | `201` |
-| `POST` | `/api/fiscal-info/csf` | Registra información fiscal extraída de una CSF. | `201` |
+| `POST` | `/api/fiscal-info` | Crea o actualiza la información fiscal y regímenes del usuario. | `200` / `201` |
+| `POST` | `/api/fiscal-info/csf` | Crea o actualiza información fiscal extraída de una CSF. | `200` / `201` |
 | `GET` | `/api/fiscal-info` | Consulta la información fiscal del usuario. | `200` |
 | `GET` | `/api/fiscal-info/regimens` | Lista los regímenes fiscales del RFC del usuario. | `200` |
 | `GET` | `/api/reporting/receipts/count` | Resumen de conteos de tickets. | `200` |
@@ -1479,7 +1479,7 @@ curl -X POST \
 
 #### Respuesta exitosa
 
-**HTTP Status:** `201 Created`
+**HTTP Status:** `201 Created` si el usuario aún no tenía información fiscal; `200 OK` si se actualizó la existente.
 
 ```json
 {
@@ -1488,7 +1488,16 @@ curl -X POST \
 }
 ```
 
-No se devuelve el `id` ni los datos guardados. El endpoint **no es idempotente**: cada llamada inserta una nueva fila en `fiscal_info`.
+En una actualización:
+
+```json
+{
+  "status": 200,
+  "message": "Información fiscal actualizada exitosamente"
+}
+```
+
+No se devuelve el `id` ni los datos guardados. El endpoint **es idempotente**: `fiscal_info` tiene `UNIQUE(user_id)` y cada llamada hace upsert. Los regímenes enviados **reemplazan** a los anteriores del usuario.
 
 #### Excepciones y respuestas de error
 
@@ -1497,7 +1506,7 @@ No se devuelve el `id` ni los datos guardados. El endpoint **no es idempotente**
 | `400` | `VALIDATION_ERROR` | `RequestValidationError` | Campo faltante, RFC/email/CP/enum/fecha inválidos o JSON malformado. |
 | `401` | `MISSING_AUTHORIZATION_HEADER` | `AuthenticationError` | Sin cabecera `Authorization` válida. |
 | `401` | `INVALID_TOKEN` | `AuthenticationError` | Token inválido/expirado. |
-| `500` | `POSTGRES_DB_ERROR` | `PostgresDBException` | Falla controlada del upsert de usuario, del `INSERT` de `fiscal_info` o de un régimen (incluye truncamiento de campos cifrados que exceden `VARCHAR(255)`). |
+| `500` | `POSTGRES_DB_ERROR` | `PostgresDBException` | Falla controlada del upsert de usuario, del upsert de `fiscal_info` o del reemplazo de regímenes (incluye truncamiento de campos cifrados que exceden `VARCHAR(255)`). |
 | `500` | `INFRASTRUCTURE_EXCEPTION` | `InfrastructureException` | No se puede crear el engine de base de datos. |
 | `500` | `INTERNAL_SERVER_ERROR` | `Exception` | Fallo de conexión fuera del bloque controlado, clave Fernet inválida, error de codificación o excepción no clasificada. |
 
@@ -1593,7 +1602,7 @@ Resto de ejemplos JSON de las excepciones listadas:
 
 - La autenticación se resuelve **antes** de validar el body: sin token la respuesta es `401` aunque el body sea inválido. Excepción: si falta `clerk_secret_key`, el fallo de bootstrap produce `500`.
 - No hay validación de compatibilidad entre `use_cfdi_code_default`, el régimen y el tipo de persona en este endpoint; esa validación ocurre al facturar.
-- `fiscal_info` y cada régimen se insertan en transacciones separadas: si falla un régimen, la fila principal y los regímenes previos quedan persistidos.
+- El upsert de `fiscal_info` y el reemplazo de regímenes se ejecutan en pasos separados: si falla el reemplazo, la fila principal queda actualizada y los regímenes anteriores se conservan (el `DELETE` y los `INSERT` de regímenes sí son atómicos entre sí).
 
 ---
 
@@ -1628,12 +1637,21 @@ curl -X POST \
 
 #### Respuesta exitosa
 
-**HTTP Status:** `201 Created`
+**HTTP Status:** `201 Created` si el usuario aún no tenía información fiscal; `200 OK` si se actualizó la existente.
 
 ```json
 {
   "status": 201,
   "message": "Información fiscal registrada exitosamente"
+}
+```
+
+En una actualización:
+
+```json
+{
+  "status": 200,
+  "message": "Información fiscal actualizada exitosamente"
 }
 ```
 
@@ -1656,7 +1674,7 @@ No se devuelven los datos extraídos, los regímenes ni el `fiscal_info_id`.
 | `401` | `INVALID_TOKEN` | `AuthenticationError` | Token inválido/expirado. |
 | `500` | `CSF_LOOKUP_FAILED` | `InfrastructureException` | Falla la consulta al SAT (`CifDownloadException`, `CifNotFoundException`), el motor LLM (`ImageReadingException`, errores de API de Gemini) o la conversión del PDF (`PdfToTextConvertException`). |
 | `500` | `CSF_PDF_TOOL_MISSING` | `InfrastructureException` | No está instalado el binario `pdftotext`. |
-| `500` | `POSTGRES_DB_ERROR` | `PostgresDBException` | Falla controlada del upsert de usuario o de los `INSERT` de `fiscal_info`/`regimenes`. |
+| `500` | `POSTGRES_DB_ERROR` | `PostgresDBException` | Falla controlada del upsert de usuario o del upsert de `fiscal_info`/reemplazo de `regimenes`. |
 | `500` | `INFRASTRUCTURE_EXCEPTION` | `InfrastructureException` | No se puede crear el engine de base de datos. |
 | `500` | `INTERNAL_SERVER_ERROR` | `Exception` | Configuración inválida (clave Fernet, API key/modelo de Gemini), fallo de disco temporal, error de conexión fuera del bloque controlado o excepción no clasificada. |
 
@@ -1861,7 +1879,7 @@ Multipart nativo — `400` (sin envelope ni `error_code`):
 
 - Los PDF escaneados no usan OCR: solo se extrae texto con `pdftotext`; si no hay capa de texto, se responde `INVALID_CSF_FILE`.
 - No se valida que el RFC de la constancia pertenezca al usuario autenticado ni que el email coincida con el de Clerk.
-- Igual que `POST /api/fiscal-info`, no es idempotente y la persistencia no es atómica.
+- Igual que `POST /api/fiscal-info`, es idempotente: hace upsert de `fiscal_info` y reemplaza los regímenes del usuario.
 
 ---
 
@@ -3273,22 +3291,20 @@ sequenceDiagram
 3. **Errores de jobs invisibles:** el cliente solo ve `estado`; `error_message`, `last_error`, `billing_error_code` y `billing_error_message` no se exponen.
 4. **`groups[]` no es una lista multipart:** se espera un único string con JSON o CSV; varias partes se colapsan a la última.
 5. **Sin validación de tamaño/cantidad de archivos:** solo se revisan los primeros 2048 bytes y no hay límite de request.
-6. **Sin atomicidad por lote ni por operación:** un fallo deja jobs/imágenes persistidos; en fiscal-info, `fiscal_info` puede quedar sin sus regímenes.
+6. **Sin atomicidad por lote ni por operación:** un fallo deja jobs/imágenes persistidos; en fiscal-info, el upsert de `fiscal_info` y el reemplazo de regímenes no son atómicos entre sí (si falla el reemplazo, se conservan los regímenes anteriores).
 7. **`GET /api/receipts` puede devolver `500 INVALID_BILLING_STATUS`:** si el estado derivado es `RECEIVED`/`EXTRACTING`/`UNKNOWN`, no pertenece a `BillingStatus`.
 8. **Descuadre de paginación:** `total` cuenta todos los tickets, pero el listado usa `INNER JOIN receipt_images` y puede duplicar tickets con varias imágenes.
-9. **`GET /api/fiscal-info` mezcla registros:** `regimen_actual` se toma por `fecha_alta` y `regimenes` por `id`; con historial pueden provenir de filas distintas.
-10. **`POST /api/fiscal-info` no es idempotente:** no hay `UNIQUE(user_id)`; cada POST agrega un registro.
-11. **Riesgo de truncamiento por cifrado:** los campos cifrados en `VARCHAR(255)` fallan con texto plano mayor a ~127 caracteres, produciendo `500 POSTGRES_DB_ERROR`.
-12. **`Webhook` sin anti-replay:** no se valida la antigüedad del timestamp; la idempotencia solo cubre la misma `idempotency_key`.
-13. **Webhook guarda payload normalizado:** no se conservan los bytes crudos.
-14. **`initiate_billing` no es idempotente a nivel de timbrado:** reejecutarlo reenvía la factura a FacturaGPT aunque ya esté `PROCESSING`/`COMPLETED`.
-15. **Sin webhook, `PROCESSING` es terminal:** no hay polling de estado (`get_invoice_status` no se usa).
-16. **`BillingAuthError` es 502, no 401.**
-17. **`fiscal-info/csf` no valida identidad fiscal:** no compara el RFC del archivo con el usuario autenticado.
-18. **PDF escaneado sin OCR:** solo se usa `pdftotext`; un PDF sin capa de texto devuelve `400 INVALID_CSF_FILE`.
-19. **404/405 no usan el envelope de error.**
-20. **CORS ausente en 500 no controlado:** el navegador puede no poder leer el cuerpo.
-21. **Configuración obligatoria no evidente:** `FACTURAGPT_WEBHOOK_SECRET` es obligatorio al arranque (`Field(...)` sin default); el comentario interno del código lo describe como opcional.
+9. **Riesgo de truncamiento por cifrado:** los campos cifrados en `VARCHAR(255)` fallan con texto plano mayor a ~127 caracteres, produciendo `500 POSTGRES_DB_ERROR`.
+10. **`Webhook` sin anti-replay:** no se valida la antigüedad del timestamp; la idempotencia solo cubre la misma `idempotency_key`.
+11. **Webhook guarda payload normalizado:** no se conservan los bytes crudos.
+12. **`initiate_billing` no es idempotente a nivel de timbrado:** reejecutarlo reenvía la factura a FacturaGPT aunque ya esté `PROCESSING`/`COMPLETED`.
+13. **Sin webhook, `PROCESSING` es terminal:** no hay polling de estado (`get_invoice_status` no se usa).
+14. **`BillingAuthError` es 502, no 401.**
+15. **`fiscal-info/csf` no valida identidad fiscal:** no compara el RFC del archivo con el usuario autenticado.
+16. **PDF escaneado sin OCR:** solo se usa `pdftotext`; un PDF sin capa de texto devuelve `400 INVALID_CSF_FILE`.
+17. **404/405 no usan el envelope de error.**
+18. **CORS ausente en 500 no controlado:** el navegador puede no poder leer el cuerpo.
+19. **Configuración obligatoria no evidente:** `FACTURAGPT_WEBHOOK_SECRET` es obligatorio al arranque (`Field(...)` sin default); el comentario interno del código lo describe como opcional.
 
 ---
 
