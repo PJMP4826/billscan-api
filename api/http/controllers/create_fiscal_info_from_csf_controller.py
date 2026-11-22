@@ -32,7 +32,7 @@ class CreateFiscalInfoFromCsfController:
         mime_type = await self._validate(file)
         content = await file.read()
 
-        await self._use_case.execute(
+        created = await self._use_case.execute(
             user_id=user_id,
             file_bytes=content,
             mime_type=mime_type,
@@ -40,12 +40,18 @@ class CreateFiscalInfoFromCsfController:
             use_cfdi_code_default=request_data.use_cfdi_code_default.value,
         )
 
+        status_code = (
+            status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
+        message = (
+            "Información fiscal registrada exitosamente"
+            if created
+            else "Información fiscal actualizada exitosamente"
+        )
+
         return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={
-                "status": 201,
-                "message": "Información fiscal registrada exitosamente",
-            },
+            status_code=status_code,
+            content={"status": status_code, "message": message},
         )
 
     async def _validate(self, file: UploadFile) -> str:

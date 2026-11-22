@@ -13,7 +13,7 @@ class CreateFiscalInfoController:
     async def handle(
         self, user_id: UserId, request_data: CreateFiscalInfoRequest
     ) -> JSONResponse:
-        await self._use_case.execute(
+        created = await self._use_case.execute(
             user_id=user_id,
             rfc=request_data.rfc,
             razon_social=request_data.razon_social,
@@ -24,10 +24,16 @@ class CreateFiscalInfoController:
             use_cfdi_code_default=request_data.use_cfdi_code_default,
         )
 
+        status_code = (
+            status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
+        message = (
+            "Información fiscal registrada exitosamente"
+            if created
+            else "Información fiscal actualizada exitosamente"
+        )
+
         return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={
-                "status": 201,
-                "message": "Información fiscal registrada exitosamente",
-            },
+            status_code=status_code,
+            content={"status": status_code, "message": message},
         )
