@@ -1,8 +1,12 @@
+import asyncio
 import base64
 
 from src.config.logger import logger
 from src.config.settings import settings
 from src.domain.enums.billing_status import BillingStatus
+from src.domain.enums.job_names import JobName
+from src.shared.errors.infrastructure_exceptions import InfrastructureException
+from src.domain.value_objects.billing_failure import BillingFailure
 from src.domain.errors.billing_error import (
     InvoiceQuotaExceededError,
     build_quota_message,
@@ -29,6 +33,7 @@ from src.domain.ports.repositories.invoice_quota_repository_port import (
 )
 from src.domain.ports.rfc_fingerprint_port import RfcFingerprintPort
 from src.domain.ports.data_encryptor import DataEncryptor
+from src.domain.ports.queue_publisher_port import QueuePublisherPort
 
 
 class InitiateBillingUseCase:
@@ -44,6 +49,9 @@ class InitiateBillingUseCase:
         invoice_quota_repository: InvoiceQuotaRepositoryPort,
         rfc_fingerprint: RfcFingerprintPort,
         max_invoices_per_rfc: int,
+        queue_publisher: QueuePublisherPort | None = None,
+        max_storage_retries: int = 3,
+        storage_retry_delay_seconds: float = 5.0,
     ) -> None:
         self._billing_provider = billing_provider
         self._billing_detail_repository = billing_detail_repository
@@ -55,10 +63,14 @@ class InitiateBillingUseCase:
         self._invoice_quota_repository = invoice_quota_repository
         self._rfc_fingerprint = rfc_fingerprint
         self._max_invoices_per_rfc = max_invoices_per_rfc
+        self._queue_publisher = queue_publisher
+        self._max_storage_retries = max(0, max_storage_retries)
+        self._storage_retry_delay_seconds = max(0.0, storage_retry_delay_seconds)
 
     async def execute(self, payload: dict[str, str | int]) -> None:
         receipt_id = int(payload["receipt_id"])
         user_id = str(payload["user_id"])
+        storage_retry_count = int(payload.get("storage_retry_count") or 0)
 
         response = None
         try:
@@ -177,29 +189,105 @@ class InitiateBillingUseCase:
 
             logger.info(f"Receipt {receipt_id} enviado a servicio de facturacion")
         except Exception as exc:
+            if self._should_retry_storage_error(exc, storage_retry_count):
+                await self._schedule_storage_retry(
+                    receipt_id=receipt_id,
+                    user_id=user_id,
+                    exc=exc,
+                    storage_retry_count=storage_retry_count,
+                    response=response,
+                )
+                return
+
             logger.error(
                 f"Error al iniciar facturación para el receipt {receipt_id}: {exc}"
             )
 
-            error_code = response.error_code if response else "INTERNAL_ERROR"
-            error_message = str(response.error_message) if response else str(exc)
+            failure = BillingFailure.from_exception(exc)
 
             # Solo devolvemos el cupo si el proveedor NO aceptó la factura.
             # Si ya devolvió un session_id, la factura sigue en curso y debe
             # conservar su lugar en la cuota.
             if response is None:
-                try:
-                    await self._invoice_quota_repository.release(receipt_id)
-                except Exception as release_exc:
-                    logger.error(
-                        "No se pudo liberar la cuota del receipt %s: %s",
-                        receipt_id,
-                        release_exc,
-                    )
+                await self._release_quota(receipt_id)
 
             await self._billing_detail_repository.update_billing_status(
                 receipt_id=receipt_id,
                 billing_status=BillingStatus.FAILED,
-                billing_error_code=error_code,
-                billing_error_message=error_message,
+                billing_error_code=failure.code,
+                billing_error_message=failure.message,
+            )
+
+    def _should_retry_storage_error(
+        self, exc: Exception, storage_retry_count: int
+    ) -> bool:
+        return (
+            self._queue_publisher is not None
+            and isinstance(exc, InfrastructureException)
+            and exc.retryable
+            and storage_retry_count < self._max_storage_retries
+        )
+
+    async def _schedule_storage_retry(
+        self,
+        *,
+        receipt_id: int,
+        user_id: str,
+        exc: InfrastructureException,
+        storage_retry_count: int,
+        response: object | None,
+    ) -> None:
+        attempt = storage_retry_count + 1
+        logger.warning(
+            "Fallo transitorio de almacenamiento para el receipt %s (%s). "
+            "Reintento %d/%d en %.1fs",
+            receipt_id,
+            exc.error_code,
+            attempt,
+            self._max_storage_retries,
+            self._storage_retry_delay_seconds,
+        )
+
+        if response is None:
+            await self._release_quota(receipt_id)
+
+        await self._billing_detail_repository.update_billing_status(
+            receipt_id=receipt_id,
+            billing_status=BillingStatus.PENDING,
+            billing_error_code=exc.error_code,
+            billing_error_message=(
+                "Fallo temporal de almacenamiento; "
+                f"reintento {attempt}/{self._max_storage_retries}"
+            ),
+        )
+
+        payload = {
+            "receipt_id": receipt_id,
+            "user_id": user_id,
+            "storage_retry_count": attempt,
+        }
+
+        if self._storage_retry_delay_seconds <= 0:
+            self._queue_publisher.enqueue_job(  # type: ignore[union-attr]
+                job_name=JobName.INITIATE_BILLING,
+                payload=payload,
+            )
+            return
+
+        loop = asyncio.get_running_loop()
+        loop.call_later(
+            self._storage_retry_delay_seconds,
+            self._queue_publisher.enqueue_job,  # type: ignore[union-attr]
+            JobName.INITIATE_BILLING,
+            payload,
+        )
+
+    async def _release_quota(self, receipt_id: int) -> None:
+        try:
+            await self._invoice_quota_repository.release(receipt_id)
+        except Exception as release_exc:
+            logger.error(
+                "No se pudo liberar la cuota del receipt %s: %s",
+                receipt_id,
+                release_exc,
             )

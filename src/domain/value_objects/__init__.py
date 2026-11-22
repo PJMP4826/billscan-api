@@ -5,6 +5,7 @@ from src.domain.value_objects.tax_detail import TaxDetail
 from src.domain.value_objects.totals_and_taxes import TotalsAndTaxes
 from src.domain.value_objects.payment_info import PaymentInfo
 from src.domain.value_objects.billing_data import BillingData
+from src.domain.value_objects.billing_failure import BillingFailure
 
 __all__ = [
     "MerchantData",
@@ -14,4 +15,5 @@ __all__ = [
     "TotalsAndTaxes",
     "PaymentInfo",
     "BillingData",
+    "BillingFailure",
 ]

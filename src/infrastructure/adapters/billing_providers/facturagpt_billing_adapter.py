@@ -92,75 +92,48 @@ class FacturaGPTBillingAdapter(BillingProviderPort):
             raise BillingProviderError(f"API Error: {raw['detail']}")
 
         parsed = FacturaGPTSubmitResponse.model_validate(raw)
-        # self._raise_if_error(parsed.ok, parsed.error)
-
-        result = InvoiceResult()
-
-        if parsed.error:
-            status = parsed.error.details.get("status", "processing")  # type: ignore
-            result = InvoiceResult(
-                session_id=parsed.meta.session_id,
-                error_code=parsed.error.code,
-                error_message=parsed.error.message,
-                status=BillingStatus(status.upper()),
-            )
+        self._raise_if_error(parsed.ok, parsed.error)
 
         data = parsed.data
-        if data:
-            result = InvoiceResult(
-                session_id=data.session_id,
-                external_id=data.external_id,
-                status=BillingStatus(data.status.upper()),
-                ocr_result=self._map_ocr(data.ocr_result),
+        if data is None:
+            raise BillingProviderError(
+                "FacturaGPT no devolvió datos de la factura",
+                error_code="BILLING_MISSING_DATA",
             )
 
-        return result
+        return InvoiceResult(
+            session_id=data.session_id,
+            external_id=data.external_id,
+            status=BillingStatus(data.status.upper()),
+            ocr_result=self._map_ocr(data.ocr_result),
+        )
 
     async def get_invoice_status(self, session_id: str) -> InvoiceResult:
         raw = await self._get(f"/api/v1/get_factura_status/{session_id}")
         parsed = FacturaGPTStatusResponse.model_validate(raw)
-        # self._raise_if_error(parsed.ok, parsed.error)
-
-        result = InvoiceResult()
-
-        if parsed.error:
-            status = parsed.error.details.get("status", "processing")  # type: ignore
-            result = InvoiceResult(
-                session_id=parsed.meta.session_id,
-                error_code=parsed.error.code,
-                status=BillingStatus(status.upper()),
-            )
+        self._raise_if_error(parsed.ok, parsed.error)
 
         data = parsed.data
-        if data:
-            result = InvoiceResult(
-                session_id=data.session_id, status=BillingStatus(data.status.upper())
-            )
+        if data is None:
+            return InvoiceResult()
 
-        return result
+        return InvoiceResult(
+            session_id=data.session_id, status=BillingStatus(data.status.upper())
+        )
 
     async def get_invoice_files(self, session_id: str) -> InvoiceResult | InvoiceFiles:
         raw = await self._get(f"/api/v1/get_factura_files/{session_id}")
         parsed = FacturaGPTFilesResponse.model_validate(raw)
-        # self._raise_if_error(parsed.ok, parsed.error)
-
-        result = InvoiceResult()
-
-        if parsed.error:
-            status = parsed.error.details.get("status", "processing")  # type: ignore
-            result = InvoiceResult(
-                session_id=parsed.meta.session_id,
-                error_code=parsed.error.code,
-                status=BillingStatus(status.upper()),
-            )
+        self._raise_if_error(parsed.ok, parsed.error)
 
         data = parsed.data
-        if data:
-            result = InvoiceFiles(
-                xml_url=data.xml_url,
-                pdf_url=data.pdf_url,
-            )
-        return result
+        if data is None:
+            return InvoiceResult()
+
+        return InvoiceFiles(
+            xml_url=data.xml_url,
+            pdf_url=data.pdf_url,
+        )
 
     async def download_invoice_file(self, url: str) -> tuple[bytes, str]:
         """

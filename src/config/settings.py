@@ -52,6 +52,17 @@ class Settings(BaseSettings):
         default=3,
         description="Máximo de facturas permitidas por RFC",
     )
+    billing_storage_max_retries: int = Field(
+        default=3,
+        description=(
+            "Reintentos del job de timbrado ante fallos transitorios de "
+            "almacenamiento (R2)"
+        ),
+    )
+    billing_storage_retry_delay_seconds: float = Field(
+        default=5.0,
+        description="Delay inicial (segundos) antes de reencolar el timbrado",
+    )
     rfc_hash_secret: str = Field(
         default="",
         description=(

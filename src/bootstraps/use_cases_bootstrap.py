@@ -144,6 +144,9 @@ def get_initiate_billing_use_case():
         get_cloudflare_r2_file_storage_adapter,
         get_rfc_fingerprint,
     )
+    from src.infrastructure.adapters.queue_adapters.asyncio_queue_publisher import (
+        AsyncioQueuePublisher,
+    )
     from .repositories.repositories_bootstrap import (
         get_receipt_billing_detail_repository,
         get_receipt_image_repository,
@@ -163,6 +166,9 @@ def get_initiate_billing_use_case():
         invoice_quota_repository=get_invoice_quota_repository(),
         rfc_fingerprint=get_rfc_fingerprint(),
         max_invoices_per_rfc=settings.billing_max_invoices_per_rfc,
+        queue_publisher=AsyncioQueuePublisher(),
+        max_storage_retries=settings.billing_storage_max_retries,
+        storage_retry_delay_seconds=settings.billing_storage_retry_delay_seconds,
     )
 
 

@@ -11,6 +11,8 @@ from src.application.use_cases.initiate_billing_use_case import (
 from src.application.dtos.invoice_result_dto import InvoiceResult
 from src.domain.entities.receipt import Receipt
 from src.domain.enums.billing_status import BillingStatus
+from src.domain.enums.job_names import JobName
+from src.shared.errors.infrastructure_exceptions import InfrastructureException
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.errors.billing_error import InvoiceQuotaExceededError
 from src.domain.enums.sat_payment_methods import (
@@ -35,6 +37,22 @@ class _FakeEncryptor:
 class _FakeFileStorage:
     async def download(self, key: str) -> tuple[bytes, str]:
         return b"image-bytes", "image/jpeg"
+
+
+class _FailingFileStorage:
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+
+    async def download(self, key: str) -> tuple[bytes, str]:
+        raise self._error
+
+
+class _FakeQueuePublisher:
+    def __init__(self) -> None:
+        self.jobs: list[dict[str, Any]] = []
+
+    def enqueue_job(self, job_name: str, payload: dict[str, Any]) -> None:
+        self.jobs.append({"job_name": job_name, "payload": payload})
 
 
 class _FakeReceiptImageRepository:
@@ -174,6 +192,9 @@ def _build_use_case(
     billing_detail_repository: _FakeBillingDetailRepository,
     billing_provider: _FakeBillingProvider | None = None,
     quota_repository: _FakeInvoiceQuotaRepository | None = None,
+    file_storage: Any | None = None,
+    queue_publisher: _FakeQueuePublisher | None = None,
+    max_storage_retries: int = 3,
 ) -> tuple[InitiateBillingUseCase, _FakeBillingProvider]:
     provider = billing_provider or _FakeBillingProvider()
     use_case = InitiateBillingUseCase(
@@ -183,12 +204,15 @@ def _build_use_case(
         receipt_image_repository_port=_FakeReceiptImageRepository(),  # type: ignore[arg-type]
         receipt_repository=_FakeReceiptRepository(),  # type: ignore[arg-type]
         encryptor=_FakeEncryptor(),  # type: ignore[arg-type]
-        file_storage=_FakeFileStorage(),  # type: ignore[arg-type]
+        file_storage=file_storage or _FakeFileStorage(),  # type: ignore[arg-type]
         invoice_quota_repository=(
             quota_repository or _FakeInvoiceQuotaRepository()
         ),  # type: ignore[arg-type]
         rfc_fingerprint=_FakeRfcFingerprint(),  # type: ignore[arg-type]
         max_invoices_per_rfc=3,
+        queue_publisher=queue_publisher,  # type: ignore[arg-type]
+        max_storage_retries=max_storage_retries,
+        storage_retry_delay_seconds=0,
     )
     return use_case, provider
 
@@ -291,3 +315,100 @@ def test_releases_reserved_quota_when_provider_fails():
     )
 
     assert quota_repository.released == [_RECEIPT_ID]
+
+
+def test_requeues_billing_on_transient_storage_error():
+    detail_repository = _FakeBillingDetailRepository()
+    queue_publisher = _FakeQueuePublisher()
+    use_case, provider = _build_use_case(
+        detail_repository,
+        file_storage=_FailingFileStorage(
+            InfrastructureException(
+                "R2 download failed",
+                error_code="R2_DOWNLOAD_ERROR",
+                retryable=True,
+            )
+        ),
+        queue_publisher=queue_publisher,
+    )
+
+    asyncio.run(
+        use_case.execute(payload={"receipt_id": _RECEIPT_ID, "user_id": _USER_ID})
+    )
+
+    assert provider.submitted == []
+    assert detail_repository.status_updates[0]["billing_status"] == (
+        BillingStatus.PENDING
+    )
+    assert queue_publisher.jobs == [
+        {
+            "job_name": JobName.INITIATE_BILLING,
+            "payload": {
+                "receipt_id": _RECEIPT_ID,
+                "user_id": _USER_ID,
+                "storage_retry_count": 1,
+            },
+        }
+    ]
+
+
+def test_marks_failed_after_storage_retries_are_exhausted():
+    detail_repository = _FakeBillingDetailRepository()
+    queue_publisher = _FakeQueuePublisher()
+    use_case, provider = _build_use_case(
+        detail_repository,
+        file_storage=_FailingFileStorage(
+            InfrastructureException(
+                "R2 download failed",
+                error_code="R2_DOWNLOAD_ERROR",
+                retryable=True,
+            )
+        ),
+        queue_publisher=queue_publisher,
+        max_storage_retries=2,
+    )
+
+    asyncio.run(
+        use_case.execute(
+            payload={
+                "receipt_id": _RECEIPT_ID,
+                "user_id": _USER_ID,
+                "storage_retry_count": 2,
+            }
+        )
+    )
+
+    assert provider.submitted == []
+    assert queue_publisher.jobs == []
+    assert detail_repository.status_updates[0]["billing_status"] == (
+        BillingStatus.FAILED
+    )
+    assert detail_repository.status_updates[0]["billing_error_code"] == (
+        "R2_DOWNLOAD_ERROR"
+    )
+
+
+def test_marks_failed_immediately_on_non_retryable_storage_error():
+    detail_repository = _FakeBillingDetailRepository()
+    queue_publisher = _FakeQueuePublisher()
+    use_case, provider = _build_use_case(
+        detail_repository,
+        file_storage=_FailingFileStorage(
+            InfrastructureException(
+                "R2 access denied",
+                error_code="R2_ACCESS_DENIED",
+                retryable=False,
+            )
+        ),
+        queue_publisher=queue_publisher,
+    )
+
+    asyncio.run(
+        use_case.execute(payload={"receipt_id": _RECEIPT_ID, "user_id": _USER_ID})
+    )
+
+    assert provider.submitted == []
+    assert queue_publisher.jobs == []
+    assert detail_repository.status_updates[0]["billing_status"] == (
+        BillingStatus.FAILED
+    )

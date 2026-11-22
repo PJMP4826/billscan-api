@@ -17,6 +17,7 @@ class InfrastructureException(BaseAppException):
         details: Optional[Dict[str, Any]] = None,
         upstream_status_code: Optional[int] = None,
         response_body: Optional[str] = None,
+        retryable: bool = False,
         **kwargs: Any,
     ) -> None:
         final_details = {**(details or {})}
@@ -28,6 +29,7 @@ class InfrastructureException(BaseAppException):
         super().__init__(
             message, error_code=error_code, details=final_details, **kwargs
         )
+        self.retryable = retryable
 
 
 class HttpException(InfrastructureException):
