@@ -1,7 +1,7 @@
 # Database Schema - billscan-api
 
-> Diagrama generado a partir del historial de migraciones de Alembic (14 migraciones).
-> Última migración: `2d944ffc2411` (2026-09-06)
+> Diagrama generado a partir del historial de migraciones de Alembic (17 migraciones).
+> Última migración: `b7e4c9a1f2d3` (2026-11-21)
 
 ## Entity Relationship Diagram
 
@@ -15,7 +15,7 @@ erDiagram
 
     fiscal_info {
         bigserial id PK
-        varchar user_id FK "VARCHAR(255) NOT NULL"
+        varchar user_id FK "VARCHAR(255) NOT NULL, UNIQUE"
         varchar rfc "VARCHAR(255) NOT NULL"
         varchar razon_social "VARCHAR(255) NOT NULL"
         varchar email "VARCHAR(255) NOT NULL"
@@ -173,7 +173,7 @@ erDiagram
         jsonb response_payload "NULLABLE"
     }
 
-    users ||--o{ fiscal_info : "has"
+    users ||--|| fiscal_info : "has"
     users ||--o{ receipts : "has"
     users ||--o{ receipt_jobs_details : "has"
 
@@ -222,6 +222,7 @@ erDiagram
 
 ## Notas de diseño
 
+- **`fiscal_info.user_id`** tiene `UNIQUE(user_id)`: cada usuario tiene un único registro fiscal, por lo que `POST /api/fiscal-info` hace upsert en lugar de insertar filas nuevas.
 - **`receipts.user_id`** es nullable porque en el flujo MVP el usuario puede no estar autenticado al momento de crear el receipt.
 - **`receipt_images.receipt_id`** es nullable porque las imágenes se insertan al crear el job de extracción, antes de que exista el receipt. Se backfilla al completar la extracción.
 - **`receipt_images.receipt_job_id`** referencia a la tabla de jobs para trazabilidad del pipeline de procesamiento.
