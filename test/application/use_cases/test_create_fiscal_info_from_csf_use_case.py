@@ -29,15 +29,21 @@ class _FakeEncryptor:
 class _FakeFiscalInfoRepository:
     def __init__(self) -> None:
         self.inserted: list[dict[str, Any]] = []
-        self.regimens: list[dict[str, Any]] = []
+        self.regimens_by_fiscal_info: dict[int, list[tuple[str, str, Any]]] = {}
+        self.ids_by_user: dict[str, int] = {}
 
-    async def insert_fiscal_info(self, **kwargs: Any) -> int:
+    async def upsert_fiscal_info(self, **kwargs: Any) -> tuple[int, bool]:
         self.inserted.append(kwargs)
-        return 42
+        user_id = kwargs["user_id"]
+        created = user_id not in self.ids_by_user
+        if created:
+            self.ids_by_user[user_id] = 42
+        return self.ids_by_user[user_id], created
 
-    async def add_regimen(self, **kwargs: Any) -> int:
-        self.regimens.append(kwargs)
-        return len(self.regimens)
+    async def replace_regimens(
+        self, fiscal_info_id: int, regimens: list[tuple[str, str, Any]]
+    ) -> None:
+        self.regimens_by_fiscal_info[fiscal_info_id] = list(regimens)
 
 
 class _FakeExtractor:
@@ -114,11 +120,11 @@ def test_execute_persists_all_regimens_from_csf():
     assert inserted["use_cfdi_code_default"] == "G03"
 
     # La constancia trae dos regímenes vigentes: se guardan los dos
-    assert len(repository.regimens) == 2
-    assert [r["regimen_code"] for r in repository.regimens] == ["601", "612"]
-    assert all(r["fiscal_info_id"] == 42 for r in repository.regimens)
-    assert all(r["fecha_alta"] == date.today() for r in repository.regimens)
-    assert repository.regimens[0]["regimen_description"] == TaxRegime.R601.description
+    saved_regimens = repository.regimens_by_fiscal_info[42]
+    assert len(saved_regimens) == 2
+    assert [r[0] for r in saved_regimens] == ["601", "612"]
+    assert all(r[2] == date.today() for r in saved_regimens)
+    assert saved_regimens[0][1] == TaxRegime.R601.description
 
 
 def test_execute_does_not_encrypt_empty_address():
@@ -160,4 +166,4 @@ def test_execute_propagates_bad_request_from_extractor():
 
     # Nada se persiste si el extractor falla
     assert repository.inserted == []
-    assert repository.regimens == []
+    assert repository.regimens_by_fiscal_info == {}

@@ -24,15 +24,21 @@ class _FakeEncryptor:
 class _FakeFiscalInfoRepository:
     def __init__(self) -> None:
         self.inserted: list[dict[str, Any]] = []
-        self.regimens: list[dict[str, Any]] = []
+        self.regimens_by_fiscal_info: dict[int, list[tuple[str, str, Any]]] = {}
+        self.ids_by_user: dict[str, int] = {}
 
-    async def insert_fiscal_info(self, **kwargs: Any) -> int:
+    async def upsert_fiscal_info(self, **kwargs: Any) -> tuple[int, bool]:
         self.inserted.append(kwargs)
-        return 7
+        user_id = kwargs["user_id"]
+        created = user_id not in self.ids_by_user
+        if created:
+            self.ids_by_user[user_id] = 7
+        return self.ids_by_user[user_id], created
 
-    async def add_regimen(self, **kwargs: Any) -> int:
-        self.regimens.append(kwargs)
-        return len(self.regimens)
+    async def replace_regimens(
+        self, fiscal_info_id: int, regimens: list[tuple[str, str, Any]]
+    ) -> None:
+        self.regimens_by_fiscal_info[fiscal_info_id] = list(regimens)
 
 
 def _build_use_case() -> tuple[CreateFiscalInfoUseCase, _FakeFiscalInfoRepository]:
@@ -73,13 +79,53 @@ def test_execute_persists_encrypted_info_and_regimen():
     assert inserted["address"] == "enc(CALLE REFORMA 222)"
     assert inserted["use_cfdi_code_default"] == "G03"
 
-    assert repository.regimens == [
-        {
-            "fiscal_info_id": 7,
-            "regimen_code": "601",
-            "regimen_description": TaxRegime.R601.description,
-            "fecha_alta": _FECHA_ALTA_SAT,
-        }
+    assert repository.regimens_by_fiscal_info[7] == [
+        ("601", TaxRegime.R601.description, _FECHA_ALTA_SAT)
+    ]
+
+
+def test_execute_is_idempotent_and_replaces_regimens_for_same_user():
+    use_case, repository = _build_use_case()
+
+    first_created = asyncio.run(
+        use_case.execute(
+            user_id=UserId(_USER_ID),
+            rfc="ACM010101AAA",
+            razon_social="ACME SA DE CV",
+            email="facturas@acme.mx",
+            cp="06600",
+            address="CALLE REFORMA 222",
+            regimens=[
+                BillingCustomerRegimeDto(
+                    code=TaxRegime.R601, fecha_alta_sat=_FECHA_ALTA_SAT
+                )
+            ],
+            use_cfdi_code_default="G03",
+        )
+    )
+    second_created = asyncio.run(
+        use_case.execute(
+            user_id=UserId(_USER_ID),
+            rfc="ACM010101AAA",
+            razon_social="ACME SA DE CV",
+            email="facturas@acme.mx",
+            cp="06700",
+            address="CALLE REFORMA 333",
+            regimens=[
+                BillingCustomerRegimeDto(
+                    code=TaxRegime.R612, fecha_alta_sat=_FECHA_ALTA_SAT
+                )
+            ],
+            use_cfdi_code_default="G03",
+        )
+    )
+
+    assert first_created is True
+    assert second_created is False
+    assert len(repository.inserted) == 2
+    assert repository.ids_by_user[_USER_ID] == 7
+    assert repository.regimens_by_fiscal_info[7] == [
+        ("612", TaxRegime.R612.description, _FECHA_ALTA_SAT)
     ]
 
 

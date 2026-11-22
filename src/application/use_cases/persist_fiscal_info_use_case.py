@@ -15,8 +15,8 @@ class PersistFiscalInfoUseCase(ABC):
     """Caso de uso base para registrar la información fiscal de un usuario.
 
     Concentra el paso que **siempre** es igual sin importar de dónde vengan los
-    datos: encriptar los campos sensibles, insertar la fila de ``fiscal_info`` y
-    dar de alta cada régimen reportado en ``regimenes``.
+    datos: encriptar los campos sensibles, hacer upsert de la fila de
+    ``fiscal_info`` y reemplazar los regímenes reportados en ``regimenes``.
 
     Las subclases solo se encargan de *obtener* los datos (desde la request o
     desde una Constancia de Situación Fiscal) y de delegar aquí:
@@ -36,11 +36,13 @@ class PersistFiscalInfoUseCase(ABC):
         self._encryptor = encryptor
 
     @abstractmethod
-    async def execute(self, *args: Any, **kwargs: Any) -> None:
+    async def execute(self, *args: Any, **kwargs: Any) -> bool:
         """Obtiene los datos fiscales y los persiste.
 
-        Cada subclase define la firma concreta, porque el origen de los datos
-        cambia (request del usuario vs. archivo de la constancia).
+        Devuelve ``True`` si la información fiscal fue creada o ``False`` si se
+        actualizó la existente. Cada subclase define la firma concreta, porque
+        el origen de los datos cambia (request del usuario vs. archivo de la
+        constancia).
         """
 
     async def _persist_fiscal_info(
@@ -54,12 +56,12 @@ class PersistFiscalInfoUseCase(ABC):
         address: str | None,
         regimens: list[BillingCustomerRegimeDto],
         use_cfdi_code_default: str,
-    ) -> None:
-        """Encripta los datos sensibles, inserta la info fiscal y sus regímenes.
+    ) -> bool:
+        """Encripta los datos sensibles, hace upsert y reemplaza los regímenes.
 
-        Se registra un renglón en ``regimenes`` por cada régimen recibido: una
-        constancia puede reportar varios regímenes vigentes a la vez y todos se
-        conservan para que el usuario elija después.
+        Los regímenes anteriores se reemplazan por los recibidos: una constancia
+        puede reportar varios regímenes vigentes a la vez y todos se conservan
+        para que el usuario elija después.
         """
         try:
             encrypted_rfc = self._encryptor.encrypt(rfc)
@@ -68,23 +70,31 @@ class PersistFiscalInfoUseCase(ABC):
             encrypted_address = self._encryptor.encrypt(address) if address else None
             encrypted_cp = self._encryptor.encrypt(cp)
 
-            fiscal_info_id = await self._fiscal_info_repository.insert_fiscal_info(
-                user_id=user_id,
-                rfc=encrypted_rfc,
-                razon_social=encrypted_razon_social,
-                email=encrypted_email,
-                cp=encrypted_cp,
-                address=encrypted_address,
-                use_cfdi_code_default=use_cfdi_code_default,
+            fiscal_info_id, created = (
+                await self._fiscal_info_repository.upsert_fiscal_info(
+                    user_id=user_id,
+                    rfc=encrypted_rfc,
+                    razon_social=encrypted_razon_social,
+                    email=encrypted_email,
+                    cp=encrypted_cp,
+                    address=encrypted_address,
+                    use_cfdi_code_default=use_cfdi_code_default,
+                )
             )
 
-            for regimen in regimens:
-                await self._fiscal_info_repository.add_regimen(
-                    fiscal_info_id=fiscal_info_id,
-                    regimen_code=regimen.code.value,
-                    regimen_description=regimen.code.description,
-                    fecha_alta=regimen.fecha_alta_sat or date.today(),
-                )
+            await self._fiscal_info_repository.replace_regimens(
+                fiscal_info_id=fiscal_info_id,
+                regimens=[
+                    (
+                        regimen.code.value,
+                        regimen.code.description,
+                        regimen.fecha_alta_sat or date.today(),
+                    )
+                    for regimen in regimens
+                ],
+            )
         except PostgresDBException as e:
             logger.debug(f"Error al registrar información fiscal: {e}")
             raise
+
+        return created

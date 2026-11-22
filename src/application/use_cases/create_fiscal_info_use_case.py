@@ -23,10 +23,10 @@ class CreateFiscalInfoUseCase(PersistFiscalInfoUseCase):
         address: str | None,
         regimens: list[BillingCustomerRegimeDto],
         use_cfdi_code_default: str,
-    ) -> None:
-        """Crea la información fiscal de un usuario y agrega un régimen."""
+    ) -> bool:
+        """Crea o actualiza la información fiscal del usuario y sus regímenes."""
 
-        await self._persist_fiscal_info(
+        return await self._persist_fiscal_info(
             user_id=user_id.value,
             rfc=rfc,
             razon_social=razon_social,

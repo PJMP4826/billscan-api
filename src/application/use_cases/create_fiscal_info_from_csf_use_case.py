@@ -40,13 +40,13 @@ class CreateFiscalInfoFromCsfUseCase(PersistFiscalInfoUseCase):
         mime_type: str,
         email: str,
         use_cfdi_code_default: str,
-    ) -> None:
+    ) -> bool:
         """Extrae los datos de la constancia, los encripta y los persiste."""
         fiscal_identity = await self._extractor.extract(
             file_bytes=file_bytes, mime_type=mime_type
         )
 
-        await self._persist_fiscal_info(
+        return await self._persist_fiscal_info(
             user_id=user_id.value,
             rfc=fiscal_identity.rfc,
             razon_social=fiscal_identity.razon_social,
