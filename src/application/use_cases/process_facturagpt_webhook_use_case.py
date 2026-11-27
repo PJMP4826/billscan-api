@@ -25,6 +25,7 @@ import json
 import re
 from typing import Any
 
+from src.application.dtos.push_notification_dto import PushNotification
 from src.config.logger import logger
 from src.application.dtos.cfdi import CfdiDto
 from src.application.dtos.invoice_result_dto import InvoiceResult
@@ -35,6 +36,7 @@ from src.domain.enums.billing_webhook_event_type import BillingWebHookEventType
 from src.domain.ports.billing_provider import BillingProviderPort
 from src.domain.ports.billing_webhook_handler_port import BillingWebhookHandlerPort
 from src.domain.ports.file_storage_port import FileStoragePort
+from src.domain.ports.push_notification_port import PushNotificationPort
 from src.domain.ports.repositories.billing_file_repository_port import (
     BillingFileRepositoryPort,
 )
@@ -47,6 +49,9 @@ from src.domain.ports.repositories.receipt_billing_detail_repository_port import
 from src.domain.ports.repositories.receipt_repository_port import ReceiptRepositoryPort
 from src.domain.ports.repositories.invoice_quota_repository_port import (
     InvoiceQuotaRepositoryPort,
+)
+from src.domain.ports.repositories.push_token_repository_port import (
+    PushTokenRepositoryPort,
 )
 from src.infrastructure.adapters.cfdi_parser import CfdiParser
 from src.shared.errors.billing_exceptions import BillingProviderError
@@ -73,6 +78,8 @@ class ProcessFacturaGPTWebhookUseCase:
         billing_provider: BillingProviderPort,
         file_storage: FileStoragePort,
         invoice_quota_repository: InvoiceQuotaRepositoryPort,
+        push_notificator: PushNotificationPort,
+        push_token_repository: PushTokenRepositoryPort,
     ) -> None:
         self._webhook_repository = webhook_repository
         self._receipt_repository = receipt_repository
@@ -82,6 +89,8 @@ class ProcessFacturaGPTWebhookUseCase:
         self._billing_provider = billing_provider
         self._file_storage = file_storage
         self._invoice_quota_repository = invoice_quota_repository
+        self._push_notificator = push_notificator
+        self._push_token_repository = push_token_repository
 
     async def execute(self, payload: dict[str, Any]) -> None:
         idempotency_key = str(payload["idempotency_key"])
@@ -168,8 +177,9 @@ class ProcessFacturaGPTWebhookUseCase:
                 f"(external_id del webhook {idempotency_key})"
             )
 
+        cfdi_content: CfdiDto | None = None
         if event is BillingWebHookEventType.COMPLETED:
-            await self._apply_completed(
+            cfdi_content = await self._apply_completed(
                 receipt_id=receipt_id,
                 idempotency_key=idempotency_key,
                 invoice_result=invoice_result,
@@ -189,14 +199,69 @@ class ProcessFacturaGPTWebhookUseCase:
                 "Webhook %s ya fue marcado como procesado por otra corrida.",
                 idempotency_key,
             )
+            return
 
-    # Evento factura.completed
+        # La notificación sale SOLO si ganamos mark_processed: evita pushes
+        # duplicados si una corrida concurrente ya aplicó el mismo evento.
+        if event is BillingWebHookEventType.COMPLETED:
+            await self._notify_invoice_ready(
+                receipt_id=receipt_id,
+                receipt_uuid=receipt_uuid,
+                cfdi=cfdi_content,
+            )
+
+    async def _notify_invoice_ready(
+        self,
+        receipt_id: int,
+        receipt_uuid: str,
+        cfdi: CfdiDto | None,
+    ) -> None:
+        """Best-effort: un fallo de push no debe deshacer el webhook aplicado."""
+        try:
+            user_id = await self._receipt_repository.find_user_id_by_receipt_id(
+                receipt_id=receipt_id
+            )
+            if user_id is None:
+                logger.info(
+                    "Receipt %s sin user_id asociado; se omite push notification.",
+                    receipt_id,
+                )
+                return
+
+            tokens = await self._push_token_repository.find_tokens_by_user_id(
+                user_id=user_id
+            )
+            if not tokens:
+                logger.info(
+                    "Usuario %s sin push tokens registrados; se omite notificación.",
+                    user_id,
+                )
+                return
+
+            if cfdi is None:
+                logger.warning(
+                    "Receipt %s completado sin CFDI parseado; se omite push.",
+                    receipt_id,
+                )
+                return
+
+            await self._send_notification(
+                cfdi=cfdi,
+                receipt_uuid=receipt_uuid,
+                tokens=tokens,
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo enviar push notification para receipt %s (webhook sigue aplicado).",
+                receipt_id,
+            )
+
     async def _apply_completed(
         self,
         receipt_id: int,
         idempotency_key: str,
         invoice_result: InvoiceResult,
-    ) -> None:
+    ) -> CfdiDto | None:
         files = invoice_result.files
         folio = (
             invoice_result.cfdi_summary.folio_fiscal
@@ -262,6 +327,23 @@ class ProcessFacturaGPTWebhookUseCase:
             receipt_id,
             xml_key,
             pdf_key,
+        )
+        return cfdi_content
+
+    async def _send_notification(
+        self, cfdi: CfdiDto, receipt_uuid: str, tokens: list[str]
+    ) -> None:
+        emisor = cfdi.emisor.nombre or "desconocido"
+        merchant = f"{emisor[:10]}..." if len(emisor) > 10 else emisor
+        body = f"Tu CFDI emitido por {merchant} ya está disponible"
+        message = PushNotification(
+            title="Tu factura esta lista",
+            body=body,
+            data={"type": "invoice", "receipt_uuid": receipt_uuid},
+        )
+        await self._push_notificator.send(
+            notification=message,
+            tokens=tokens,
         )
 
     async def _download_invoce_content(self, url: str) -> tuple[bytes, str]:
