@@ -278,6 +278,7 @@ def get_process_facturagpt_webhook_use_case():
         get_facturagpt_webhook_handler,
         get_facturagpt_billing_adapter,
         get_cloudflare_r2_file_storage_adapter,
+        get_expo_push_adapter,
     )
     from .repositories.repositories_bootstrap import (
         get_facturagpt_webhook_repository,
@@ -285,6 +286,7 @@ def get_process_facturagpt_webhook_use_case():
         get_receipt_billing_detail_repository,
         get_billing_file_repository,
         get_invoice_quota_repository,
+        get_push_token_repository,
     )
 
     return ProcessFacturaGPTWebhookUseCase(
@@ -296,6 +298,8 @@ def get_process_facturagpt_webhook_use_case():
         billing_provider=get_facturagpt_billing_adapter(),
         file_storage=get_cloudflare_r2_file_storage_adapter(),
         invoice_quota_repository=get_invoice_quota_repository(),
+        push_notificator=get_expo_push_adapter(),
+        push_token_repository=get_push_token_repository(),
     )
 
 
