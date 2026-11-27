@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks
 _facturagpt_billing_adapter_instance = None
 _facturagpt_webhook_handler_instance = None
 _token_verifier_adapter_instance = None
+_expo_push_adapter_instance = None
 
 
 def get_http_client_adapter():
@@ -129,6 +130,30 @@ def get_facturagpt_webhook_handler():
             webhook_secret=settings.facturagpt_webhook_secret
         )
     return _facturagpt_webhook_handler_instance
+
+
+def get_expo_push_adapter():
+    """Adapter de notificaciones push de Expo (singleton).
+
+    El access token es opcional: Expo solo lo exige si push security está
+    habilitado en el dashboard.
+    """
+    global _expo_push_adapter_instance
+    if _expo_push_adapter_instance is None:
+        from src.infrastructure.adapters.push_notifications.expo_push_adapter import (
+            ExpoPushNotificationAdapter,
+        )
+
+        _expo_push_adapter_instance = ExpoPushNotificationAdapter(
+            base_url=settings.expo_push_base_url,
+            access_token=settings.expo_push_access_token,
+            timeout_seconds=settings.expo_push_timeout_seconds,
+            max_retries=settings.expo_push_max_retries,
+            retry_min_delay=settings.expo_push_retry_min_delay_seconds,
+            max_messages_per_request=settings.expo_push_max_messages_per_request,
+            max_receipts_per_request=settings.expo_push_max_receipts_per_request,
+        )
+    return _expo_push_adapter_instance
 
 
 def get_token_verifier_adapter():
