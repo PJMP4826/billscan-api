@@ -71,6 +71,39 @@ class Settings(BaseSettings):
         ),
     )
 
+    # Push Notifications (Expo)
+    expo_push_base_url: str = Field(
+        default="https://exp.host",
+        description="Base URL de la Expo Push API",
+    )
+    expo_push_access_token: str = Field(
+        default="",
+        description=(
+            "Access token de Expo. Solo se requiere si push security está "
+            "habilitado en el dashboard."
+        ),
+    )
+    expo_push_timeout_seconds: float = Field(
+        default=10.0,
+        description="Timeout por petición a Expo (segundos)",
+    )
+    expo_push_max_retries: int = Field(
+        default=2,
+        description="Reintentos para respuestas 429/5xx de Expo",
+    )
+    expo_push_retry_min_delay_seconds: float = Field(
+        default=1.0,
+        description="Delay base (segundos) del backoff exponencial ante 429/5xx",
+    )
+    expo_push_max_messages_per_request: int = Field(
+        default=100,
+        description="Máximo de mensajes por petición de envío a Expo",
+    )
+    expo_push_max_receipts_per_request: int = Field(
+        default=1000,
+        description="Máximo de ids por petición de recibos a Expo",
+    )
+
     # Security Configuration
     # Data Encryptors
 
