@@ -47,3 +47,14 @@ class PushTokenRepository(PushTokenRepositoryPort):
         await self._db_manager.execute_statement(
             sql, {"token": token, "user_id": user_id}
         )
+
+    async def find_tokens_by_user_id(self, user_id: str) -> list[str]:
+        sql = """
+            SELECT token
+            FROM push_tokens
+            WHERE user_id = :user_id;
+        """
+        rows = await self._db_manager.execute_sql_query_fetch_all(
+            sql, {"user_id": user_id}
+        )
+        return [str(row["token"]) for row in rows]

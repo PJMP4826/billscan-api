@@ -79,6 +79,19 @@ class ReceiptRepository(ReceiptRepositoryPort):
         row = await self._db.execute_sql_query_fetch_first(sql, {"uuid": receipt_uuid})
         return int(row["id"]) if row else None
 
+    async def find_user_id_by_receipt_id(self, receipt_id: int) -> str | None:
+        """Devuelve el `user_id` dueño del receipt (NULL en receipts sin usuario)."""
+        sql = """
+            SELECT user_id
+            FROM receipts
+            WHERE id = :id;
+        """
+        row = await self._db.execute_sql_query_fetch_first(sql, {"id": receipt_id})
+        if not row:
+            return None
+        user_id = row["user_id"]
+        return str(user_id) if user_id is not None else None
+
     async def delete(self, receipt_id: int) -> None:
         """Deletes a receipt and relies on ON DELETE CASCADE for aggregate children."""
         async with self._db.transaction() as conn:
