@@ -11,6 +11,7 @@ from pydantic import EmailStr
 
 from api.http.dependencies import get_current_user_id
 from api.http.requests.fiscal_info_request import CreateFiscalInfoRequest
+from api.http.requests.push_token_request import PushTokenRequest
 from src.domain.enums.invoice_use import InvoiceUse
 from src.domain.enums.tax_regime import TaxRegime
 from src.domain.value_objects.user_id import UserId
@@ -202,6 +203,34 @@ async def get_completed_billing_summary(
 
     completed_billing_controller = GetCompletedBillingSummaryController()
     return await completed_billing_controller.handle(user_id, period)
+
+
+@router.post("/push-tokens")
+async def register_push_token(
+    payload: PushTokenRequest,
+    user_id: UserId = Depends(get_current_user_id),
+):
+    """Registra o reasigna el token de notificaciones del dispositivo."""
+    from api.http.controllers.register_push_token_controller import (
+        RegisterPushTokenController,
+    )
+
+    controller = RegisterPushTokenController()
+    return await controller.handle(user_id=user_id, request_data=payload)
+
+
+@router.delete("/push-tokens/{token}")
+async def unregister_push_token(
+    token: str,
+    user_id: UserId = Depends(get_current_user_id),
+):
+    """Desregistra un token del usuario autenticado (idempotente)."""
+    from api.http.controllers.unregister_push_token_controller import (
+        UnregisterPushTokenController,
+    )
+
+    controller = UnregisterPushTokenController()
+    return await controller.handle(user_id=user_id, token=token)
 
 
 @router.get("/reporting/recent-activity")
