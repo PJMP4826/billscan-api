@@ -22,3 +22,8 @@ class PushTokenRepositoryPort(ABC):
     async def delete_by_token_and_user_id(self, token: str, user_id: str) -> None:
         """Borra el token solo si pertenece al usuario. Idempotente si no existe."""
         pass
+
+    @abstractmethod
+    async def find_tokens_by_user_id(self, user_id: str) -> list[str]:
+        """Devuelve todos los tokens registrados para el usuario (puede ser [])."""
+        pass

@@ -47,6 +47,17 @@ class ReceiptRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    async def find_user_id_by_receipt_id(self, receipt_id: int) -> str | None:
+        """
+        Devuelve el `user_id` dueño de un receipt (puede ser NULL en MVP).
+
+        Lo usa el worker de webhooks para resolver receipt → usuario y de ahí
+        sus `push_tokens`. Devuelve None si el receipt no existe o no tiene
+        usuario asociado.
+        """
+        pass
+
+    @abstractmethod
     async def delete(self, receipt_id: int) -> None:
         """Elimina un recibo por su ID."""
         pass
