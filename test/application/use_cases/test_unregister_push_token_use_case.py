@@ -23,6 +23,9 @@ class _FakePushTokenRepository(PushTokenRepositoryPort):
     async def delete_by_token_and_user_id(self, token: str, user_id: str) -> None:
         self.deletes.append((token, user_id))
 
+    async def find_tokens_by_user_id(self, user_id: str) -> list[str]:
+        return []
+
 
 def test_execute_deletes_token_scoped_to_authenticated_user() -> None:
     repository = _FakePushTokenRepository()
