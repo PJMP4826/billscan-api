@@ -330,3 +330,25 @@ def get_ensure_user_use_case():
     from src.bootstraps.repositories.repositories_bootstrap import get_user_repository
 
     return EnsureUserExistsUseCase(users_repository=get_user_repository())
+
+
+def get_register_push_token_use_case():
+    from src.application.use_cases.register_push_token_use_case import (
+        RegisterPushTokenUseCase,
+    )
+    from .repositories.repositories_bootstrap import get_push_token_repository
+
+    return RegisterPushTokenUseCase(
+        push_token_repository=get_push_token_repository()
+    )
+
+
+def get_unregister_push_token_use_case():
+    from src.application.use_cases.unregister_push_token_use_case import (
+        UnregisterPushTokenUseCase,
+    )
+    from .repositories.repositories_bootstrap import get_push_token_repository
+
+    return UnregisterPushTokenUseCase(
+        push_token_repository=get_push_token_repository()
+    )

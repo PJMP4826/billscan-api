@@ -82,3 +82,11 @@ def get_invoice_quota_repository():
     )
 
     return InvoiceQuotaRepository(manager=database_connection_manager)
+
+
+def get_push_token_repository():
+    from src.infrastructure.repositories.push_token_repository import (
+        PushTokenRepository,
+    )
+
+    return PushTokenRepository(manager=database_connection_manager)
