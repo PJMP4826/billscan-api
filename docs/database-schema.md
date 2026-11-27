@@ -1,7 +1,7 @@
 # Database Schema - billscan-api
 
-> Diagrama generado a partir del historial de migraciones de Alembic (17 migraciones).
-> Última migración: `b7e4c9a1f2d3` (2026-11-21)
+> Diagrama generado a partir del historial de migraciones de Alembic (18 migraciones).
+> Última migración: `9c1f4a7b2d30` (2026-11-26)
 
 ## Entity Relationship Diagram
 
@@ -11,6 +11,15 @@ erDiagram
         varchar id PK "VARCHAR(255)"
         varchar email UK "VARCHAR(255) NOT NULL"
         timestamptz created_at "DEFAULT NOW()"
+    }
+
+    push_tokens {
+        bigserial id PK
+        varchar user_id FK "VARCHAR(255) NOT NULL"
+        varchar token UK "VARCHAR(255) NOT NULL, UNIQUE"
+        varchar platform "VARCHAR(16) NOT NULL, CHECK android|ios"
+        timestamptz created_at "DEFAULT NOW()"
+        timestamptz updated_at "DEFAULT NOW()"
     }
 
     fiscal_info {
@@ -174,6 +183,7 @@ erDiagram
     }
 
     users ||--|| fiscal_info : "has"
+    users ||--o{ push_tokens : "has"
     users ||--o{ receipts : "has"
     users ||--o{ receipt_jobs_details : "has"
 
@@ -203,6 +213,7 @@ erDiagram
 | Tabla padre            | Tabla hijo                | FK                    | On Delete |
 | ---------------------- | ------------------------- | --------------------- | --------- |
 | `users`                | `fiscal_info`             | `user_id`             | RESTRICT  |
+| `users`                | `push_tokens`             | `user_id`             | CASCADE   |
 | `users`                | `receipts`                | `user_id`             | CASCADE   |
 | `users`                | `receipt_jobs_details`    | `user_id`             | CASCADE   |
 | `fiscal_info`          | `regimenes`               | `fiscal_info`         | RESTRICT  |
@@ -222,6 +233,7 @@ erDiagram
 
 ## Notas de diseño
 
+- **`push_tokens.token`** tiene `UNIQUE` global: un mismo dispositivo puede cambiar de usuario (gana el último login) y el registro es idempotente vía `ON CONFLICT (token)`. Un usuario puede tener múltiples tokens (varios dispositivos). El `DELETE` solo borra si el token pertenece al `user_id` autenticado.
 - **`fiscal_info.user_id`** tiene `UNIQUE(user_id)`: cada usuario tiene un único registro fiscal, por lo que `POST /api/fiscal-info` hace upsert en lugar de insertar filas nuevas.
 - **`receipts.user_id`** es nullable porque en el flujo MVP el usuario puede no estar autenticado al momento de crear el receipt.
 - **`receipt_images.receipt_id`** es nullable porque las imágenes se insertan al crear el job de extracción, antes de que exista el receipt. Se backfilla al completar la extracción.
